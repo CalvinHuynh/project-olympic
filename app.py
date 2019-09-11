@@ -1,82 +1,28 @@
-import time
-# import redis
-# import peewee
 import os
+import peewee as db
 
+from flask import Flask
 from dotenv import load_dotenv
 from pathlib import Path
-from flask import Flask, request
-from flask_restplus import Api, Resource, fields
 env_path = Path('.') / '.env'
 load_dotenv(dotenv_path=env_path)
 
-# cache = redis.Redis(host='redis', port=6379)
+app = Flask(__name__)
+# TODO: Compare the pros and cons of a dot env file versus configuration file
+# app.config.from_object('config.Configuration')
 
-# db = peewee.MySQLDatabase(os.getenv("MYSQL_DATABASE"),
-#                           host="0.0.0.0",
-#                           port=3306,
-#                           user=os.getenv("MYSQL_USER"),
-#                           passwd=os.getenv("MYSQL_PASSWORD"))
+mysql_db = db.MySQLDatabase(os.getenv("FLASK_APP_NAME"),
+                            user=os.getenv("MYSQL_USER"),
+                            password=os.getenv("MYSQL_PASSWORD"),
+                            host=os.getenv("MYSQL_HOST").strip()
+                            if os.getenv("MYSQL_HOST").strip() else "0.0.0.0",
+                            port=3306)
 
-flask_app = Flask(os.getenv("FLASK_APP_NAME"))
-app = Api(app=flask_app,
-          version="1.0",
-          title=os.getenv("FLASK_APP_NAME"),
-          description="Manage names of various users of the application")
-
-name_space = app.namespace('names', description='Manage names')
-
-model = app.model(
-    'Name Model', {
-        'name':
-        fields.String(required=True,
-                      description="Name of the person",
-                      help="Name cannot be blank.")
-    })
-
-list_of_names = {}
+models = db.ModelBase.__bases__
 
 
-@name_space.route("/<int:id>")
-class MainClass(Resource):
-    @app.doc(responses={
-        200: 'OK',
-        400: 'Invalid Argument',
-        500: 'Mapping Key Error'
-    },
-             params={'id': 'Specify the Id associated with the person'})
-    def get(self, id):
-        try:
-            return {"status": "Person retrieved", "name": list_of_names[id]}
-        except KeyError as e:
-            name_space.abort(500,
-                             e.__doc__,
-                             status="Could not retrieve information",
-                             statusCode="500")
-        except Exception as e:
-            name_space.abort(400,
-                             e.__doc__,
-                             status="Could not retrieve information",
-                             statusCode="400")
+def create_tables():
+    with mysql_db:
+        mysql_db.create_tables(models)
 
-    @app.doc(responses={
-        200: 'OK',
-        400: 'Invalid Argument',
-        500: 'Mapping Key Error'
-    },
-             params={'id': 'Specify the Id associated with the person'})
-    @app.expect(model)
-    def post(self, id):
-        try:
-            list_of_names[id] = request.json['name']
-            return {"status": "New person added", "name": list_of_names[id]}
-        except KeyError as e:
-            name_space.abort(500,
-                             e.__doc__,
-                             status="Could not save information",
-                             statusCode="500")
-        except Exception as e:
-            name_space.abort(400,
-                             e.__doc__,
-                             status="Could not save information",
-                             statusCode="400")
+create_tables()
