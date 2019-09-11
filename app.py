@@ -21,7 +21,7 @@ load_dotenv(dotenv_path=env_path)
 flask_app = Flask(os.getenv("FLASK_APP_NAME"))
 app = Api(app=flask_app,
           version="1.0",
-          title="Name Recorder",
+          title=os.getenv("FLASK_APP_NAME"),
           description="Manage names of various users of the application")
 
 name_space = app.namespace('names', description='Manage names')
@@ -47,7 +47,6 @@ class MainClass(Resource):
              params={'id': 'Specify the Id associated with the person'})
     def get(self, id):
         try:
-            name = list_of_names[id]
             return {"status": "Person retrieved", "name": list_of_names[id]}
         except KeyError as e:
             name_space.abort(500,
