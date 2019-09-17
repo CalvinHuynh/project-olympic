@@ -1,8 +1,8 @@
-from peewee import *
-from models.base_model import BaseModel
+from peewee import PrimaryKeyField, CharField, DateTimeField
+from .base import Base
 
 
-class User(BaseModel):
+class User(Base):
     id = PrimaryKeyField()
     username = CharField(unique=True)
     email = CharField()

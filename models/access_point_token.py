@@ -1,9 +1,9 @@
-from peewee import *
-from models.base_model import BaseModel
-from models.user import User
-from models.access_point import AccessPoint
+from peewee import ForeignKeyField
+from .base import Base
+from .user import User
+from .access_point import AccessPoint
 
 
-class AccessPointToken(BaseModel):
+class AccessPointToken(Base):
     user = ForeignKeyField(User)
     AccessPoint = ForeignKeyField(AccessPoint)

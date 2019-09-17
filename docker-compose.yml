@@ -1,18 +1,8 @@
 version: '3'
 services:
-  web:
-    build: .
-    ports:
-      - "3000:${FLASK_RUN_PORT}"
-    volumes: 
-      - .:/app
-    environment: 
-      FLASK_ENV: ${FLASK_ENV}
-      FLASK_RUN_HOST: ${FLASK_RUN_HOST}
-      FLASK_RUN_PORT: ${FLASK_RUN_PORT}
   redis:
     image: "redis:alpine"
-  database:
+  maria_db:
     image: mariadb:10.3
     environment:
       MYSQL_RANDOM_ROOT_PASSWORD: 1
@@ -21,3 +11,15 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
     - "3306:3306"
+  web:
+    build: .
+    ports:
+      - "3000:${FLASK_RUN_PORT}"
+    depends_on:
+      - maria_db
+    volumes: 
+      - .:/app
+    environment: 
+      FLASK_ENV: ${FLASK_ENV}
+      FLASK_RUN_HOST: ${FLASK_RUN_HOST}
+      FLASK_RUN_PORT: ${FLASK_RUN_PORT}
