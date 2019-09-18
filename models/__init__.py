@@ -2,7 +2,7 @@ from .base import database, MySQLDatabase, Base
 from .user import User
 from .access_point import AccessPoint
 from .access_point_token import AccessPointToken
-from .data import AccessPointData
+from .access_point_data import AccessPointData
 
 
 def create_tables(database, models):
@@ -15,5 +15,5 @@ def create_tables(database, models):
         )
 
 
-def init_default():
+def initialize_database():
     create_tables(database, Base.__subclasses__())
