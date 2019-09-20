@@ -10,8 +10,8 @@ user = api.inherit(
     {
         'id':
         fields.Integer(description="Id of user"),
-        # 'username':
-        # fields.String(description="Username", example="admin1234"),
+        'username':
+        fields.String(description="Username", example="admin1234"),
         # 'email':
         # fields.String(description="Email of user", example="test@test.test"),
         # 'join_date': fields.String,

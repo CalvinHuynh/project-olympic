@@ -1,6 +1,9 @@
-from models import User
+from .user import UserDto
 
 class CreateAccessPointDto:
-    def __init__(self, description, user: User):
-        self.description = description
-        self.user = user
+    description: str
+    user: UserDto
+
+    def __init__(self, description, user: UserDto):
+        CreateAccessPointDto.description = description
+        CreateAccessPointDto.user = user
