@@ -23,3 +23,6 @@ app = Flask(
 app.config['RESTPLUS_VALIDATE'] = True
 # Initializes the routes
 api.init_app(app)
+
+if __name__ == "__main__":
+    app.run()

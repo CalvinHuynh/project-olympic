@@ -1,17 +1,19 @@
 from flask_restplus import Namespace, Resource, fields
+from flask import jsonify
+from http import HTTPStatus
+
 from services import AccessPointService
-from peewee import PeeweeException
-from dto import CreateAccessPointDto
+from helpers import ErrorObject, SuccessObject
+
+# from helpers import convert_input_to
 
 api = Namespace('access-points', description="Access point related operations")
 
 user = api.inherit(
     'User',
     {
-        'id':
-        fields.Integer(description="Id of user"),
-        'username':
-        fields.String(description="Username", example="admin1234"),
+        'id': fields.Integer(description="Id of user"),
+        'username': fields.String(description="Username", example="admin1234"),
         # 'email':
         # fields.String(description="Email of user", example="test@test.test"),
         # 'join_date': fields.String,
@@ -37,12 +39,28 @@ class GetAllAccessPoints(Resource):
     # @api.marshal_list_with(access_point) # marshal is able to format the responses
     def get(self):
         """Retrieves all access points"""
-        return access_point_service.get_all_access_points(self)
+        # return access_point_service.get_all_access_points(self)
+        try:
+            return jsonify(
+                SuccessObject.create_response(
+                    self, HTTPStatus.OK,
+                    access_point_service.get_all_access_points(self)))
+        except Exception as err:
+            print(err)
+            return ErrorObject.create_response(self, err.args[0], err.args[1])
 
+    # decorator that transform the payload dictionary to an object
+    # decorator that jsonifies all the output and returns it
     @api.doc('create_access_point')
     @api.expect(create_access_point_dto)
     def post(self):
-        return create_access_point_dto
+        try:
+            return jsonify(
+                SuccessObject.create_response(
+                    self, HTTPStatus.OK,
+                    access_point_service.add_access_point(self, api.payload)))
+        except Exception as err:
+            return ErrorObject.create_response(self, err.args[0], err.args[1])
 
 
 @api.route('/<id>')
@@ -53,4 +71,10 @@ class GetAccessPoint(Resource):
     # @api.marshal_with(access_point)
     def get(self, id):
         """Fetch a single access point"""
-        return access_point_service.get_one_access_point(self, id)
+        try:
+            return jsonify(
+                SuccessObject.create_response(
+                    self, HTTPStatus.OK,
+                    access_point_service.get_one_access_point(self, id)))
+        except Exception as err:
+            return ErrorObject.create_response(self, err.args[0], err.args[1])

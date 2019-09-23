@@ -1,15 +1,15 @@
 class UserDto:
-    identifier: int
+    id: int
     username: str
 
     # email: str
 
     def __init__(
             self,
-            identifier,
+            id,
             username,
             # email
     ):
-        UserDto.identifier = identifier
-        UserDto.username = username
-        # UserDto.email = email
+        self.id = id
+        self.username = username
+        # self.email = email

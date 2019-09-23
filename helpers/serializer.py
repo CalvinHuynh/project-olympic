@@ -1,6 +1,6 @@
 import json
 from datetime import date, datetime
-
+from collections import namedtuple
 
 def date_time_serializer(obj):
     """JSON serializer for objects not serializable by default json code"""
@@ -10,11 +10,23 @@ def date_time_serializer(obj):
     raise TypeError("Type %s not serializable" % type(obj))
 
 
-# class Object:
-#     def to_json_serializer(self):
-#         """Transforms an object to a dictionary to turn it to a json object"""
+def _json_object_hook(d):
+    return namedtuple(type(d).__name__, d.keys())(*d.values())
 
-#         return json.dumps(self,
-#                           default=lambda o: o.__dict__,
-#                           sort_keys=True,
-#                           indent=4)
+
+def json_to_object(data):
+    """Converts Json to strongly typed object
+    
+    Arguments:
+        data {JSON} -- data in valid json format
+    
+    Returns:
+        dict -- a dictionary representation of the json
+    """
+    try: 
+        return json.loads(data, object_hook=_json_object_hook)
+    except ValueError:
+        # print("Trying to fix json structure")
+        data = json.dumps(data)
+        return json.loads(data, object_hook=_json_object_hook)
+    
