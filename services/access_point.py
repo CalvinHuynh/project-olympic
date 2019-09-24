@@ -21,12 +21,12 @@ class AccessPointService():
         Returns:
             [AccessPoint] -- An array of access points will be returned
         """
-        all_access_point_array = []
+        all_access_points_array = []
 
         for access_point in AccessPoint.select():
-            all_access_point_array.append(model_to_dict(access_point))
+            all_access_points_array.append(model_to_dict(access_point))
 
-        return all_access_point_array
+        return all_access_points_array
 
     def get_one_access_point(self, id: int):
         """Retrieves a single access point

@@ -36,7 +36,7 @@ access_point_service = AccessPointService
 @api.route('/')
 class GetAllAccessPoints(Resource):
     @api.doc('get_all_access_points')
-    # @api.marshal_list_with(access_point) # marshal is able to format the responses
+    # @api.marshal_list_with({object}) # marshal is able to format the responses
     def get(self):
         """Fetches all access points"""
         # return access_point_service.get_all_access_points(self)
@@ -68,7 +68,6 @@ class GetAllAccessPoints(Resource):
 @api.response(404, 'Access point not found')
 class GetAccessPoint(Resource):
     @api.doc('get_access_point')
-    # @api.marshal_with(access_point)
     def get(self, id):
         """Fetch a single access point"""
         try:
