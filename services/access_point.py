@@ -17,9 +17,9 @@ user_service = UserService
 class AccessPointService():
     def get_all_access_points(self):
         """Retrieves all the access points
-        
+
         Returns:
-            json -- Returns all the access points
+            [AccessPoint] -- An array of access points will be returned
         """
         all_access_point_array = []
 
@@ -30,13 +30,15 @@ class AccessPointService():
 
     def get_one_access_point(self, id: int):
         """Retrieves a single access point
-        
+
         Arguments:
-            id {int} -- id of access point
-        
+            id {int} -- Id of access point
+
+        Raises:
+            ValueError: Access point not found with given id
+
         Returns:
-            json -- If the access point exist, an access point will be returned. 
-            Else a corresponding error will be returned
+            AccessPoint -- An access point will be returned
         """
         try:
             return model_to_dict(AccessPoint.get_by_id(id))
@@ -50,18 +52,14 @@ class AccessPointService():
                          user_id=None,
                          username=None):
         """Creates a new access point
-        
+
         Arguments:
-            create_access_point_dto {CreateAccessPoint} -- Object containing the 
-            user and a description for the access point.
+            create_access_point_dto {CreateAccessPointDto} -- Data transfer
+            object containing the description of the access point and user
 
-            user_id {int} -- Optional: User id
-
-            username {str} -- Optional: Username
-        
-        Returns:
-            json -- If created, the new access point will be returned.
-            Else a corresponding error will be returned
+        Keyword Arguments:
+            user_id {int} -- Optional: id of user (default: {None})
+            username {str} -- Optional: username of user (default: {None})
         """
         # Maps incomming dictionary to strongly typed object
         create_access_point_dto: CreateAccessPointDto = json_to_object(
@@ -90,6 +88,6 @@ class AccessPointService():
                     AccessPoint.create(
                         description=create_access_point_dto.description,
                         user=result))
-            except:
+            except Exception:
                 raise ValueError("Unable to create access point",
                                  HTTPStatus.INTERNAL_SERVER_ERROR)

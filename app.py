@@ -3,7 +3,6 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from flask import Flask
-from flask_restplus import Api, Resource, fields
 
 from models import initialize_database
 from routes import api
@@ -19,7 +18,8 @@ app = Flask(
     os.getenv("FLASK_APP_NAME").strip() if os.getenv("FLASK_APP_NAME").strip(
     ) else __name__)
 
-# app.config['JSON_SORT_KEYS'] = os.getenv("FLASK_SORT_JSON_KEYS").strip() if os.getenv("FLASK_SORT_JSON_KEYS").strip() else True
+# app.config['JSON_SORT_KEYS'] = os.getenv("FLASK_SORT_JSON_KEYS").strip()
+# if os.getenv("FLASK_SORT_JSON_KEYS").strip() else True
 app.config['RESTPLUS_VALIDATE'] = True
 # Initializes the routes
 api.init_app(app)

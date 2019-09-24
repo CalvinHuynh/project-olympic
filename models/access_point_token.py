@@ -7,3 +7,4 @@ from .access_point import User
 class AccessPointToken(Base):
     user = ForeignKeyField(User)
     AccessPoint = ForeignKeyField(User)
+    

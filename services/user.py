@@ -7,13 +7,16 @@ from models import User
 
 class UserService():
     def get_user_by_id(self, id: int):
-        """Retrieves the user by id
+        """Get user by id
 
         Arguments:
             id {int} -- Id of user
 
+        Raises:
+            ValueError: User not found with given id
+
         Returns:
-            json -- Returns the user if found
+            User -- User object
         """
         try:
             return User.get_by_id(id)
@@ -24,13 +27,16 @@ class UserService():
         #     return result
 
     def get_user_by_username(self, username: str):
-        """Retrieves the user by username
-        
+        """Get user by username
+
         Arguments:
-            username {str} -- Username of user
-        
+            username {str} -- Username
+
+        Raises:
+            ValueError: User not found with given username
+
         Returns:
-            json -- Returns the user if found
+            User -- User object
         """
         try:
             return User.select().where(User.username == username).get()

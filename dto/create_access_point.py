@@ -1,4 +1,6 @@
 from .user import UserDto
+
+
 class CreateAccessPointDto:
 
     description: str

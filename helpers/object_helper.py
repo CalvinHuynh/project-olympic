@@ -7,8 +7,9 @@ from dotenv import load_dotenv
 env_path = Path('.') / '.env'
 load_dotenv(dotenv_path=env_path)
 
+api_version = os.getenv("FLASK_API_VERSION").strip() if os.getenv(
+    "FLASK_API_VERSION").strip() else "1.0.0"
 
-api_version = os.getenv("FLASK_API_VERSION").strip() if os.getenv("FLASK_API_VERSION").strip() else "1.0.0"
 
 class ErrorObject:
     def create_response(self, error_code: HTTPStatus, error_message: str):

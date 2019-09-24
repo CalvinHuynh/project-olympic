@@ -8,3 +8,4 @@ class User(Base):
     email = CharField()
     join_date = DateTimeField()
     last_login_date = DateTimeField()
+    
