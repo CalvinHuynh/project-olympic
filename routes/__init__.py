@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from flask_restplus import Api
 
 from routes.access_point import api as access_point_api
+from routes.user import api as user_api
 
 env_path = Path('.') / '.env'
 load_dotenv(dotenv_path=env_path)
@@ -17,3 +18,4 @@ api = Api(version=os.getenv("FLASK_API_VERSION").strip()
           if os.getenv("SWAGGER_DOC_ENDPOINT") else "/docs/")
 
 api.add_namespace(access_point_api)
+api.add_namespace(user_api)

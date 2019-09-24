@@ -38,7 +38,7 @@ class GetAllAccessPoints(Resource):
     @api.doc('get_all_access_points')
     # @api.marshal_list_with(access_point) # marshal is able to format the responses
     def get(self):
-        """Retrieves all access points"""
+        """Fetches all access points"""
         # return access_point_service.get_all_access_points(self)
         try:
             return jsonify(

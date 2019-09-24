@@ -1,6 +1,7 @@
 from http import HTTPStatus
 
 from peewee import DoesNotExist
+from playhouse.shortcuts import model_to_dict
 
 from models import User
 
@@ -39,8 +40,10 @@ class UserService():
             User -- User object
         """
         try:
-            return User.select().where(User.username == username).get()
+            return model_to_dict(User.select().where(User.username == username).get())
         except DoesNotExist:
             raise ValueError(
                 'User with username {} does not exist'.format(username),
                 HTTPStatus.NOT_FOUND)
+        except Exception:
+            raise BaseException('Internal server error', HTTPStatus.INTERNAL_SERVER_ERROR)
