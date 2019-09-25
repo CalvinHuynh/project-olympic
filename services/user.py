@@ -54,15 +54,15 @@ class UserService():
         all_access_points_from_user_array = []
         try:
             try:
-                user = dict_to_model(User ,UserService.get_user_by_username(self, username))
+                user = dict_to_model(User, UserService.get_user_by_username(self, username))
             except Exception as err:
                 raise ValueError(err.args[0], err.args[1])
 
             if user is not None:
                 for access_point in AccessPoint.select(
-                    AccessPoint, user).where(AccessPoint.user == user):
+                        AccessPoint, user).where(AccessPoint.user == user):
                     all_access_points_from_user_array.append(
-                    model_to_dict(access_point))
+                        model_to_dict(access_point))
             return all_access_points_from_user_array
         except Exception as err:
             try:
@@ -70,4 +70,4 @@ class UserService():
             except IndexError:
                 status_code = HTTPStatus.INTERNAL_SERVER_ERROR
 
-            return ValueError(err.args[0], status_code)
+            raise ValueError(err.args[0], status_code)

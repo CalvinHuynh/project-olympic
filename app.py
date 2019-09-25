@@ -21,6 +21,8 @@ app = Flask(
 # app.config['JSON_SORT_KEYS'] = os.getenv("FLASK_SORT_JSON_KEYS").strip()
 # if os.getenv("FLASK_SORT_JSON_KEYS").strip() else True
 app.config['RESTPLUS_VALIDATE'] = True
+app.config['SECRET_KEY'] = os.getenv("FLASK_SECRET_KEY").strip()
+
 # Initializes the routes
 api.init_app(app)
 

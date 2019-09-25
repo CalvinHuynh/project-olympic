@@ -14,18 +14,23 @@ def convert_input_to(class_):
         return decorator
     return wrap
 
+# inspired by https://stackoverflow.com/a/15882054
+def _json_object_hook(data):
+    return namedtuple(type(data).__name__, data.keys())(*data.values())
 
-def _json_object_hook(name, data):
-    return namedtuple(name, data.keys())(*data.values())
+"""Decorator that converts the API payload to an tuple object
 
-
-def convert_input_to_tuple(name):
-    def wrapper():
-        data = request.get_json()
-        try: 
-            return json.loads(data, object_hook=_json_object_hook(name, data))
-        except ValueError:
-            print("Trying to fix json structure")
-            data = json.dumps(data)
-            return json.loads(data, object_hook=_json_object_hook)
-    return wrapper
+Returns:
+    namedtuple -- object representation of the API payload
+"""
+def convert_input_to_tuple(f):
+        def decorator(*args, **kwargs):
+            data = args[0].api.payload
+            try: 
+                kwargs['tupled_output'] = json.loads(data, object_hook=_json_object_hook)
+                return f(*args, **kwargs)
+            except Exception:
+                data = json.dumps(data)
+                kwargs['tupled_output'] = json.loads(data, object_hook=_json_object_hook)
+                return f(*args, **kwargs)
+        return decorator

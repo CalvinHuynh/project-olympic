@@ -1,11 +1,9 @@
 from flask_restplus import Namespace, Resource, fields
-from flask import jsonify
+from flask import jsonify, request
 from http import HTTPStatus
 
 from services import AccessPointService
-from helpers import ErrorObject, SuccessObject
-
-# from helpers import convert_input_to
+from helpers import ErrorObject, SuccessObject, convert_input_to_tuple
 
 api = Namespace('access-points', description="Access point related operations")
 
@@ -53,12 +51,13 @@ class GetAllAccessPoints(Resource):
     # decorator that jsonifies all the output and returns it
     @api.doc('create_access_point')
     @api.expect(create_access_point_dto)
-    def post(self):
+    @convert_input_to_tuple
+    def post(self, **kwargs):
         try:
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    access_point_service.add_access_point(self, api.payload)))
+                    access_point_service.add_access_point(self, kwargs['tupled_output'])))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
 

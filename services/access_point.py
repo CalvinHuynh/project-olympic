@@ -5,7 +5,6 @@ from peewee import DoesNotExist
 from playhouse.shortcuts import model_to_dict
 
 from dto import CreateAccessPointDto
-from helpers import json_to_object
 from models import AccessPoint, User
 
 from .user import UserService
@@ -61,10 +60,6 @@ class AccessPointService():
             user_id {int} -- Optional: id of user (default: {None})
             username {str} -- Optional: username of user (default: {None})
         """
-        # Maps incomming dictionary to strongly typed object
-        create_access_point_dto: CreateAccessPointDto = json_to_object(
-            json.dumps(create_access_point_dto))
-
         result = None
         # try to lookup the user
         try:
