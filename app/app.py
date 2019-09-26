@@ -1,8 +1,9 @@
 from authlib.flask.client import OAuth
 from flask import Flask
 
-from models import initialize_database
-from routes import api
+from app.models import initialize_database
+from app.routes import api
+
 from settings import FLASK_APP_NAME, FLASK_SECRET_KEY, CLIENT_ID, CLIENT_SECRET
 
 initialize_database()
@@ -12,9 +13,9 @@ app = Flask(FLASK_APP_NAME if FLASK_APP_NAME else __name__)
 app.config['RESTPLUS_VALIDATE'] = True
 app.config['SECRET_KEY'] = FLASK_SECRET_KEY
 
-oauth = OAuth()
+github_oauth = OAuth()
 
-oauth.register(
+github_oauth.register(
     name='github',
     client_id=CLIENT_ID,
     client_secret=CLIENT_SECRET,
@@ -25,7 +26,7 @@ oauth.register(
 )
 
 # Initializes oauth
-oauth.init_app(app)
+github_oauth.init_app(app)
 
 # Initializes the routes
 api.init_app(app)

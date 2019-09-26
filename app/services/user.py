@@ -3,7 +3,7 @@ from http import HTTPStatus
 from peewee import DoesNotExist
 from playhouse.shortcuts import dict_to_model, model_to_dict
 
-from models import AccessPoint, User
+from app.models import AccessPoint, User
 
 
 class UserService():

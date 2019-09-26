@@ -3,10 +3,10 @@ from http import HTTPStatus
 from flask import jsonify
 from flask_restplus import Namespace, Resource, fields
 
-from helpers import ErrorObject, SuccessObject
-from services import UserService
+from app.helpers import ErrorObject, SuccessObject
+from app.services import UserService
 
-api = Namespace('', description="User related operations")
+api = Namespace('user', description="User related operations")
 
 # TODO: add DI
 user_service = UserService
@@ -25,7 +25,6 @@ user_service = UserService
 #     'apiVersion': fields.String(description="API version", example="0.0.1"),
 #     'data': [fields.Nested(access_point)]
 # })
-
 
 @api.route('/<name>')
 @api.param('name', 'Username of the user')

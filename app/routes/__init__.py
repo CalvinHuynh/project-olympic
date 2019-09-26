@@ -1,10 +1,10 @@
 
 from flask_restplus import Api
 
-from routes.access_point import api as access_point_api
-from routes.oauth import api as oauth_api
-from routes.user import api as user_api
-from routes.assets import api as assets_api
+from app.routes.access_point import api as access_point_api
+from app.routes.oauth import api as oauth_api
+from app.routes.user import api as user_api
+from app.routes.assets import api as assets_api
 from settings import FLASK_API_VERSION, SWAGGER_DOC_ENDPOINT
 
 api = Api(version=FLASK_API_VERSION if FLASK_API_VERSION else "1.0.0",
