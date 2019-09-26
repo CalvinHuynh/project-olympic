@@ -1,6 +1,6 @@
 import json
-from datetime import date, datetime
 from collections import namedtuple
+from datetime import date, datetime
 
 
 def date_time_serializer(obj):

@@ -1,14 +1,8 @@
-import os
 from http import HTTPStatus
-from pathlib import Path
 
-from dotenv import load_dotenv
+from settings import FLASK_API_VERSION
 
-env_path = Path('.') / '.env'
-load_dotenv(dotenv_path=env_path)
-
-api_version = os.getenv("FLASK_API_VERSION").strip() if os.getenv(
-    "FLASK_API_VERSION").strip() else "1.0.0"
+api_version = FLASK_API_VERSION if FLASK_API_VERSION else "1.0.0"
 
 
 class ErrorObject:

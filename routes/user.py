@@ -1,9 +1,10 @@
-from flask_restplus import Namespace, Resource, fields
-from flask import jsonify
 from http import HTTPStatus
 
-from services import UserService
+from flask import jsonify
+from flask_restplus import Namespace, Resource, fields
+
 from helpers import ErrorObject, SuccessObject
+from services import UserService
 
 api = Namespace('', description="User related operations")
 

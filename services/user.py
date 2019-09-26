@@ -1,9 +1,9 @@
 from http import HTTPStatus
 
 from peewee import DoesNotExist
-from playhouse.shortcuts import model_to_dict, dict_to_model
+from playhouse.shortcuts import dict_to_model, model_to_dict
 
-from models import User, AccessPoint
+from models import AccessPoint, User
 
 
 class UserService():
@@ -32,7 +32,7 @@ class UserService():
 
         Arguments:
             username {str} -- Username
-
+    
         Raises:
             ValueError: User not found with given username
 

@@ -1,7 +1,7 @@
 # WIP, should be a decorator that converts the payload dict object to a json object
 import json
-
 from collections import namedtuple
+
 from flask import request
 
 

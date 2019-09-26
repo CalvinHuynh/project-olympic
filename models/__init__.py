@@ -1,8 +1,8 @@
-from .base import database, MySQLDatabase, Base
-from .user import User
 from .access_point import AccessPoint
-from .access_point_token import AccessPointToken
 from .access_point_data import AccessPointData
+from .access_point_token import AccessPointToken
+from .base import Base, MySQLDatabase, database
+from .user import User
 
 
 def create_tables(database, models):

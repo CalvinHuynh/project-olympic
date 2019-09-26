@@ -1,9 +1,10 @@
-from flask_restplus import Namespace, Resource, fields
-from flask import jsonify, request
 from http import HTTPStatus
 
-from services import AccessPointService
+from flask import jsonify, request
+from flask_restplus import Namespace, Resource, fields
+
 from helpers import ErrorObject, SuccessObject, convert_input_to_tuple
+from services import AccessPointService
 
 api = Namespace('access-points', description="Access point related operations")
 

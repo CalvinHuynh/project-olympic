@@ -1,4 +1,5 @@
-from peewee import PrimaryKeyField, CharField, DateTimeField
+from peewee import CharField, DateTimeField, PrimaryKeyField
+
 from .base import Base
 
 
@@ -8,4 +9,3 @@ class User(Base):
     email = CharField()
     join_date = DateTimeField()
     last_login_date = DateTimeField()
-    

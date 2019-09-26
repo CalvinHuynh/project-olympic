@@ -9,7 +9,6 @@ from models import AccessPoint, User
 
 from .user import UserService
 
-
 user_service = UserService
 
 

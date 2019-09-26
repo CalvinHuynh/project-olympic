@@ -1,6 +1,8 @@
-from peewee import PrimaryKeyField, ForeignKeyField, IntegerField, DateTimeField
-from .base import Base
+from peewee import (DateTimeField, ForeignKeyField, IntegerField,
+                    PrimaryKeyField)
+
 from .access_point import User
+from .base import Base
 
 
 class AccessPointData(Base):
