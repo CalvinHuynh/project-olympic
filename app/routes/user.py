@@ -37,12 +37,7 @@ class GetUser(Resource):
                     self, HTTPStatus.OK,
                     user_service.get_user_by_username(self, name)))
         except Exception as err:
-            try:
-                status_code = err.args[1]
-            except IndexError:
-                status_code = HTTPStatus.INTERNAL_SERVER_ERROR
-
-            return ErrorObject.create_response(self, err.args[0], status_code)
+            return ErrorObject.create_response(self, err.args[0], err.args[1])
 
 
 @api.route('/<name>/access-points')

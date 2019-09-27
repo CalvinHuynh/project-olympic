@@ -2,6 +2,7 @@ from http import HTTPStatus
 
 from flask import jsonify, request
 from flask_restplus import Namespace, Resource, fields
+from flask_jwt_extended import jwt_required
 
 from app.helpers import ErrorObject, SuccessObject, convert_input_to_tuple
 from app.services import AccessPointService
@@ -50,6 +51,8 @@ class GetAllAccessPoints(Resource):
 
     # decorator that transform the payload dictionary to an object
     # decorator that jsonifies all the output and returns it
+    @jwt_required
+    @api.doc(security='JWT')
     @api.doc('create_access_point')
     @api.expect(create_access_point_dto)
     @convert_input_to_tuple

@@ -73,8 +73,8 @@ class AccessPointService():
                 result = user_service.get_user_by_id(self, user_id)
             else:
                 result = user_service.get_user_by_username(self, username)
-        except Exception as err:
-            raise ValueError(err.args[0], err.args[1])
+        except Exception:
+            raise
 
         if result is not None and isinstance(result, User):
             try:

@@ -11,6 +11,7 @@ cryptography==2.7
 entrypoints==0.3
 flake8==3.7.8
 Flask==1.1.1
+Flask-JWT-Extended==3.23.0
 flask-restplus==0.13.0
 idna==2.8
 isort==4.3.21
@@ -18,6 +19,7 @@ itsdangerous==1.1.0
 Jinja2==2.10.1
 jsonschema==3.0.2
 lazy-object-proxy==1.4.2
+loginpass==0.4
 MarkupSafe==1.1.1
 mccabe==0.6.1
 mistune==0.8.4
@@ -26,6 +28,7 @@ peewee==3.10.0
 pycodestyle==2.5.0
 pycparser==2.19
 pyflakes==2.1.1
+PyJWT==1.7.1
 pylint==2.3.1
 PyMySQL==0.9.3
 pyrsistent==0.15.4
