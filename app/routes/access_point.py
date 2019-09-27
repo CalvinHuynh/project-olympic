@@ -2,7 +2,7 @@ from http import HTTPStatus
 
 from flask import jsonify, request
 from flask_restplus import Namespace, Resource, fields
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from app.helpers import ErrorObject, SuccessObject, convert_input_to_tuple
 from app.services import AccessPointService
@@ -57,6 +57,8 @@ class GetAllAccessPoints(Resource):
     @api.expect(create_access_point_dto)
     @convert_input_to_tuple
     def post(self, **kwargs):
+        current_user = get_jwt_identity()
+        print(current_user)
         try:
             return jsonify(
                 SuccessObject.create_response(

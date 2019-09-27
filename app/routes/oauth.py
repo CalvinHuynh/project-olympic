@@ -28,16 +28,15 @@ def handle_authorize(remote, token, user_info):
         "acces_token": token['access_token'],
     }
     try:
-        user_service.create_user(UserService, email=user_info.email)
+        user_service.create_user(UserService, email=user_info['email'])
         access_token = create_access_token(identity=identity_object)
         print(access_token)
         return jsonify(
-            SuccessObject.create_response(UserService, HTTPStatus.OK, access_token)
+            SuccessObject.create_response(UserService, HTTPStatus.OK, {"jwt": access_token})
         )
     except Exception as err:
         return ErrorObject.create_response(UserService, err.args[0], err.args[1])
-    # print(identity_object)
-    # return jsonify(token, user_info, create_access_token(identity_object))
+ 
 
 @api.route('/')
 class GetLoginRoutes(Resource):

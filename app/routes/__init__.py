@@ -13,7 +13,7 @@ authorizations = {
     'JWT': {
         'type': 'apiKey',
         'in': 'header',
-        'name': 'bearer'
+        'name': 'Authorization'
     }
 }
 

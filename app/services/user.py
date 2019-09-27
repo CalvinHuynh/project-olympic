@@ -25,8 +25,6 @@ class UserService():
         except DoesNotExist:
             raise ValueError('User with id {} does not exist'.format(id),
                              HTTPStatus.NOT_FOUND)
-        # finally:
-        #     return result
 
     def get_user_by_username(self, username: str):
         """Get user by username
@@ -96,42 +94,18 @@ class UserService():
         join_date = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
         last_login_date = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
         try:
-            return model_to_dict(
-                User.create(username=username,
-                            email=email,
-                            join_date=join_date,
-                            last_login_date=last_login_date))
-        except IntegrityError:
-            raise ValueError('Email is required', HTTPStatus.BAD_REQUEST)
-        except Exception:
-            raise BaseException('Internal server error',
-                                HTTPStatus.INTERNAL_SERVER_ERROR)
-
-
-def create_user_without_self(email: str, username=None):
-        """Creates a new user
-        
-        Arguments:
-            email {str} -- email of user
-        
-        Keyword Arguments:
-            username {str} -- Optional: username of user (default: {None})
-        
-        Raises:
-            ValueError: Email is required
-            BaseException: Internal server error
-        
-        Returns:
-            User -- Newly created user
-        """
-        join_date = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-        last_login_date = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-        try:
-            return model_to_dict(
-                User.create(username=username,
-                            email=email,
-                            join_date=join_date,
-                            last_login_date=last_login_date))
+            if username is not None:
+                return model_to_dict(
+                    User.create(
+                        username=username,
+                        email=email,
+                        join_date=join_date,
+                        last_login_date=last_login_date))
+            else:
+                return model_to_dict(
+                    User.create(email=email,
+                                join_date=join_date,
+                                last_login_date=last_login_date))
         except IntegrityError:
             raise ValueError('Email is required', HTTPStatus.BAD_REQUEST)
         except Exception:
