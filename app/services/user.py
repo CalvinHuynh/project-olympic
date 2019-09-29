@@ -48,6 +48,29 @@ class UserService():
         except Exception:
             raise BaseException('Internal server error',
                                 HTTPStatus.INTERNAL_SERVER_ERROR)
+    
+    def get_user_by_email(self, email: str):
+        """Get user by email
+        
+        Arguments:
+            email {str} -- Email
+        
+        Raises:
+            ValueError: User not found with given email
+        
+        Returns:
+            User -- User object
+        """
+        try:
+            return model_to_dict(
+                User.select().where(User.email == email).get())
+        except DoesNotExist:
+            raise ValueError(
+                'User with email {} does not exist'.format(email),
+                HTTPStatus.NOT_FOUND)
+        except Exception:
+            raise BaseException('Internal server error',
+                                HTTPStatus.INTERNAL_SERVER_ERROR)
 
     def get_access_point_by_user(self, username: str):
         """Retrieves access point from an user
@@ -107,7 +130,10 @@ class UserService():
                                 join_date=join_date,
                                 last_login_date=last_login_date))
         except IntegrityError:
-            raise ValueError('Email is required', HTTPStatus.BAD_REQUEST)
+            if email is None:
+                raise ValueError('Email is required', HTTPStatus.BAD_REQUEST)
+            else:
+                raise ValueError('Email already exists', HTTPStatus.CONFLICT)
         except Exception:
             raise BaseException('Internal server error',
                                 HTTPStatus.INTERNAL_SERVER_ERROR)

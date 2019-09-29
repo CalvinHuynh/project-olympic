@@ -29,24 +29,29 @@ oauth = OAuth(app)
 # Initializes JWT
 jwt = JWTManager(app)
 
+# Overwrite default error handling
+@jwt.invalid_token_loader
+def custom_invalid_token_loader(self):
+    from app.helpers import ErrorObject
+    return ErrorObject.create_response(self, HTTPStatus.UNAUTHORIZED,
+                                        'Invalid token provided')
 
-# @jwt.expired_token_loader
-# def custom_expired_token_loader(self, token):
-#     from app.helpers import ErrorObject
-#     token_type = token['type']
-#     return ErrorObject.create_response(
-#         self, HTTPStatus.UNAUTHORIZED,
-#         'The {} token has expired'.format(token_type))
+@jwt.expired_token_loader
+def custom_expired_token_loader(self, token):
+    from app.helpers import ErrorObject
+    token_type = token['type']
+    return ErrorObject.create_response(
+        self, HTTPStatus.UNAUTHORIZED,
+        'The {} token has expired'.format(token_type))
 
-# @jwt.unauthorized_loader
-# def custom_unauthorized_loader(self):
-#     from app.helpers import ErrorObject
-#     return ErrorObject.create_response(self, HTTPStatus.UNAUTHORIZED,
-#                                         'No access token provided')
+@jwt.unauthorized_loader
+def custom_unauthorized_loader(self):
+    from app.helpers import ErrorObject
+    return ErrorObject.create_response(self, HTTPStatus.UNAUTHORIZED,
+                                        'No access token provided')
 
 
 # Initializes the routes
-# api.init_app(app)
 app.register_blueprint(index)
 app.register_blueprint(api_v1)
 
