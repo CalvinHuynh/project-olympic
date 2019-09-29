@@ -44,7 +44,7 @@ def handle_authorize(remote, token, user_info):
 
 
 @api.route('/')
-class GetLoginRoutes(Resource):
+class SetupLoginRoutes(Resource):
     def get(self):
         tpl = '<a href="/{}/login"><button type="button">{}</button></a><br/><br/>'
         lis = [tpl.format(b.OAUTH_NAME, b.OAUTH_NAME)
@@ -53,3 +53,7 @@ class GetLoginRoutes(Resource):
         resp = Response(render_template(
             'login.html', SUPPORTED_OAUTH_PROVIDERS='<ul>{}</ul>'.format(''.join(lis))))
         return resp
+
+@api.route('/logout')
+class LogOut(Resource):
+    pass

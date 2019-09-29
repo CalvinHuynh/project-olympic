@@ -34,7 +34,7 @@ access_point_service = AccessPointService
 
 
 @api.route('/')
-class GetAllAccessPoints(Resource):
+class AllAccessPointResources(Resource):
     @api.doc('get_all_access_points')
     # @api.marshal_list_with({object}) # marshal is able to format the responses
     def get(self):
