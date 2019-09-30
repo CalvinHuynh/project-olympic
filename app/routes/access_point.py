@@ -10,7 +10,7 @@ from app.services import AccessPointService, AccessPointTokenService
 
 api = Namespace('access-points', description="Access point related operations")
 
-user = api.inherit(
+user_dto = api.inherit(
     'User',
     {
         'id': fields.Integer(description="Id of user"),
@@ -29,7 +29,7 @@ create_access_point_dto = api.model(
         fields.String(description="Description of access point",
                       example="Near the entrance"),
         'user':
-        fields.Nested(user)
+        fields.Nested(user_dto)
     })
 
 # TODO: Add DI
@@ -43,7 +43,6 @@ class AllAccessPointsResources(Resource):
     # @api.marshal_list_with({object}) # marshal is able to format the responses
     def get(self):
         """Fetches all access points"""
-        # return access_point_service.get_all_access_points(self)
         try:
             return jsonify(
                 SuccessObject.create_response(
@@ -52,13 +51,11 @@ class AllAccessPointsResources(Resource):
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
 
-    # decorator that transform the payload dictionary to an object
-    # decorator that jsonifies all the output and returns it
+    @is_user_check
     @jwt_required
     @api.doc('post_access_point', security='JWT')
     @api.expect(create_access_point_dto)
     @convert_input_to_tuple
-    @is_user_check
     def post(self, **kwargs):
         """Creates a new access point"""
         token = get_jwt_identity()

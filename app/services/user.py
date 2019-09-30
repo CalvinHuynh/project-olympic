@@ -130,3 +130,27 @@ class UserService():
                 raise ValueError(HTTPStatus.CONFLICT, 'Email already exists')
         except Exception:
             raise BaseException(HTTPStatus.INTERNAL_SERVER_ERROR, 'Internal server error')
+
+    def set_username(self, id: int, username: str):
+        """Sets the username of the logged in user
+        
+        Arguments:
+            id {int} -- User id
+            username {str} -- new username
+        
+        Raises:
+            ValueError: [description]
+        """
+        user: User = UserService.get_user_by_id(self, id)
+        if user is not None and username is not None:
+            if user.username is None:
+                user.username = username
+                try:
+                    user.save()
+                    return model_to_dict(user)
+                except  :
+                    raise ValueError(HTTPStatus.CONFLICT, 'Username already exists')
+            else:
+                raise ValueError(HTTPStatus.NOT_MODIFIED, 'Username can only be set once')
+        else:
+            raise ValueError(HTTPStatus.BAD_REQUEST, 'Username is required')

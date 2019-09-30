@@ -6,7 +6,8 @@ from flask_jwt_extended import (
 
 from .object_helper import ErrorObject
 
-
+"""A wrapper that checks if the provided JWT is a user token
+"""
 def is_user_check(fn):
     def wrapper(*args, **kwargs):
         verify_jwt_in_request()
