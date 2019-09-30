@@ -51,11 +51,11 @@ class AllAccessPointsResources(Resource):
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
 
-    @is_user_check
-    @jwt_required
     @api.doc('post_access_point', security='JWT')
     @api.expect(create_access_point_dto)
     @convert_input_to_tuple
+    @is_user_check
+    @jwt_required
     def post(self, **kwargs):
         """Creates a new access point"""
         token = get_jwt_identity()
@@ -83,9 +83,9 @@ class SingleAccessPointResources(Resource):
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
 
-    @jwt_required
     @api.doc('post_token_for_access_point', security='JWT')
     @is_user_check
+    @jwt_required
     def post(self, id):
         """Creates a token for access point"""
         token = get_jwt_identity()
