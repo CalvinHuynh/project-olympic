@@ -19,3 +19,23 @@ def is_user_check(fn):
         else:
             return fn(*args, **kwargs)
     return wrapper
+
+"""A wrapper that checks if the provided JWT is an access token
+"""
+def token_is_active_check(fn):
+    def wrapper(*args, **kwargs):
+        verify_jwt_in_request()
+        token = get_jwt_identity()
+        if token['is_user_token'] is False:
+            if token['access_point_token']['is_active'] is False:
+                return ErrorObject.create_response(
+                    ErrorObject, HTTPStatus.FORBIDDEN, 'Unable to access this resource with provided token'
+                )
+            else:
+                return fn(*args, **kwargs)
+        else:
+             return ErrorObject.create_response(
+                    ErrorObject, HTTPStatus.FORBIDDEN, 'Unable to access this resource with provided token'
+                )
+    return wrapper
+

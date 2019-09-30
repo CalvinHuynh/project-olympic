@@ -1,0 +1,71 @@
+from http import HTTPStatus
+
+from flask import jsonify
+from flask_jwt_extended import get_jwt_identity, jwt_required
+from flask_restplus import Namespace, Resource, fields
+
+from app.helpers import (ErrorObject, SuccessObject, convert_input_to_tuple,
+                         token_is_active_check)
+from app.services import AccessPointDataService
+
+api = Namespace('data', description="Access point data related operations")
+
+create_access_point_data_dto = api.model(
+    'CreateAccessPointDataDto', {
+        'no_of_clients': fields.Integer(description="number of clients",
+                                        example=4),
+    })
+
+access_point_data_service = AccessPointDataService
+
+
+@api.doc(security='JWT')
+@api.route('/')
+class DataResources(Resource):
+    @jwt_required
+    def get(self):
+        """Fetches all access points"""
+        try:
+            return jsonify(
+                SuccessObject.create_response(
+                    self, HTTPStatus.OK,
+                    access_point_data_service.get_all_data(self)
+                )
+            )
+        except Exception as err:
+            return ErrorObject.create_response(self, err.args[0], err.args[1])
+
+    @jwt_required
+    @api.expect(create_access_point_data_dto)
+    @convert_input_to_tuple
+    @token_is_active_check
+    def post(self, **kwargs):
+        """Creates access point data"""
+        token = get_jwt_identity()
+        try:
+            return jsonify(
+                SuccessObject.create_response(
+                    self, HTTPStatus.OK,
+                    access_point_data_service.post_access_point_data(
+                        self, token['access_point_token']['access_point']['id'], kwargs['tupled_output'])
+                )
+            )
+        except Exception as err:
+            print(err)
+            return ErrorObject.create_response(self, err.args[0], err.args[1])
+
+
+@api.doc(security='JWT')
+@api.route('/<id>')
+@api.param('id', 'The identifier of the data point')
+class SincleDataResources(Resource):
+    @jwt_required
+    def get(self, id):
+        """Fetch a single data point"""
+        try:
+            return jsonify(
+                SuccessObject.create_response(
+                    self, HTTPStatus.OK,
+                    access_point_data_service.get_access_point_by_id(self, id)))
+        except Exception as err:
+            return ErrorObject.create_response(self, err.args[0], err.args[1])

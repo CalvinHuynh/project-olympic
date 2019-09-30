@@ -16,7 +16,7 @@ class AccessPointService():
         """Retrieves all the access points
 
         Returns:
-            [AccessPoint] -- An array of access points will be returned
+            AccessPoint -- An array of access points will be returned
         """
         all_access_points_array = []
 
