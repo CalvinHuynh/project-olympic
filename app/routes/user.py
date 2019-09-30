@@ -29,8 +29,9 @@ user_service = UserService
 @api.route('/<name>')
 @api.param('name', 'Username of the user')
 class GetUser(Resource):
-    @api.doc('get_user_by_username')
+    # @api.doc('get_user_by_username')
     def get(self, name: str):
+        """Retrieves user by username"""
         try:
             return jsonify(
                 SuccessObject.create_response(
@@ -43,9 +44,10 @@ class GetUser(Resource):
 @api.route('/<name>/access-points')
 @api.param('name', 'Username of user')
 class GetUserAccessPoints(Resource):
-    @api.doc('get_access_points_by_user')
+    # @api.doc('get_access_points_by_user')
     # @api.marshal_list_with(base_model)
     def get(self, name: str):
+        """Retrieves access points created by user"""
         try:
             return jsonify(
                 SuccessObject.create_response(

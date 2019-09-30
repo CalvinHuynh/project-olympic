@@ -25,12 +25,13 @@ def handle_authorize(remote, token, user_info):
                 UserService, email=user_info['email'])
 
         identity_object = {
+            "is_user_token": True,
             "email": user_info['email'],
             "acces_token": token['access_token'],
             "user": user
         }
         access_token = create_access_token(identity=identity_object)
-        success_response = make_response(redirect('/'))
+        success_response = make_response(redirect('/api/v1/docs'))
         success_response.set_cookie('jwt', 'Bearer {}'.format(access_token))
 
         return success_response
@@ -46,6 +47,7 @@ def handle_authorize(remote, token, user_info):
 @api.route('/')
 class SetupLoginRoutes(Resource):
     def get(self):
+        """Retrieves login providers"""
         tpl = '<a href="/{}/login"><button type="button">{}</button></a><br/><br/>'
         lis = [tpl.format(b.OAUTH_NAME, b.OAUTH_NAME)
                for b in SUPPORTED_OAUTH_PROVIDERS]

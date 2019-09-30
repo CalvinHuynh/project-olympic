@@ -1,13 +1,15 @@
-from peewee import ForeignKeyField, DateTimeField, IntegerField
+from peewee import BooleanField, DateTimeField, ForeignKeyField, IntegerField
 
-from .access_point import User
-from .base import Base
 from .user import User
+from .base import Base
+from .access_point import AccessPoint
 
 
 class AccessPointToken(Base):
     user = ForeignKeyField(User)
-    access_point = ForeignKeyField(User)
+    access_point = ForeignKeyField(AccessPoint)
     created_date = DateTimeField()
-    last_activity_date = DateTimeField()
-    no_of_hits = IntegerField()
+    last_activity_date = DateTimeField(null=True)
+    expiry_date = DateTimeField()
+    no_of_usage = IntegerField()
+    is_active = BooleanField(default=True)

@@ -37,11 +37,11 @@ def custom_invalid_token_loader(self):
                                         'Invalid token provided')
 
 @jwt.expired_token_loader
-def custom_expired_token_loader(self, token):
+def custom_expired_token_loader(callback):
     from app.helpers import ErrorObject
-    token_type = token['type']
+    token_type = callback['type']
     return ErrorObject.create_response(
-        self, HTTPStatus.UNAUTHORIZED,
+        ErrorObject, HTTPStatus.UNAUTHORIZED,
         'The {} token has expired'.format(token_type))
 
 @jwt.unauthorized_loader

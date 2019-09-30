@@ -1,4 +1,3 @@
-import json
 from http import HTTPStatus
 
 from peewee import DoesNotExist
@@ -26,7 +25,7 @@ class AccessPointService():
 
         return all_access_points_array
 
-    def get_one_access_point(self, id: int):
+    def get_access_point_by_id(self, id: int):
         """Retrieves a single access point
 
         Arguments:
@@ -41,9 +40,7 @@ class AccessPointService():
         try:
             return model_to_dict(AccessPoint.get_by_id(id))
         except DoesNotExist:
-            raise ValueError(
-                'Access point with id {} does not exist'.format(id),
-                HTTPStatus.NOT_FOUND)
+            raise ValueError(HTTPStatus.NOT_FOUND, 'Access point with id {} does not exist'.format(id))
 
     def add_access_point(self,
                          create_access_point_dto: CreateAccessPointDto,
@@ -66,9 +63,12 @@ class AccessPointService():
                 if create_access_point_dto.user.id:
                     result = user_service.get_user_by_id(
                         self, create_access_point_dto.user.id)
-                else:
+                elif create_access_point_dto.user.username:
                     result = user_service.get_user_by_username(
                         self, create_access_point_dto.user.username)
+                else:
+                    print("Skipping as user has no fields")
+                    pass
             elif user_id:
                 result = user_service.get_user_by_id(self, user_id)
             else:
@@ -81,7 +81,7 @@ class AccessPointService():
                 return model_to_dict(
                     AccessPoint.create(
                         description=create_access_point_dto.description,
+                        ip_addr=create_access_point_dto.ip_addr,
                         user=result))
             except Exception:
-                raise ValueError("Unable to create access point",
-                                 HTTPStatus.INTERNAL_SERVER_ERROR)
+                raise ValueError(HTTPStatus.INTERNAL_SERVER_ERROR, "Unable to create access point")

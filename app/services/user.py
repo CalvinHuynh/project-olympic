@@ -23,8 +23,8 @@ class UserService():
         try:
             return User.get_by_id(id)
         except DoesNotExist:
-            raise ValueError('User with id {} does not exist'.format(id),
-                             HTTPStatus.NOT_FOUND)
+            raise ValueError(HTTPStatus.NOT_FOUND,
+                             'User with id {} does not exist'.format(id))
 
     def get_user_by_username(self, username: str):
         """Get user by username
@@ -42,13 +42,10 @@ class UserService():
             return model_to_dict(
                 User.select().where(User.username == username).get())
         except DoesNotExist:
-            raise ValueError(
-                'User with username {} does not exist'.format(username),
-                HTTPStatus.NOT_FOUND)
+            raise ValueError(HTTPStatus.NOT_FOUND, 'User with username {} does not exist'.format(username))
         except Exception:
-            raise BaseException('Internal server error',
-                                HTTPStatus.INTERNAL_SERVER_ERROR)
-    
+            raise BaseException(HTTPStatus.INTERNAL_SERVER_ERROR, 'Internal server error')
+
     def get_user_by_email(self, email: str):
         """Get user by email
         
@@ -65,12 +62,9 @@ class UserService():
             return model_to_dict(
                 User.select().where(User.email == email).get())
         except DoesNotExist:
-            raise ValueError(
-                'User with email {} does not exist'.format(email),
-                HTTPStatus.NOT_FOUND)
+            raise ValueError(HTTPStatus.NOT_FOUND, 'User with email {} does not exist'.format(email))
         except Exception:
-            raise BaseException('Internal server error',
-                                HTTPStatus.INTERNAL_SERVER_ERROR)
+            raise BaseException(HTTPStatus.INTERNAL_SERVER_ERROR, 'Internal server error')
 
     def get_access_point_by_user(self, username: str):
         """Retrieves access point from an user
@@ -131,9 +125,8 @@ class UserService():
                                 last_login_date=last_login_date))
         except IntegrityError:
             if email is None:
-                raise ValueError('Email is required', HTTPStatus.BAD_REQUEST)
+                raise ValueError(HTTPStatus.BAD_REQUEST, 'Email is required')
             else:
-                raise ValueError('Email already exists', HTTPStatus.CONFLICT)
+                raise ValueError(HTTPStatus.CONFLICT, 'Email already exists')
         except Exception:
-            raise BaseException('Internal server error',
-                                HTTPStatus.INTERNAL_SERVER_ERROR)
+            raise BaseException(HTTPStatus.INTERNAL_SERVER_ERROR, 'Internal server error')

@@ -1,8 +1,8 @@
 from .user import UserDto
 
 
-class CreateAccessPointDto:
-
+class AccessPointDto:
+    id: int
     ip_addr: str
     description: str
     user: UserDto
