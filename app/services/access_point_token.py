@@ -113,3 +113,39 @@ class AccessPointTokenService():
             return HTTPStatus.NO_CONTENT
         else:
             raise
+
+    def check_if_token_is_active(self, access_point_token_id: int):
+        """Check if token is active
+        
+        Arguments:
+            access_point_token_id {int} -- Id of access token
+        
+        Returns:
+            Bool -- [description]
+        """
+        access_point_token: AccessPointToken = AccessPointTokenService.get_token_by_id(self, access_point_token_id)
+        if access_point_token is not None:
+            if access_point_token.is_active:
+                return True
+            else:
+                return False
+        else:
+            raise
+
+    def revoke_token(self, access_point_token_id: int):
+        """Revokes access token
+        
+        Arguments:
+            access_point_token_id {int} -- Id of access token
+        
+        Returns:
+            AccessPointToken -- Deactivated AccessPointToken object
+        """
+        access_point_token: AccessPointToken = AccessPointTokenService.get_token_by_id(self, access_point_token_id)
+        if access_point_token is not None:
+            access_point_token.is_active = False
+            access_point_token.deactivated_since = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+            access_point_token.save()
+            return model_to_dict(access_point_token)
+        else:
+            raise

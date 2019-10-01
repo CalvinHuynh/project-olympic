@@ -1,11 +1,11 @@
 from http import HTTPStatus
 
 from flask import jsonify
-from flask_jwt_extended import get_jwt_identity, jwt_required
+from flask_jwt_extended import get_jwt_identity
 from flask_restplus import Namespace, Resource, fields
 
 from app.helpers import (ErrorObject, SuccessObject, convert_input_to_tuple,
-                         token_is_active_check)
+                         token_is_active_check, jwt_required_extended)
 from app.services import AccessPointDataService
 
 api = Namespace('data', description="Access point data related operations")
@@ -22,9 +22,9 @@ access_point_data_service = AccessPointDataService
 @api.doc(security='JWT')
 @api.route('/')
 class DataResources(Resource):
-    @jwt_required
+    @jwt_required_extended
     def get(self):
-        """Fetches all access points"""
+        """Fetches all data points"""
         try:
             return jsonify(
                 SuccessObject.create_response(
@@ -35,7 +35,7 @@ class DataResources(Resource):
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
 
-    @jwt_required
+    @jwt_required_extended
     @api.expect(create_access_point_data_dto)
     @convert_input_to_tuple
     @token_is_active_check
@@ -58,7 +58,7 @@ class DataResources(Resource):
 @api.route('/<id>')
 @api.param('id', 'The identifier of the data point')
 class SincleDataResources(Resource):
-    @jwt_required
+    @jwt_required_extended
     def get(self, id):
         """Fetch a single data point"""
         try:

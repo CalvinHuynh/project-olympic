@@ -13,3 +13,4 @@ class AccessPointToken(Base):
     expiry_date = DateTimeField()
     no_of_usage = IntegerField()
     is_active = BooleanField(default=True)
+    deactivated_since = DateTimeField()

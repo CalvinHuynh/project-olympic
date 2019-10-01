@@ -2,9 +2,9 @@ from http import HTTPStatus
 
 from flask import jsonify, request
 from flask_restplus import Namespace, Resource, fields
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import get_jwt_identity
 
-from app.helpers import ErrorObject, SuccessObject, convert_input_to_tuple, is_user_check
+from app.helpers import ErrorObject, SuccessObject, convert_input_to_tuple, is_user_check, jwt_required_extended
 from app.services import AccessPointService, AccessPointTokenService
 
 
@@ -37,11 +37,12 @@ access_point_service = AccessPointService
 access_point_token_service = AccessPointTokenService
 
 
-@jwt_required
 @api.doc(security='JWT')
 @api.route('/')
 class AllAccessPointsResources(Resource):
-    @api.doc('get_all_access_points') # TODO: implement actual usage of docs according tohttps://flask-restplus.readthedocs.io/en/stable/swagger.html
+    # TODO: implement actual usage of docs according tohttps://flask-restplus.readthedocs.io/en/stable/swagger.html
+    @api.doc('get_all_access_points')
+    @jwt_required_extended
     # @api.marshal_list_with({object}) # marshal is able to format the responses
     def get(self):
         """Fetches all access points"""
@@ -55,6 +56,7 @@ class AllAccessPointsResources(Resource):
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
 
+    @jwt_required_extended
     @api.expect(create_access_point_dto)
     @convert_input_to_tuple
     @is_user_check
@@ -69,13 +71,14 @@ class AllAccessPointsResources(Resource):
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
 
-@jwt_required
+
 @api.doc(security='JWT')
 @api.route('/<id>')
 @api.param('id', 'The identifier of the access point')
 # @api.response(404, 'Access point not found')
 class SingleAccessPointResources(Resource):
     @api.doc('get_access_point')
+    @jwt_required_extended
     def get(self, id):
         """Fetch a single access point"""
         try:
@@ -87,6 +90,7 @@ class SingleAccessPointResources(Resource):
             return ErrorObject.create_response(self, err.args[0], err.args[1])
 
     # @api.doc('post_token_for_access_point', security='JWT')
+    @jwt_required_extended
     @is_user_check
     def post(self, id):
         """Creates a token for access point"""
@@ -101,15 +105,3 @@ class SingleAccessPointResources(Resource):
             )
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
-
-
-@jwt_required
-@api.route('/test')
-class Test(Resource):
-    @api.doc('test_token')
-    @api.doc('post_token_for_access_point', security='JWT')
-    def get(self):
-        token = get_jwt_identity()
-        return jsonify(
-            SuccessObject.create_response(
-                self, HTTPStatus.OK, token))

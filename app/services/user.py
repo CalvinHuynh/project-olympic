@@ -4,7 +4,7 @@ from http import HTTPStatus
 from peewee import DoesNotExist, IntegrityError
 from playhouse.shortcuts import dict_to_model, model_to_dict
 
-from app.models import AccessPoint, User
+from app.models import AccessPoint, User, AccessPointToken
 
 
 class UserService():
@@ -66,20 +66,27 @@ class UserService():
         except Exception:
             raise BaseException(HTTPStatus.INTERNAL_SERVER_ERROR, 'Internal server error')
 
-    def get_access_point_by_user(self, username: str):
+    def get_access_point_by_user(self, username: str = None, id: int = None):
         """Retrieves access point from an user
         
         Arguments:
-            username {str} -- Username
+            username {str} -- (Optional) Username
+            id {int} -- (Optional) Id of user
         
         Returns:
             AccessPoint[] -- An array of access points
         """
         all_access_points_from_user_array = []
+        user = None
         try:
             try:
-                user = dict_to_model(
-                    User, UserService.get_user_by_username(self, username))
+                if username is not None:
+                    user = dict_to_model(
+                        User, UserService.get_user_by_username(self, username))
+                elif id is not None:
+                    user = dict_to_model(
+                        User, UserService.get_user_by_id(self, id)
+                    )
             except Exception:
                 raise
 
@@ -151,3 +158,29 @@ class UserService():
                 raise ValueError(HTTPStatus.NOT_MODIFIED, 'Username can only be set once')
         else:
             raise ValueError(HTTPStatus.BAD_REQUEST, 'Username is required')
+
+    def get_access_point_tokens_by_user(self, id: int):
+        """Get access point tokens by user
+        
+        Arguments:
+            id {int} -- User id
+        
+        Returns:
+            AccessPointTokens[] -- An array of access point tokens objects
+        """
+        all_access_point_tokens_array = []
+        user = None
+        try:
+            user: User = UserService.get_user_by_id(self, id)
+        except Exception:
+            raise
+        
+        try:
+            if user is not None:
+                for access_point_tokens in AccessPointToken.select(
+                        AccessPointToken, user).where(AccessPointToken.user == user):
+                    all_access_point_tokens_array.append(
+                        model_to_dict(access_point_tokens))
+            return all_access_point_tokens_array
+        except Exception:
+            raise
