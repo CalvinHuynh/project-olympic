@@ -37,7 +37,6 @@ class UserResource(Resource):
                 )
             )
         except Exception as err:
-            print(err)
             return ErrorObject.create_response(self, err.args[0], err.args[1])
 
 

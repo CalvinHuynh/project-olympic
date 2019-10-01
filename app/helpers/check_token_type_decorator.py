@@ -8,6 +8,8 @@ from .object_helper import ErrorObject
 
 """A wrapper that checks if the provided JWT is a user token
 """
+
+
 def is_user_check(fn):
     def wrapper(*args, **kwargs):
         verify_jwt_in_request()
@@ -20,8 +22,11 @@ def is_user_check(fn):
             return fn(*args, **kwargs)
     return wrapper
 
+
 """A wrapper that checks if the provided JWT is an access token
 """
+
+
 def token_is_active_check(fn):
     def wrapper(*args, **kwargs):
         verify_jwt_in_request()
@@ -32,10 +37,12 @@ def token_is_active_check(fn):
                     ErrorObject, HTTPStatus.FORBIDDEN, 'Unable to access this resource with provided token'
                 )
             else:
+                from app.services.access_point_token import AccessPointTokenService
+                AccessPointTokenService.update_hit_count_and_date(
+                    AccessPointTokenService, token['access_point_token']['id'])
                 return fn(*args, **kwargs)
         else:
              return ErrorObject.create_response(
-                    ErrorObject, HTTPStatus.FORBIDDEN, 'Unable to access this resource with provided token'
-                )
+                 ErrorObject, HTTPStatus.FORBIDDEN, 'Unable to access this resource with provided token'
+             )
     return wrapper
-

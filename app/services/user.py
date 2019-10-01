@@ -137,9 +137,6 @@ class UserService():
         Arguments:
             id {int} -- User id
             username {str} -- new username
-        
-        Raises:
-            ValueError: [description]
         """
         user: User = UserService.get_user_by_id(self, id)
         if user is not None and username is not None:
@@ -148,7 +145,7 @@ class UserService():
                 try:
                     user.save()
                     return model_to_dict(user)
-                except  :
+                except:
                     raise ValueError(HTTPStatus.CONFLICT, 'Username already exists')
             else:
                 raise ValueError(HTTPStatus.NOT_MODIFIED, 'Username can only be set once')

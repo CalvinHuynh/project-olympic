@@ -51,7 +51,6 @@ class DataResources(Resource):
                 )
             )
         except Exception as err:
-            print(err)
             return ErrorObject.create_response(self, err.args[0], err.args[1])
 
 
@@ -66,6 +65,6 @@ class SincleDataResources(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    access_point_data_service.get_access_point_by_id(self, id)))
+                    access_point_data_service.get_one_data_point(self, id)))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])

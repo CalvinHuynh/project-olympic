@@ -1,11 +1,16 @@
 from http import HTTPStatus
-from flask import redirect, url_for, render_template, Response, jsonify, make_response
-from flask_restplus import Namespace, Resource, fields
-from loginpass import Google, GitHub
-from flask_jwt_extended import create_access_token
+from datetime import datetime
 
-from app.services import UserService
+from flask import (Response, jsonify, make_response, redirect, render_template,
+                   url_for)
+from flask_jwt_extended import create_access_token
+from flask_restplus import Namespace, Resource, fields
+from loginpass import GitHub, Google
+from playhouse.shortcuts import dict_to_model, model_to_dict
+
 from app.helpers import ErrorObject, SuccessObject
+from app.models import User
+from app.services import UserService
 
 api = Namespace('auth', description="Auth related operations")
 SUPPORTED_OAUTH_PROVIDERS = [Google, GitHub]
@@ -17,6 +22,10 @@ def handle_authorize(remote, token, user_info):
     user = None
     try:
         user = user_service.get_user_by_email(UserService, user_info['email'])
+        user = dict_to_model(User, user)
+        user.last_login_date = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+        user.save()
+        user = model_to_dict(user)
     except:
         pass
     try:
@@ -40,7 +49,6 @@ def handle_authorize(remote, token, user_info):
         #         UserService, HTTPStatus.OK, {"jwt": access_token})
         # )
     except Exception as err:
-        print(err)
         return ErrorObject.create_response(UserService, err.args[0], err.args[1])
 
 

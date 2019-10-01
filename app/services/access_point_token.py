@@ -17,22 +17,40 @@ access_point_service = AccessPointService
 
 
 class AccessPointTokenService():
+    def get_token_by_id(self, id: int):
+        """Retrieves access point token by id
+        
+        Arguments:
+            id {int} -- access point token id
+        
+        Raises:
+            ValueError: Id does not exist
+        
+        Returns:
+            AccessPointToken -- AccessPointToken object
+        """
+        try:
+            return AccessPointToken.get_by_id(id)
+        except DoesNotExist:
+            raise ValueError(HTTPStatus.NOT_FOUND,
+                             'Token with id {} does not exist'.format(id))
+
     def create_token_for_access_point(
             self,
             # access_point_dto: AccessPointDto,
             access_point_id: int,
             user_id: int):
-        """Creates an jwt token
+        """Creates a JWT for an access point
         
         Arguments:
-            access_point_dto {AccessPointDto} -- [description]
-            access_point_id {int} -- [description]
+            access_point_id {int} -- Id of access point
+            user_id {int} -- Id of user
         
         Raises:
-            ValueError: [description]
+            ValueError: Unable to create token for access point
         
         Returns:
-            [type] -- [description]
+            JWT -- Returns an JWT
         """
         user: User = None
         access_point: AccessPoint = None
@@ -54,7 +72,8 @@ class AccessPointTokenService():
             created_date = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
             last_activity_date = None
             # Set validity of token to 1 year
-            expiry_date = (datetime.utcnow() + relativedelta(years=1)).strftime('%Y-%m-%d %H:%M:%S')
+            expiry_date = (datetime.utcnow() + relativedelta(years=1)
+                           ).strftime('%Y-%m-%d %H:%M:%S')
             no_of_usage = 0
             try:
                 result = model_to_dict(
@@ -73,7 +92,24 @@ class AccessPointTokenService():
                     "access_point_token": result
                 }
                 return create_access_token(identity=identity_object, expires_delta=relativedelta(years=1))
-            except Exception as err:
-                print(err)
+            except Exception:
                 raise ValueError(HTTPStatus.INTERNAL_SERVER_ERROR, 'Unable to create token for access point {}'.format(
                     access_point_id))
+
+    def update_hit_count_and_date(self, access_point_token_id: int):
+        """Update the hit counter of an access point token
+        
+        Arguments:
+            access_point_token_id {int} -- Id of access point token
+        
+        Returns:
+            AccessPointToken -- An updated AccessPointToken
+        """
+        access_point_token: AccessPointToken = AccessPointTokenService.get_token_by_id(self, access_point_token_id)
+        if access_point_token is not None:
+            access_point_token.no_of_usage += 1
+            access_point_token.last_activity_date = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+            access_point_token.save()
+            return HTTPStatus.NO_CONTENT
+        else:
+            raise
