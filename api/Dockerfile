@@ -1,7 +1,7 @@
 FROM python:alpine
 
-RUN mkdir -p /app
-WORKDIR /app
+RUN mkdir -p /api
+WORKDIR /api
 ENV FLASK_APP app.py
 # ENV FLASK_RUN_HOST 0.0.0.0
 RUN apk add --no-cache gcc musl-dev linux-headers libffi-dev openssl-dev

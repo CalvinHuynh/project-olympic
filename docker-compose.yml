@@ -12,13 +12,13 @@ services:
     volumes:
       - ~/mysql_data:/var/lib/mysql
   web:
-    build: .
+    build: ./api
     ports:
       - "3000:${FLASK_RUN_PORT}"
     depends_on:
       - maria_db
     volumes: 
-      - .:/app
+      - ./api:/api
     environment: 
       FLASK_ENV: ${FLASK_ENV}
       FLASK_RUN_HOST: ${FLASK_RUN_HOST}

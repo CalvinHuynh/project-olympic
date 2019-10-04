@@ -1,6 +1,6 @@
 from http import HTTPStatus
 
-from settings import FLASK_API_VERSION
+from api.settings import FLASK_API_VERSION
 
 api_version = FLASK_API_VERSION if FLASK_API_VERSION else "1.0.0"
 

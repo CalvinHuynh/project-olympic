@@ -6,8 +6,8 @@ from flask_jwt_extended import create_access_token
 from peewee import DoesNotExist
 from playhouse.shortcuts import model_to_dict, dict_to_model
 
-from app.dto import AccessPointDto
-from app.models import AccessPoint, AccessPointToken, User
+from api.dto import AccessPointDto
+from api.models import AccessPoint, AccessPointToken, User
 
 from .user import UserService
 from .access_point import AccessPointService

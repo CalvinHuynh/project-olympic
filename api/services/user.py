@@ -4,7 +4,7 @@ from http import HTTPStatus
 from peewee import DoesNotExist, IntegrityError
 from playhouse.shortcuts import dict_to_model, model_to_dict
 
-from app.models import AccessPoint, User, AccessPointToken
+from api.models import AccessPoint, User, AccessPointToken
 
 
 class UserService():

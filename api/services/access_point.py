@@ -3,8 +3,8 @@ from http import HTTPStatus
 from peewee import DoesNotExist
 from playhouse.shortcuts import model_to_dict
 
-from app.dto import CreateAccessPointDto
-from app.models import AccessPoint, User
+from api.dto import CreateAccessPointDto
+from api.models import AccessPoint, User
 
 from .user import UserService
 

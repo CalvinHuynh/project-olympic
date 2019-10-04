@@ -4,9 +4,7 @@ from flask_jwt_extended import jwt_manager as jwt
 from .object_helper import ErrorObject
 
 
-# class CustomFlaskJwtResponses():
-from app.app import jwt
-# import app.app.jwt as jwt
+from api.app import jwt
 
 @jwt.expired_token_loader
 def custom_expired_token_loader(self, token):

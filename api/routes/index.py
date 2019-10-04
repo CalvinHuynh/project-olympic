@@ -2,7 +2,7 @@ import os
 from flask import render_template, Response
 from flask_restplus import Namespace, Resource, fields
 
-from settings import FLASK_APP_NAME
+from api.settings import FLASK_APP_NAME
 
 api = Namespace('', description="Operations at index")
 

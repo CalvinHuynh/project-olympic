@@ -4,8 +4,8 @@ from flask import jsonify
 from flask_restplus import Namespace, Resource, fields
 from flask_jwt_extended import get_jwt_identity
 
-from app.helpers import ErrorObject, SuccessObject, is_user_check, jwt_required_extended
-from app.services import UserService, AccessPointTokenService
+from api.helpers import ErrorObject, SuccessObject, is_user_check, jwt_required_extended
+from api.services import UserService, AccessPointTokenService
 
 api = Namespace('user', description="User related operations")
 

@@ -7,6 +7,6 @@
 # @api.route('/favicon.ico')
 # class GetFavicon(Resource):
 #     def get(self):
-#         from app.app import app
+#         from api.app import app
 #         return send_from_directory(os.path.join(app.root_path, 'assets'),
 #                             'favicon.ico',mimetype='image/x-icon')

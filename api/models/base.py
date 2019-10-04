@@ -1,6 +1,6 @@
 from peewee import Model, MySQLDatabase
 
-from settings import MYSQL_DATABASE, MYSQL_HOST, MYSQL_PASSWORD, MYSQL_USER
+from api.settings import MYSQL_DATABASE, MYSQL_HOST, MYSQL_PASSWORD, MYSQL_USER
 
 database = MySQLDatabase(MYSQL_DATABASE,
                          user=MYSQL_USER,

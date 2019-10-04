@@ -4,8 +4,8 @@ from flask import jsonify, request
 from flask_restplus import Namespace, Resource, fields
 from flask_jwt_extended import get_jwt_identity
 
-from app.helpers import ErrorObject, SuccessObject, convert_input_to_tuple, is_user_check, jwt_required_extended
-from app.services import AccessPointService, AccessPointTokenService
+from api.helpers import ErrorObject, SuccessObject, convert_input_to_tuple, is_user_check, jwt_required_extended
+from api.services import AccessPointService, AccessPointTokenService
 
 
 api = Namespace('access-points', description="Access point related operations")

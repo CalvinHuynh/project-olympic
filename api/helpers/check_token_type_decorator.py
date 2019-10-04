@@ -10,7 +10,7 @@ from .object_helper import ErrorObject
 original_jwt_required = jwt_required
 
 def token_usage_counter_add(token_id: int):
-    from app.services.access_point_token import AccessPointTokenService
+    from api.services.access_point_token import AccessPointTokenService
     AccessPointTokenService.update_hit_count_and_date(
                     AccessPointTokenService, token_id)
 
@@ -24,7 +24,7 @@ def jwt_required_extended(fn):
         verify_jwt_in_request()
         token = get_jwt_identity()
         if token['is_user_token'] is False:
-            from app.services.access_point_token import AccessPointTokenService
+            from api.services.access_point_token import AccessPointTokenService
             if AccessPointTokenService.check_if_token_is_active(AccessPointTokenService, token['access_point_token']['id']):
                 token_usage_counter_add(token['access_point_token']['id'])
         return fn(*args, **kwargs)
@@ -58,14 +58,14 @@ def token_is_active_check(fn):
         verify_jwt_in_request()
         token = get_jwt_identity()
         if token['is_user_token'] is False:
-            from app.services.access_point_token import AccessPointTokenService
+            from api.services.access_point_token import AccessPointTokenService
             token_usage_counter_add(token['access_point_token']['id'])
             if AccessPointTokenService.check_if_token_is_active(AccessPointTokenService, token['access_point_token']['id']) is False:
                 return ErrorObject.create_response(
                     ErrorObject, HTTPStatus.FORBIDDEN, 'Token has been revoked'
                 )
             else:
-                # from app.services.access_point_token import AccessPointTokenService
+                # from api.services.access_point_token import AccessPointTokenService
                 # AccessPointTokenService.update_hit_count_and_date(
                 #     AccessPointTokenService, token['access_point_token']['id'])
                 return fn(*args, **kwargs)

@@ -8,9 +8,9 @@ from flask_restplus import Namespace, Resource, fields
 from loginpass import GitHub, Google
 from playhouse.shortcuts import dict_to_model, model_to_dict
 
-from app.helpers import ErrorObject, SuccessObject
-from app.models import User
-from app.services import UserService
+from api.helpers import ErrorObject, SuccessObject
+from api.models import User
+from api.services import UserService
 
 api = Namespace('auth', description="Auth related operations")
 SUPPORTED_OAUTH_PROVIDERS = [Google, GitHub]

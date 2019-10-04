@@ -3,11 +3,11 @@ from authlib.flask.client import OAuth
 from flask import Flask
 from flask_jwt_extended import JWTManager
 
-from app.models import initialize_database
-from app.routes import blueprint_index as index
-from app.routes import blueprint as api_v1
+from api.models import initialize_database
+from api.routes import blueprint_index as index
+from api.routes import blueprint as api_v1
 
-from settings import (FLASK_APP_NAME, FLASK_SECRET_KEY,GITHUB_CLIENT_ID,
+from api.settings import (FLASK_APP_NAME, FLASK_SECRET_KEY,GITHUB_CLIENT_ID,
                       GITHUB_CLIENT_SECRET, GOOGLE_CLIENT_ID,
                       GOOGLE_CLIENT_SECRET, JWT_SECRET_KEY)
 
@@ -32,13 +32,13 @@ jwt = JWTManager(app)
 # Overwrite default error handling
 @jwt.invalid_token_loader
 def custom_invalid_token_loader(self):
-    from app.helpers import ErrorObject
+    from api.helpers import ErrorObject
     return ErrorObject.create_response(self, HTTPStatus.UNAUTHORIZED,
                                         'Invalid token provided')
 
 @jwt.expired_token_loader
 def custom_expired_token_loader(callback):
-    from app.helpers import ErrorObject
+    from api.helpers import ErrorObject
     token_type = callback['type']
     return ErrorObject.create_response(
         ErrorObject, HTTPStatus.UNAUTHORIZED,
@@ -46,7 +46,7 @@ def custom_expired_token_loader(callback):
 
 @jwt.unauthorized_loader
 def custom_unauthorized_loader(self):
-    from app.helpers import ErrorObject
+    from api.helpers import ErrorObject
     return ErrorObject.create_response(self, HTTPStatus.UNAUTHORIZED,
                                         'No access token provided')
 

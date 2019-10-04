@@ -4,8 +4,8 @@ from http import HTTPStatus
 from peewee import IntegrityError, DoesNotExist
 from playhouse.shortcuts import model_to_dict, dict_to_model
 
-from app.dto import CreateAccessPointDataDto
-from app.models import AccessPointData, AccessPoint
+from api.dto import CreateAccessPointDataDto
+from api.models import AccessPointData, AccessPoint
 
 from .access_point import AccessPointService
 
