@@ -13,6 +13,8 @@ services:
       - ~/mysql_data:/var/lib/mysql
   web:
     build: ./api
+    env_file: 
+      - .env
     ports:
       - "3000:${FLASK_RUN_PORT}"
     depends_on:

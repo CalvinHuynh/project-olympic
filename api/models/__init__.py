@@ -5,12 +5,12 @@ from .base import Base, MySQLDatabase, database
 from .user import User
 
 
-def create_tables(database, models):
+def create_tables(database: MySQLDatabase, models):
     if isinstance(database, MySQLDatabase):
         with database:
             database.create_tables(models, safe=True)
     else:
-        print(
+        raise ValueError(
             "Please provide a database class that is an instance of MySQLDatabase"
         )
 

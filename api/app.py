@@ -1,15 +1,15 @@
 from http import HTTPStatus
+
 from authlib.flask.client import OAuth
 from flask import Flask
 from flask_jwt_extended import JWTManager
 
 from api.models import initialize_database
-from api.routes import blueprint_index as index
 from api.routes import blueprint as api_v1
-
-from api.settings import (FLASK_APP_NAME, FLASK_SECRET_KEY,GITHUB_CLIENT_ID,
-                      GITHUB_CLIENT_SECRET, GOOGLE_CLIENT_ID,
-                      GOOGLE_CLIENT_SECRET, JWT_SECRET_KEY)
+from api.routes import blueprint_index as index
+from api.settings import (FLASK_APP_NAME, FLASK_SECRET_KEY, GITHUB_CLIENT_ID,
+                          GITHUB_CLIENT_SECRET, GOOGLE_CLIENT_ID,
+                          GOOGLE_CLIENT_SECRET, JWT_SECRET_KEY)
 
 initialize_database()
 
