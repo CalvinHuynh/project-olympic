@@ -3,6 +3,7 @@ from .access_point_data import AccessPointData
 from .access_point_token import AccessPointToken
 from .base import Base, MySQLDatabase, database
 from .user import User
+from .weather import Weather
 
 
 def create_tables(database: MySQLDatabase, models):

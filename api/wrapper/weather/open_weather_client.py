@@ -1,7 +1,7 @@
 from requests import Session
 
 # For more endpoints, please refer to https://openweathermap.org/api
-class OpenWeatherController():
+class OpenWeatherClient():
     def __init__(self, api_key: str, city: str, country_code: str, units: str = 'metric', schema: str = 'http'):
         """Initializes open weather api client
         

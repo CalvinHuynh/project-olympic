@@ -2,6 +2,7 @@ version: '3'
 services:
   maria_db:
     image: mariadb:10.3
+    restart: always
     environment:
       MYSQL_RANDOM_ROOT_PASSWORD: 1
       MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -13,6 +14,7 @@ services:
       - ~/mysql_data:/var/lib/mysql
   web:
     build: ./api
+    restart: always
     env_file: 
       - .env
     ports:
