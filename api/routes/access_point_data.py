@@ -6,7 +6,7 @@ from flask_restplus import Namespace, Resource, fields
 
 from api.helpers import (ErrorObject, SuccessObject, convert_input_to_tuple,
                          token_is_active_check, jwt_required_extended)
-from api.services import AccessPointDataService
+from api.services import AccessPointDataService as _AccessPointDataService, WeatherService as _WeatherService
 
 api = Namespace('data', description="Access point data related operations")
 
@@ -16,8 +16,8 @@ create_access_point_data_dto = api.model(
                                         example=4),
     })
 
-access_point_data_service = AccessPointDataService
-
+_access_point_data_service = _AccessPointDataService
+_weather_service = _WeatherService
 
 @api.doc(security='JWT')
 @api.route('/')
@@ -29,7 +29,7 @@ class DataResources(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    access_point_data_service.get_all_data(self)
+                    _access_point_data_service.get_all_data(self)
                 )
             )
         except Exception as err:
@@ -46,7 +46,7 @@ class DataResources(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    access_point_data_service.post_access_point_data(
+                    _access_point_data_service.post_access_point_data(
                         self, token['access_point_token']['access_point']['id'], kwargs['tupled_output'])
                 )
             )
@@ -65,6 +65,22 @@ class SincleDataResources(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    access_point_data_service.get_one_data_point(self, id)))
+                    _access_point_data_service.get_one_data_point(self, id)))
+        except Exception as err:
+            return ErrorObject.create_response(self, err.args[0], err.args[1])
+
+@api.doc(security='JWT')
+@api.route('/weather')
+class WeatherResources(Resource):
+    @jwt_required_extended
+    def get(self):
+        """Fetches all weather data"""
+        try:
+            return jsonify(
+                SuccessObject.create_response(
+                    self, HTTPStatus.OK,
+                    _weather_service.retrieve_all_weather_data(self)
+                )
+            )
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])

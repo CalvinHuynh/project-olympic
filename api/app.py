@@ -55,5 +55,9 @@ def custom_unauthorized_loader(self):
 app.register_blueprint(index)
 app.register_blueprint(api_v1)
 
+
+from api.jobs import bg_scheduler
+bg_scheduler.start()
+
 if __name__ == "__main__":
     app.run()

@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from http import HTTPStatus
 
@@ -8,17 +9,21 @@ from api.models import Weather
 from api.settings import OPEN_WEATHER_API_KEY
 from api.wrapper import OpenWeatherClient
 
-client = OpenWeatherClient(OPEN_WEATHER_API_KEY, 'Amsterdam', 'NL')
+_client = OpenWeatherClient(OPEN_WEATHER_API_KEY, 'Amsterdam', 'NL')
 
 
 class WeatherService():
 
-    def create_current_weather(self):
+    def get_current_weather(self):
         """Retrieves the current weather data"""
-        weather_data = client.get_current_weather()
-        Weather.create(
-            created_date=to_utc_datetime(),
-            data=weather_data)
+        weather_data = _client.get_current_weather()
+        try:
+            Weather.create(
+                created_date=to_utc_datetime(),
+                data=weather_data)
+            return HTTPStatus.CREATED
+        except:
+            raise
 
     def retrieve_all_weather_data(self):
         """Retrieves all weather data
@@ -27,8 +32,10 @@ class WeatherService():
             WeatherData -- An array of all weather data
         """
         all_data_array = []
-
-        for data in Weather.select():
-            all_data_array.append(model_to_dict(data))
-
-        return all_data_array
+        try:
+            for result in Weather.select():
+                result.data = json.loads(result.data) # escapes json data
+                all_data_array.append(model_to_dict(result))
+            return all_data_array
+        except Exception as err:
+            raise err
