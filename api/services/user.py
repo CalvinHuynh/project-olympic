@@ -4,7 +4,8 @@ from http import HTTPStatus
 from peewee import DoesNotExist, IntegrityError
 from playhouse.shortcuts import dict_to_model, model_to_dict
 
-from api.models import AccessPoint, User, AccessPointToken
+from api.helpers import to_utc_datetime
+from api.models import AccessPoint, AccessPointToken, User
 
 
 class UserService():
@@ -115,8 +116,8 @@ class UserService():
         Returns:
             User -- Newly created user
         """
-        join_date = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-        last_login_date = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+        join_date = to_utc_datetime()
+        last_login_date = to_utc_datetime()
         try:
             if username is not None:
                 return model_to_dict(

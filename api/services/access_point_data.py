@@ -1,11 +1,12 @@
 from datetime import datetime
 from http import HTTPStatus
 
-from peewee import IntegrityError, DoesNotExist
-from playhouse.shortcuts import model_to_dict, dict_to_model
+from peewee import DoesNotExist, IntegrityError
+from playhouse.shortcuts import dict_to_model, model_to_dict
 
 from api.dto import CreateAccessPointDataDto
-from api.models import AccessPointData, AccessPoint
+from api.helpers import to_utc_datetime
+from api.models import AccessPoint, AccessPointData
 
 from .access_point import AccessPointService
 
@@ -71,7 +72,7 @@ class AccessPointDataService():
                     AccessPointData.create(
                         access_point=dict_to_model(AccessPoint, access_point),
                         no_of_clients=create_access_point_data_dto.no_of_clients,
-                        creation_date=datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+                        creation_date=to_utc_datetime()
                     )
                 )
             else:

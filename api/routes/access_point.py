@@ -24,10 +24,10 @@ user_dto = api.inherit(
 create_access_point_dto = api.model(
     'CreateAccessPoint', {
         'ip_addr': fields.String(description="(static) IP if access point",
-                                 example="192.168.1.1"),
+                                 example="localhost"),
         'description':
         fields.String(description="Description of access point",
-                      example="Near the entrance"),
+                      example="Running on localhost"),
         'user':
         fields.Nested(user_dto)
     })
@@ -40,7 +40,7 @@ access_point_token_service = AccessPointTokenService
 @api.doc(security='JWT')
 @api.route('/')
 class AllAccessPointsResources(Resource):
-    # TODO: implement actual usage of docs according tohttps://flask-restplus.readthedocs.io/en/stable/swagger.html
+    # TODO: implement actual usage of docs according to https://flask-restplus.readthedocs.io/en/stable/swagger.html
     @api.doc('get_all_access_points')
     @jwt_required_extended
     # @api.marshal_list_with({object}) # marshal is able to format the responses

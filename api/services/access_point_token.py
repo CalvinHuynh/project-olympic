@@ -1,16 +1,17 @@
 from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
 from http import HTTPStatus
 
+from dateutil.relativedelta import relativedelta
 from flask_jwt_extended import create_access_token
 from peewee import DoesNotExist
-from playhouse.shortcuts import model_to_dict, dict_to_model
+from playhouse.shortcuts import dict_to_model, model_to_dict
 
 from api.dto import AccessPointDto
+from api.helpers import to_utc_datetime
 from api.models import AccessPoint, AccessPointToken, User
 
-from .user import UserService
 from .access_point import AccessPointService
+from .user import UserService
 
 user_service = UserService
 access_point_service = AccessPointService
@@ -69,11 +70,11 @@ class AccessPointTokenService():
             raise
 
         if user is not None and isinstance(user, User) and access_point is not None and isinstance(access_point, AccessPoint):
-            created_date = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+            created_date = to_utc_datetime()
             last_activity_date = None
             # Set validity of token to 1 year
-            expiry_date = (datetime.utcnow() + relativedelta(years=1)
-                           ).strftime('%Y-%m-%d %H:%M:%S')
+            expiry_date = to_utc_datetime(
+                (datetime.utcnow() + relativedelta(years=1)))
             no_of_usage = 0
             try:
                 result = model_to_dict(
@@ -105,10 +106,11 @@ class AccessPointTokenService():
         Returns:
             AccessPointToken -- An updated AccessPointToken
         """
-        access_point_token: AccessPointToken = AccessPointTokenService.get_token_by_id(self, access_point_token_id)
+        access_point_token: AccessPointToken = AccessPointTokenService.get_token_by_id(
+            self, access_point_token_id)
         if access_point_token is not None:
             access_point_token.no_of_usage += 1
-            access_point_token.last_activity_date = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+            access_point_token.last_activity_date = to_utc_datetime()
             access_point_token.save()
             return HTTPStatus.NO_CONTENT
         else:
@@ -123,7 +125,8 @@ class AccessPointTokenService():
         Returns:
             Bool -- [description]
         """
-        access_point_token: AccessPointToken = AccessPointTokenService.get_token_by_id(self, access_point_token_id)
+        access_point_token: AccessPointToken = AccessPointTokenService.get_token_by_id(
+            self, access_point_token_id)
         if access_point_token is not None:
             if access_point_token.is_active:
                 return True
@@ -141,10 +144,11 @@ class AccessPointTokenService():
         Returns:
             AccessPointToken -- Deactivated AccessPointToken object
         """
-        access_point_token: AccessPointToken = AccessPointTokenService.get_token_by_id(self, access_point_token_id)
+        access_point_token: AccessPointToken = AccessPointTokenService.get_token_by_id(
+            self, access_point_token_id)
         if access_point_token is not None:
             access_point_token.is_active = False
-            access_point_token.deactivated_since = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+            access_point_token.deactivated_since = to_utc_datetime()
             access_point_token.save()
             return model_to_dict(access_point_token)
         else:

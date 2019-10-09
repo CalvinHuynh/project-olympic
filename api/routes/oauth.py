@@ -1,5 +1,5 @@
-from http import HTTPStatus
 from datetime import datetime
+from http import HTTPStatus
 
 from flask import (Response, jsonify, make_response, redirect, render_template,
                    url_for)
@@ -8,7 +8,7 @@ from flask_restplus import Namespace, Resource, fields
 from loginpass import GitHub, Google
 from playhouse.shortcuts import dict_to_model, model_to_dict
 
-from api.helpers import ErrorObject, SuccessObject
+from api.helpers import ErrorObject, SuccessObject, to_utc_datetime
 from api.models import User
 from api.services import UserService
 
@@ -23,7 +23,7 @@ def handle_authorize(remote, token, user_info):
     try:
         user = user_service.get_user_by_email(UserService, user_info['email'])
         user = dict_to_model(User, user)
-        user.last_login_date = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+        user.last_login_date = to_utc_datetime()
         user.save()
         user = model_to_dict(user)
     except:
