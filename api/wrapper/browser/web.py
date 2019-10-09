@@ -15,26 +15,28 @@ from selenium.webdriver.support.ui import WebDriverWait
 env_path = _Path('.') / '.env'
 _load_dotenv(dotenv_path=env_path)
 
-UNIFI_USER = _os.getenv("UNIFI_USER")
-UNIFI_PASSWORD = _os.getenv("UNIFI_PASSWORD")
 cookie_path = _Path("./api/wrapper/browser/.cookies.pkl")
 
 driver = webdriver.Firefox(
     executable_path=_os.getcwd() + '/api/bin/geckodriver')
 wait = WebDriverWait(driver, 120)
-# TODO: remove credentials
-# UNIFI_USER = "ch14346"
-# UNIFI_PASSWORD = "exZu54rMe6JV7M4Qv0EF"
 driver.implicitly_wait(10)
 driver.get("https://unifi.ui.com")
 if cookie_path.exists():
     try:
+        # Load in the cookies
         cookies = pickle.load(open(cookie_path, "rb"))
         for cookie in cookies:
             driver.add_cookie(cookie)
+        # Refresh the page so that the site gets loaded with the added cookies
+        driver.refresh()
     except:
         raise
 else:
+    # Retrieve the credentials
+    UNIFI_USER = _os.getenv("UNIFI_USER")
+    UNIFI_PASSWORD = _os.getenv("UNIFI_PASSWORD")
+
     wait.until(EC.title_contains("Ubiquiti Account"))
 
     username_field = driver.find_element_by_name("username")
@@ -50,7 +52,6 @@ else:
     button.click()
 
     # Time to solve captcha
-
     wait.until(EC.title_contains("UniFi Cloud Access Portal"))
 
     pickle.dump(driver.get_cookies(), open(cookie_path, "wb"))

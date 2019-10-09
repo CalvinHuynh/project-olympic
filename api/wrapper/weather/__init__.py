@@ -1,1 +1,1 @@
-from .open_weather_client import OpenWeatherController
+from .open_weather_client import OpenWeatherClient
