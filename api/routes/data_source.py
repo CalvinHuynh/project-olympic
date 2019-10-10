@@ -87,7 +87,6 @@ class SingleDataSourceResource(Resource):
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
 
-    # @api.doc('post_token_for_access_point', security='JWT')
     @jwt_required_extended
     @is_user_check
     def post(self, id):
@@ -98,7 +97,7 @@ class SingleDataSourceResource(Resource):
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
                     _data_source_token_service.create_token_for_data_source(
-                        self, access_point_id=id, user_id=token['user']['id'])
+                        self, data_source_id=id, user_id=token['user']['id'])
                 )
             )
         except Exception as err:

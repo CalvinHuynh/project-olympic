@@ -3,7 +3,7 @@ from .data_source_data import DataSourceData
 from .data_source_token import DataSourceToken
 from .base import Base, MySQLDatabase, database
 from .user import User
-from .weather import Weather
+from .weather import Weather, Forecast
 
 
 def create_tables(database: MySQLDatabase, models):

@@ -45,16 +45,16 @@ class UserResource(Resource):
 @jwt_required_extended
 @api.doc(security='JWT')
 @api.route('/tokens')
-class UserAccessPointsTokensResource(Resource):
+class UserDataSourceTokensResource(Resource):
     @is_user_check
     def get(self):
-        """Retrieves access tokens created by the logged in user"""
+        """Retrieves data source tokens created by the logged in user"""
         token = get_jwt_identity()
         try:
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _user_service.get_access_point_tokens_by_user(self, token['user']['id'])
+                    _user_service.get_data_source_tokens_by_user(self, token['user']['id'])
                 )
             )
         except Exception as err:
@@ -63,10 +63,10 @@ class UserAccessPointsTokensResource(Resource):
 @api.doc(security='JWT')
 @api.route('/tokens/<id>/revoke')
 @api.param('id', 'Id of token to revoke')
-class UserAccessPointsTokenRevokeResource(Resource):
+class UserDataSourceTokenRevokeResource(Resource):
     @is_user_check
     def post(self, id: int):
-        """Deactivates a specific access point token"""
+        """Deactivates a specific data source token"""
         try:
             return jsonify(
                 SuccessObject.create_response(
@@ -97,18 +97,17 @@ class GetUserResource(Resource):
 
 @jwt_required_extended
 @api.doc(security='JWT')
-@api.route('/<name>/access-points')
+@api.route('/<name>/data-source')
 @api.param('name', 'Username of user')
-class UserAccessPointsResource(Resource):
-    # @api.doc('get_access_points_by_user')
+class UserDataSourcesResource(Resource):
     # @api.marshal_list_with(base_model)
     @is_user_check
     def get(self, name: str):
-        """Retrieves access points created by user"""
+        """Retrieves data sources created by user"""
         try:
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _user_service.get_access_point_by_user(self, username=name)))
+                    _user_service.get_data_source_by_user(self, username=name)))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])

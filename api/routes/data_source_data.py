@@ -8,7 +8,7 @@ from api.helpers import (ErrorObject, SuccessObject, convert_input_to_tuple,
                          token_is_active_check, jwt_required_extended)
 from api.services import DataSourceDataService as _DataSourceDataService, WeatherService as _WeatherService
 
-api = Namespace('data', description="Access point data related operations")
+api = Namespace('data', description="Data related operations")
 
 create_data_source_data_dto = api.model(
     'CreateDataSourceDataDto', {
@@ -46,7 +46,7 @@ class DataResources(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _data_source_data_service.post_access_point_data(
+                    _data_source_data_service.post_data(
                         self, token['data_source_token']['data_source']['id'], kwargs['tupled_output'])
                 )
             )

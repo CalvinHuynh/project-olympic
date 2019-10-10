@@ -50,7 +50,7 @@ class DataSourceService():
 
         Arguments:
             create_data_source_dto {CreateDataSourceDto} -- Data transfer
-            object containing the description of the access point and user
+            object containing the description of the data source and user
 
         Keyword Arguments:
             user_id {int} -- Optional: id of user (default: {None})
@@ -84,4 +84,4 @@ class DataSourceService():
                         source=create_data_source_dto.source,
                         user=result))
             except Exception:
-                raise ValueError(HTTPStatus.INTERNAL_SERVER_ERROR, "Unable to create access point")
+                raise ValueError(HTTPStatus.INTERNAL_SERVER_ERROR, "Unable to create data source")

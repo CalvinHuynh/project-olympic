@@ -44,24 +44,24 @@ class DataSourceDataService():
 
         return all_data_array
 
-    def post_access_point_data(self, access_point_id: int, create_data_source_data_dto: CreateDataSourceDataDto):
+    def post_data(self, data_source_id: int, create_data_source_data_dto: CreateDataSourceDataDto):
         """Creates a data point
         
         Arguments:
-            access_point_id {int} -- id of access point
+            data_source_id {int} -- id of data source
             create_data_source_data_dto {CreateDataSourceDataDto} -- Data transfer object
             containing the payload for the data point
         
         Raises:
-            ValueError: Access point not found with given id
+            ValueError: Data source not found with given id
         
         Returns:
             DataSourceData -- DataSourceData object
         """
         data_source = None
         try:
-            data_source = _data_source_service.get_access_point_by_id(
-                self, access_point_id)
+            data_source = _data_source_service.get_data_source_by_id(
+                self, data_source_id)
         except Exception:
             raise
 

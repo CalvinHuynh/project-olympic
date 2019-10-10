@@ -1,6 +1,8 @@
 from requests import Session
 
 # For more endpoints, please refer to https://openweathermap.org/api
+
+
 class OpenWeatherClient():
     def __init__(self, api_key: str, city: str, country_code: str, units: str = 'metric', schema: str = 'http'):
         """Initializes open weather api client
@@ -30,10 +32,16 @@ class OpenWeatherClient():
 
     def get_current_weather(self):
         """Returns a json object with the current weather"""
-        return self._send_get(self.__base_url() + 'weather' + '?q=' + self.city + ',' + self.country +
-                              '&appid=' + self.api_key + '&units=' + self.units)
+        try:
+            return self._send_get(self.__base_url() + 'weather' + '?q=' + self.city + ',' + self.country +
+                                  '&appid=' + self.api_key + '&units=' + self.units)
+        except:
+            raise
 
     def get_weather_forecast_5d_3h(self):
         """Returns a 5 day weather forecast"""
-        return self._send_get(self.__base_url() + 'forecast' + '?q=' + self.city + ',' + self.country +
-                              '&appid=' + self.api_key + '&units=' + self.units)
+        try:
+            return self._send_get(self.__base_url() + 'forecast' + '?q=' + self.city + ',' + self.country +
+                                  '&appid=' + self.api_key + '&units=' + self.units)
+        except:
+            raise

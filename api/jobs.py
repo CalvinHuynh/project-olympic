@@ -3,22 +3,32 @@ from datetime import datetime
 from apscheduler.executors.pool import ProcessPoolExecutor
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from api.services.scheduler import test_scheduler
+from api.services import DataSourceDataService as _DataSourceDataService
 from api.services import WeatherService as _WeatherService
-from .settings import NO_OF_BACKGROUND_WORKERS
+from api.wrapper.browser.web import AutomatedWebDriver
+
+from .settings import NUMBER_OF_BACKGROUND_WORKERS, UNIFI_ADDRESS
 
 _weather_service = _WeatherService
+_data_source_data_service = _DataSourceDataService
 
 executors = {
-    'default': {'type': 'threadpool', 'max_workers': NO_OF_BACKGROUND_WORKERS},
+    'default': {'type': 'threadpool', 'max_workers': NUMBER_OF_BACKGROUND_WORKERS},
 }
 
 bg_scheduler = BackgroundScheduler(executors=executors)
 
-@bg_scheduler.scheduled_job('interval', seconds=10)
-def do_test_function():
-    test_scheduler(test_scheduler)
-
-@bg_scheduler.scheduled_job('cron' , minute='10')
-def do_second_function():
+@bg_scheduler.scheduled_job('cron' , minute='*/10')
+def get_weather():
     _weather_service.get_current_weather(_weather_service)
+
+@bg_scheduler.scheduled_job('cron', minute='0', hour='20')
+def get_weather_forecast():
+    _weather_service.get_weather_forecast_5d_3h(_weather_service)
+
+@bg_scheduler.scheduled_job('cron', minute='*/10')
+def get_clients():
+    from api.dto import CreateDataSourceDataDto
+    webDriver = AutomatedWebDriver(UNIFI_ADDRESS)
+    dto = CreateDataSourceDataDto(webDriver.get_clients())
+    _data_source_data_service.post_data(_data_source_data_service, 1, dto)

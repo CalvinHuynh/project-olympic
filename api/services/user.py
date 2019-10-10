@@ -67,17 +67,17 @@ class UserService():
         except Exception:
             raise BaseException(HTTPStatus.INTERNAL_SERVER_ERROR, 'Internal server error')
 
-    def get_access_point_by_user(self, username: str = None, id: int = None):
-        """Retrieves access point from an user
+    def get_data_source_by_user(self, username: str = None, id: int = None):
+        """Retrieves data source from an user
         
         Arguments:
             username {str} -- (Optional) Username
             id {int} -- (Optional) Id of user
         
         Returns:
-            AccessPoint[] -- An array of access points
+            DataSource[] -- An array of data sources
         """
-        all_access_points_from_user_array = []
+        all_data_sources_from_user_array = []
         user = None
         try:
             try:
@@ -94,9 +94,9 @@ class UserService():
             if user is not None:
                 for data_source in DataSource.select(
                         DataSource, user).where(DataSource.user == user):
-                    all_access_points_from_user_array.append(
+                    all_data_sources_from_user_array.append(
                         model_to_dict(data_source))
-            return all_access_points_from_user_array
+            return all_data_sources_from_user_array
         except Exception:
             raise
 
@@ -160,16 +160,16 @@ class UserService():
         else:
             raise ValueError(HTTPStatus.BAD_REQUEST, 'Username is required')
 
-    def get_access_point_tokens_by_user(self, id: int):
-        """Get access point tokens by user
+    def get_data_source_tokens_by_user(self, id: int):
+        """Get data source tokens by user
         
         Arguments:
             id {int} -- User id
         
         Returns:
-            AccessPointTokens[] -- An array of access point tokens objects
+            DataSourceToken[] -- An array of data source tokens objects
         """
-        all_access_point_tokens_array = []
+        all_data_source_tokens_array = []
         user = None
         try:
             user: User = UserService.get_user_by_id(self, id)
@@ -178,10 +178,10 @@ class UserService():
         
         try:
             if user is not None:
-                for access_point_tokens in DataSourceToken.select(
+                for data_source_token in DataSourceToken.select(
                         DataSourceToken, user).where(DataSourceToken.user == user):
-                    all_access_point_tokens_array.append(
-                        model_to_dict(access_point_tokens))
-            return all_access_point_tokens_array
+                    all_data_source_tokens_array.append(
+                        model_to_dict(data_source_token))
+            return all_data_source_tokens_array
         except Exception:
             raise

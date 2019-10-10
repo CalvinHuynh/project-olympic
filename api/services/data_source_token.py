@@ -63,7 +63,7 @@ class DataSourceTokenService():
         try:
             if data_source_id:
                 data_source = dict_to_model(
-                    DataSource, _data_source_service.get_access_point_by_id(self, data_source_id))
+                    DataSource, _data_source_service.get_data_source_by_id(self, data_source_id))
         except Exception:
             raise
 
@@ -118,7 +118,7 @@ class DataSourceTokenService():
         """Check if token is active
         
         Arguments:
-            data_source_token_id {int} -- Id of access token
+            data_source_token_id {int} -- Id of data source token
         
         Returns:
             Boolean -- True if token is active, else False
@@ -134,10 +134,10 @@ class DataSourceTokenService():
             raise
 
     def revoke_token(self, data_source_token_id: int):
-        """Revokes access token
+        """Revokes token of data source
         
         Arguments:
-            data_source_token_id {int} -- Id of access token
+            data_source_token_id {int} -- Id of data source token
         
         Returns:
             DataSourceToken -- Deactivated DataSourceToken object

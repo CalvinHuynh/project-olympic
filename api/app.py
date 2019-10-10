@@ -58,6 +58,7 @@ app.register_blueprint(api_v1)
 
 
 from api.jobs import bg_scheduler
+# Start the scheduler
 bg_scheduler.start()
 
 if __name__ == "__main__":
