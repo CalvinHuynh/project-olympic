@@ -5,7 +5,7 @@ from peewee import DoesNotExist, IntegrityError
 from playhouse.shortcuts import dict_to_model, model_to_dict
 
 from api.helpers import to_utc_datetime
-from api.models import AccessPoint, AccessPointToken, User
+from api.models import DataSource, DataSourceToken, User
 
 
 class UserService():
@@ -92,10 +92,10 @@ class UserService():
                 raise
 
             if user is not None:
-                for access_point in AccessPoint.select(
-                        AccessPoint, user).where(AccessPoint.user == user):
+                for data_source in DataSource.select(
+                        DataSource, user).where(DataSource.user == user):
                     all_access_points_from_user_array.append(
-                        model_to_dict(access_point))
+                        model_to_dict(data_source))
             return all_access_points_from_user_array
         except Exception:
             raise
@@ -178,8 +178,8 @@ class UserService():
         
         try:
             if user is not None:
-                for access_point_tokens in AccessPointToken.select(
-                        AccessPointToken, user).where(AccessPointToken.user == user):
+                for access_point_tokens in DataSourceToken.select(
+                        DataSourceToken, user).where(DataSourceToken.user == user):
                     all_access_point_tokens_array.append(
                         model_to_dict(access_point_tokens))
             return all_access_point_tokens_array

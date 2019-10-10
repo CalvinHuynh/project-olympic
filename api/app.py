@@ -29,6 +29,7 @@ oauth = OAuth(app)
 # Initializes JWT
 jwt = JWTManager(app)
 
+# TODO: move it to a separate file
 # Overwrite default error handling
 @jwt.invalid_token_loader
 def custom_invalid_token_loader(self):

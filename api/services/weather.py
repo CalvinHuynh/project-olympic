@@ -20,7 +20,8 @@ class WeatherService():
         try:
             Weather.create(
                 created_date=to_utc_datetime(),
-                data=weather_data)
+                data=weather_data,
+                data_source=1)
             return HTTPStatus.CREATED
         except:
             raise

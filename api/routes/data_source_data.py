@@ -6,17 +6,17 @@ from flask_restplus import Namespace, Resource, fields
 
 from api.helpers import (ErrorObject, SuccessObject, convert_input_to_tuple,
                          token_is_active_check, jwt_required_extended)
-from api.services import AccessPointDataService as _AccessPointDataService, WeatherService as _WeatherService
+from api.services import DataSourceDataService as _DataSourceDataService, WeatherService as _WeatherService
 
 api = Namespace('data', description="Access point data related operations")
 
-create_access_point_data_dto = api.model(
-    'CreateAccessPointDataDto', {
+create_data_source_data_dto = api.model(
+    'CreateDataSourceDataDto', {
         'no_of_clients': fields.Integer(description="number of clients",
                                         example=4),
     })
 
-_access_point_data_service = _AccessPointDataService
+_data_source_data_service = _DataSourceDataService
 _weather_service = _WeatherService
 
 @api.doc(security='JWT')
@@ -29,25 +29,25 @@ class DataResources(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _access_point_data_service.get_all_data(self)
+                    _data_source_data_service.get_all_data(self)
                 )
             )
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
 
     @jwt_required_extended
-    @api.expect(create_access_point_data_dto)
+    @api.expect(create_data_source_data_dto)
     @convert_input_to_tuple
     @token_is_active_check
     def post(self, **kwargs):
-        """Creates access point data"""
+        """Creates new data"""
         token = get_jwt_identity()
         try:
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _access_point_data_service.post_access_point_data(
-                        self, token['access_point_token']['access_point']['id'], kwargs['tupled_output'])
+                    _data_source_data_service.post_access_point_data(
+                        self, token['data_source_token']['data_source']['id'], kwargs['tupled_output'])
                 )
             )
         except Exception as err:
@@ -65,7 +65,7 @@ class SincleDataResources(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _access_point_data_service.get_one_data_point(self, id)))
+                    _data_source_data_service.get_one_data_point(self, id)))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
 

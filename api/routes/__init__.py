@@ -2,12 +2,12 @@ from flask import Blueprint, jsonify
 from flask_restplus import Api
 from loginpass import create_flask_blueprint, Google, GitHub
 
-from api.routes.access_point import api as access_point_api
+from api.routes.data_source import api as data_source_api
 from api.routes.oauth import api as oauth_api, handle_authorize
 from api.routes.user import api as user_api
 # from api.routes.assets import api as assets_api
 from api.routes.index import api as index_api
-from api.routes.access_point_data import api as data_api
+from api.routes.data_source_data import api as data_source_data_api # data generated from the data source
 from api.settings import FLASK_API_VERSION, SWAGGER_DOC_ENDPOINT, GET_PATH
 
 authorizations = {
@@ -35,10 +35,10 @@ api = Api(blueprint,
           doc=SWAGGER_DOC_ENDPOINT if SWAGGER_DOC_ENDPOINT else "/docs/",
           authorizations=authorizations)
 
-api.add_namespace(access_point_api)
+api.add_namespace(data_source_api)
 api.add_namespace(user_api)
 api.add_namespace(oauth_api)
-api.add_namespace(data_api)
+api.add_namespace(data_source_data_api)
 # api.add_namespace(assets_api)
 
 # TODO: extract to separate file

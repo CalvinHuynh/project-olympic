@@ -17,6 +17,9 @@ _load_dotenv(dotenv_path=env_path)
 
 _cookie_path = _Path("./api/wrapper/browser/.cookies.pkl")
 
+# Retrieve Unifi cloud address
+_UNIFI_ADDRESS = _os.getenv("UNIFI_ADDRESS")
+
 # Retrieve the credentials
 _UNIFI_USER = _os.getenv("UNIFI_USER")
 _UNIFI_PASSWORD = _os.getenv("UNIFI_PASSWORD")
@@ -83,3 +86,7 @@ class AutomatedWebDriver():
         incentro_element_clients = self.driver.find_element_by_xpath(
             "//td[@class='controllerClients visible--mdUp ng-binding']").text
         return(incentro_element_clients)
+
+
+# test = AutomatedWebDriver(_UNIFI_ADDRESS)
+# test.get_clients()

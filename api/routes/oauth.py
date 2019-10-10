@@ -66,4 +66,5 @@ class SetupLoginRoutes(Resource):
 
 @api.route('/logout')
 class LogOut(Resource):
+    # TODO: Clear session on logout
     pass

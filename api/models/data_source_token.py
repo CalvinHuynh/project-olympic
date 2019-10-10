@@ -2,12 +2,12 @@ from peewee import BooleanField, DateTimeField, ForeignKeyField, IntegerField
 
 from .user import User
 from .base import Base
-from .access_point import AccessPoint
+from .data_source import DataSource
 
 
-class AccessPointToken(Base):
+class DataSourceToken(Base):
     user = ForeignKeyField(User)
-    access_point = ForeignKeyField(AccessPoint)
+    data_source = ForeignKeyField(DataSource)
     created_date = DateTimeField()
     last_activity_date = DateTimeField(null=True)
     expiry_date = DateTimeField()

@@ -19,7 +19,6 @@ bg_scheduler = BackgroundScheduler(executors=executors)
 def do_test_function():
     test_scheduler(test_scheduler)
 
-@bg_scheduler.scheduled_job('cron' , minute='15')
+@bg_scheduler.scheduled_job('cron' , minute='10')
 def do_second_function():
     _weather_service.get_current_weather(_weather_service)
-

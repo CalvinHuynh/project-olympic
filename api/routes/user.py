@@ -5,13 +5,13 @@ from flask_restplus import Namespace, Resource, fields
 from flask_jwt_extended import get_jwt_identity
 
 from api.helpers import ErrorObject, SuccessObject, is_user_check, jwt_required_extended
-from api.services import UserService, AccessPointTokenService
+from api.services import UserService as _UserService, DataSourceTokenService as _DataSourceTokenService
 
 api = Namespace('user', description="User related operations")
 
 # TODO: add DI
-user_service = UserService
-access_point_token_service = AccessPointTokenService
+_user_service = _UserService
+_data_source_token_service = _DataSourceTokenService
 
 username_dto = api.model(
     'User\'s username', {
@@ -33,7 +33,7 @@ class UserResource(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    user_service.set_username(
+                    _user_service.set_username(
                         self, token['user']['id'], api.payload['username'])
                 )
             )
@@ -54,7 +54,7 @@ class UserAccessPointsTokensResource(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    user_service.get_access_point_tokens_by_user(self, token['user']['id'])
+                    _user_service.get_access_point_tokens_by_user(self, token['user']['id'])
                 )
             )
         except Exception as err:
@@ -71,7 +71,7 @@ class UserAccessPointsTokenRevokeResource(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    access_point_token_service.revoke_token(self, id)
+                    _data_source_token_service.revoke_token(self, id)
                 )
             )
         except Exception as err:
@@ -90,7 +90,7 @@ class GetUserResource(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    user_service.get_user_by_username(self, name)))
+                    _user_service.get_user_by_username(self, name)))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
 
@@ -109,6 +109,6 @@ class UserAccessPointsResource(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    user_service.get_access_point_by_user(self, username=name)))
+                    _user_service.get_access_point_by_user(self, username=name)))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
