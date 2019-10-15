@@ -100,6 +100,3 @@ class AutomatedWebDriver():
             return(incentro_element_clients)
         except:
             raise
-
-test = AutomatedWebDriver(_UNIFI_ADDRESS, run_headless=False)
-test.get_clients()
