@@ -8,15 +8,15 @@ from dotenv import load_dotenv as _load_dotenv
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.firefox.options import Options
 
 # Load .env file
 _env_path = _Path('.') / '.env'
 _load_dotenv(dotenv_path=_env_path)
 
-_cookie_path = _Path("./api/wrapper/browser/.cookies.pkl")
+_cookie_path = _os.path.join(_os.path.abspath(_os.path.dirname(__file__)), '.cookies.pkl')
 
 # Retrieve Unifi cloud address
 _UNIFI_ADDRESS = _os.getenv("UNIFI_ADDRESS")
@@ -41,8 +41,8 @@ class AutomatedWebDriver():
         """
         self.options = Options()
         self.options.headless = run_headless
-        self.driver = webdriver.Firefox(options=self.options, executable_path=_os.getcwd(
-        ) + '/api/bin/geckodriver', service_log_path='/tmp/geckodriver.log')
+        self.driver = webdriver.Firefox(options=self.options, executable_path=_os.path.join(_os.path.abspath(
+            _os.path.dirname(__file__)), '../../bin/geckodriver'), service_log_path='/tmp/geckodriver.log')
         self.wait = WebDriverWait(self.driver, explicit_wait_time)
         self.url = url
         self.driver.implicitly_wait(implicit_wait_time)
@@ -51,7 +51,7 @@ class AutomatedWebDriver():
         """Retrieves the number of clients
         """
         self.driver.get(self.url)
-        if _cookie_path.exists():
+        if _os.path.isfile(_cookie_path):
             try:
                 # Load in the cookies
                 cookies = pickle.load(open(_cookie_path, "rb"))
@@ -100,3 +100,6 @@ class AutomatedWebDriver():
             return(incentro_element_clients)
         except:
             raise
+
+test = AutomatedWebDriver(_UNIFI_ADDRESS, run_headless=False)
+test.get_clients()
