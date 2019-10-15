@@ -8,13 +8,14 @@ from api.routes.user import api as user_api
 # from api.routes.assets import api as assets_api
 from api.routes.index import api as index_api
 from api.routes.data_source_data import api as data_source_data_api # data generated from the data source
-from api.settings import FLASK_API_VERSION, SWAGGER_DOC_ENDPOINT, GET_PATH
+from api.settings import FLASK_API_VERSION, SWAGGER_DOC_ENDPOINT, GET_PATH, FLASK_APP_NAME
 
 authorizations = {
     'JWT': {
         'type': 'apiKey',
         'in': 'header',
-        'name': 'Authorization'
+        'name': 'Authorization',
+        'description': "Type in the *'Value'* input box below: **'Bearer &lt;JWT&gt;'**, where JWT is the token"
     }
 }
 
@@ -30,7 +31,7 @@ api_index.add_namespace(index_api)
 blueprint = Blueprint('api', __name__, url_prefix='/api/v1')
 api = Api(blueprint,
           version=FLASK_API_VERSION if FLASK_API_VERSION else "1.0.0",
-          title='Project Olympic API',
+          title=f"{FLASK_APP_NAME} API",
           description='All the available endpoints of Project Olympic',
           doc=SWAGGER_DOC_ENDPOINT if SWAGGER_DOC_ENDPOINT else "/docs/",
           authorizations=authorizations)

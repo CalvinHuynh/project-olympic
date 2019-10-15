@@ -3,8 +3,7 @@ Exploratory project to experiment with unfamiliar technologies such as:
 * Docker (and Docker-compose)
 * Python
 * Flask web framework (and other extensions extending Flask)
-* Peewee ORM.* Redis
-
+* Peewee ORM.
 
 ## Requirement
 * Python 3.3 or higher

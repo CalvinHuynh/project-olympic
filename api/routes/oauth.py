@@ -41,7 +41,7 @@ def handle_authorize(remote, token, user_info):
         }
         access_token = create_access_token(identity=identity_object)
         success_response = make_response(redirect('/api/v1/docs'))
-        success_response.set_cookie('jwt', 'Bearer {}'.format(access_token))
+        success_response.set_cookie('jwt', access_token)
 
         return success_response
         # return jsonify(
