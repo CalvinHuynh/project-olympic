@@ -1,3 +1,4 @@
+from api.jobs import bg_scheduler
 from http import HTTPStatus
 
 from authlib.flask.client import OAuth
@@ -29,13 +30,15 @@ oauth = OAuth(app)
 # Initializes JWT
 jwt = JWTManager(app)
 
+
 # TODO: move it to a separate file
 # Overwrite default error handling
 @jwt.invalid_token_loader
 def custom_invalid_token_loader(self):
     from api.helpers import ErrorObject
     return ErrorObject.create_response(self, HTTPStatus.UNAUTHORIZED,
-                                        'Invalid token provided')
+                                       'Invalid token provided')
+
 
 @jwt.expired_token_loader
 def custom_expired_token_loader(callback):
@@ -45,19 +48,18 @@ def custom_expired_token_loader(callback):
         ErrorObject, HTTPStatus.UNAUTHORIZED,
         'The {} token has expired'.format(token_type))
 
+
 @jwt.unauthorized_loader
 def custom_unauthorized_loader(self):
     from api.helpers import ErrorObject
     return ErrorObject.create_response(self, HTTPStatus.UNAUTHORIZED,
-                                        'No access token provided')
+                                       'No access token provided')
 
 
 # Initializes the routes
 app.register_blueprint(index)
 app.register_blueprint(api_v1)
 
-
-from api.jobs import bg_scheduler
 # Start the scheduler
 bg_scheduler.start()
 

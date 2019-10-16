@@ -20,17 +20,21 @@ def _seed():
     """Creates the admin and a data source"""
     from api.helpers import to_utc_datetime
     join_date = to_utc_datetime()
-    user = User.get_or_create(email='calvin.huynh@incentro.com', defaults={
-        'join_date': join_date,
-        'last_login_date': join_date,
-        'username': 'admin'
-    })
+    user = User.get_or_create(email='calvin.huynh@incentro.com',
+                              defaults={
+                                  'join_date': join_date,
+                                  'last_login_date': join_date,
+                                  'username': 'admin'
+                              })
 
-    data_source = DataSource.get_or_create(id=1, defaults={
-        'source': 'system_scheduled_task',
-        'description': 'A data source that is used to send the result from the scheduled task',
-        'user': user[0].id
-    })
+    DataSource.get_or_create(
+        id=1,
+        defaults={
+            'source': 'system_scheduled_task',
+            'description':
+            'A data source that is used to send the result from the scheduled task',
+            'user': user[0].id
+        })
 
 
 def initialize_database():

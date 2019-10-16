@@ -15,9 +15,16 @@ class Weather(Base):
 
 
 class Forecast(Enum):
-    """The 2 types of forecasts that are currently available for the free tier API of Openweathermap."""
-    # Return the name instead of the value, as the name gives more information
+    """
+    The 2 types of forecasts that are currently available for the free tier
+    API of Openweathermap.
+    """
+
+    # Return the name instead of the value, as the name gives more
+    # information
+
     def __str__(self):
         return str(self.name)
+
     HOURLY = 1
     FIVE_DAYS_THREE_HOUR = 2

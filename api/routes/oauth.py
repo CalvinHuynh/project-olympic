@@ -1,14 +1,10 @@
-from datetime import datetime
-from http import HTTPStatus
-
-from flask import (Response, jsonify, make_response, redirect, render_template,
-                   url_for)
+from flask import (Response, make_response, redirect, render_template)
 from flask_jwt_extended import create_access_token
-from flask_restplus import Namespace, Resource, fields
+from flask_restplus import Namespace, Resource
 from loginpass import GitHub, Google
 from playhouse.shortcuts import dict_to_model, model_to_dict
 
-from api.helpers import ErrorObject, SuccessObject, to_utc_datetime
+from api.helpers import ErrorObject, to_utc_datetime
 from api.models import User
 from api.services import UserService
 
@@ -26,12 +22,12 @@ def handle_authorize(remote, token, user_info):
         user.last_login_date = to_utc_datetime()
         user.save()
         user = model_to_dict(user)
-    except:
+    except BaseException:
         pass
     try:
         if user is None:
-            user = user_service.create_user(
-                UserService, email=user_info['email'])
+            user = user_service.create_user(UserService,
+                                            email=user_info['email'])
 
         identity_object = {
             "is_user_token": True,
@@ -49,7 +45,8 @@ def handle_authorize(remote, token, user_info):
         #         UserService, HTTPStatus.OK, {"jwt": access_token})
         # )
     except Exception as err:
-        return ErrorObject.create_response(UserService, err.args[0], err.args[1])
+        return ErrorObject.create_response(UserService, err.args[0],
+                                           err.args[1])
 
 
 @api.route('/')
@@ -57,12 +54,17 @@ class SetupLoginRoutes(Resource):
     def get(self):
         """Retrieves login providers"""
         tpl = '<a href="/{}/login"><button type="button">{}</button></a><br/><br/>'
-        lis = [tpl.format(b.OAUTH_NAME, b.OAUTH_NAME)
-               for b in SUPPORTED_OAUTH_PROVIDERS]
+        lis = [
+            tpl.format(b.OAUTH_NAME, b.OAUTH_NAME)
+            for b in SUPPORTED_OAUTH_PROVIDERS
+        ]
         print(lis)
-        resp = Response(render_template(
-            'login.html', SUPPORTED_OAUTH_PROVIDERS='<ul>{}</ul>'.format(''.join(lis))))
+        resp = Response(
+            render_template('login.html',
+                            SUPPORTED_OAUTH_PROVIDERS='<ul>{}</ul>'.format(
+                                ''.join(lis))))
         return resp
+
 
 @api.route('/logout')
 class LogOut(Resource):

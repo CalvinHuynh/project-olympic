@@ -1,4 +1,3 @@
-from datetime import datetime
 from http import HTTPStatus
 
 from peewee import DoesNotExist, IntegrityError
@@ -32,7 +31,7 @@ class UserService():
 
         Arguments:
             username {str} -- Username
-    
+
         Raises:
             ValueError: User not found with given username
 
@@ -43,19 +42,22 @@ class UserService():
             return model_to_dict(
                 User.select().where(User.username == username).get())
         except DoesNotExist:
-            raise ValueError(HTTPStatus.NOT_FOUND, 'User with username {} does not exist'.format(username))
+            raise ValueError(
+                HTTPStatus.NOT_FOUND,
+                'User with username {} does not exist'.format(username))
         except Exception:
-            raise BaseException(HTTPStatus.INTERNAL_SERVER_ERROR, 'Internal server error')
+            raise BaseException(HTTPStatus.INTERNAL_SERVER_ERROR,
+                                'Internal server error')
 
     def get_user_by_email(self, email: str):
         """Get user by email
-        
+
         Arguments:
             email {str} -- Email
-        
+
         Raises:
             ValueError: User not found with given email
-        
+
         Returns:
             User -- User object
         """
@@ -63,17 +65,19 @@ class UserService():
             return model_to_dict(
                 User.select().where(User.email == email).get())
         except DoesNotExist:
-            raise ValueError(HTTPStatus.NOT_FOUND, 'User with email {} does not exist'.format(email))
+            raise ValueError(HTTPStatus.NOT_FOUND,
+                             'User with email {} does not exist'.format(email))
         except Exception:
-            raise BaseException(HTTPStatus.INTERNAL_SERVER_ERROR, 'Internal server error')
+            raise BaseException(HTTPStatus.INTERNAL_SERVER_ERROR,
+                                'Internal server error')
 
     def get_data_source_by_user(self, username: str = None, id: int = None):
         """Retrieves data source from an user
-        
+
         Arguments:
             username {str} -- (Optional) Username
             id {int} -- (Optional) Id of user
-        
+
         Returns:
             DataSource[] -- An array of data sources
         """
@@ -85,9 +89,8 @@ class UserService():
                     user = dict_to_model(
                         User, UserService.get_user_by_username(self, username))
                 elif id is not None:
-                    user = dict_to_model(
-                        User, UserService.get_user_by_id(self, id)
-                    )
+                    user = dict_to_model(User,
+                                         UserService.get_user_by_id(self, id))
             except Exception:
                 raise
 
@@ -102,17 +105,17 @@ class UserService():
 
     def create_user(self, email: str, username=None):
         """Creates a new user
-        
+
         Arguments:
             email {str} -- email of user
-        
+
         Keyword Arguments:
             username {str} -- Optional: username of user (default: {None})
-        
+
         Raises:
             ValueError: Email is required
             BaseException: Internal server error
-        
+
         Returns:
             User -- Newly created user
         """
@@ -121,11 +124,10 @@ class UserService():
         try:
             if username is not None:
                 return model_to_dict(
-                    User.create(
-                        username=username,
-                        email=email,
-                        join_date=join_date,
-                        last_login_date=last_login_date))
+                    User.create(username=username,
+                                email=email,
+                                join_date=join_date,
+                                last_login_date=last_login_date))
             else:
                 return model_to_dict(
                     User.create(email=email,
@@ -137,11 +139,12 @@ class UserService():
             else:
                 raise ValueError(HTTPStatus.CONFLICT, 'Email already exists')
         except Exception:
-            raise BaseException(HTTPStatus.INTERNAL_SERVER_ERROR, 'Internal server error')
+            raise BaseException(HTTPStatus.INTERNAL_SERVER_ERROR,
+                                'Internal server error')
 
     def set_username(self, id: int, username: str):
         """Sets the username of the logged in user
-        
+
         Arguments:
             id {int} -- User id
             username {str} -- new username
@@ -153,19 +156,21 @@ class UserService():
                 try:
                     user.save()
                     return model_to_dict(user)
-                except:
-                    raise ValueError(HTTPStatus.CONFLICT, 'Username already exists')
+                except BaseException:
+                    raise ValueError(HTTPStatus.CONFLICT,
+                                     'Username already exists')
             else:
-                raise ValueError(HTTPStatus.NOT_MODIFIED, 'Username can only be set once')
+                raise ValueError(HTTPStatus.NOT_MODIFIED,
+                                 'Username can only be set once')
         else:
             raise ValueError(HTTPStatus.BAD_REQUEST, 'Username is required')
 
     def get_data_source_tokens_by_user(self, id: int):
         """Get data source tokens by user
-        
+
         Arguments:
             id {int} -- User id
-        
+
         Returns:
             DataSourceToken[] -- An array of data source tokens objects
         """
@@ -175,11 +180,12 @@ class UserService():
             user: User = UserService.get_user_by_id(self, id)
         except Exception:
             raise
-        
+
         try:
             if user is not None:
                 for data_source_token in DataSourceToken.select(
-                        DataSourceToken, user).where(DataSourceToken.user == user):
+                        DataSourceToken,
+                        user).where(DataSourceToken.user == user):
                     all_data_source_tokens_array.append(
                         model_to_dict(data_source_token))
             return all_data_source_tokens_array

@@ -19,12 +19,14 @@ def date_time_serializer(obj):
         return obj.isoformat()
     raise TypeError("Type %s not serializable" % type(obj))
 
+
 def to_utc_datetime(obj_to_convert: datetime = None):
     """Formats pythons datetime object to YYYY-mm-dd HH:MM:SS format
-    
+
     Keyword Arguments:
-        obj_to_convert {datetime} -- datetime object to convert (default: {None})
-    
+        obj_to_convert {datetime} -- datetime object to convert
+        (default: {None})
+
     Returns:
         datetime -- datetime object in the format YYYY-mm-dd HH:MM:SS
     """
@@ -33,15 +35,19 @@ def to_utc_datetime(obj_to_convert: datetime = None):
     else:
         return datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
 
+
 def to_rfc3339_datetime(when: str = 'now', obj_to_convert: datetime = None):
     """Converts Python's datetime object to comply with RFC 3339 specification
-    
+
     Keyword Arguments:
-        when {str} -- Returns the current UTC time in RFC 3339 compliant format (default: {'Now'})
-        obj_to_convert {datetime} -- Converts given object to RFC 3339 compliant format [description] (default: {None})
-    
+        when {str} -- Returns the current UTC time in RFC 3339 compliant
+        format (default: {'Now'})
+        obj_to_convert {datetime} -- Converts given object to RFC 3339
+        compliant format [description] (default: {None})
+
     Returns:
-        datetime -- datetime object in the following format YYYY-mm-ddTHH:MM:sssZ
+        datetime -- datetime object in the following format
+        YYYY-mm-ddTHH:MM:sssZ
     """
     if when and when.lower() == 'now':
         return datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
@@ -49,7 +55,8 @@ def to_rfc3339_datetime(when: str = 'now', obj_to_convert: datetime = None):
         return obj_to_convert.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
     else:
         raise ValueError(
-            "When parameter can only accept the keyword 'now' or given datetime object is not of type datetime")
+            "When parameter can only accept the keyword 'now' or given datetime object is not of type datetime"
+        )
 
 
 def _json_object_hook(d):

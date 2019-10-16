@@ -4,8 +4,10 @@ from flask import jsonify
 from flask_restplus import Namespace, Resource, fields
 from flask_jwt_extended import get_jwt_identity
 
-from api.helpers import ErrorObject, SuccessObject, is_user_check, jwt_required_extended
-from api.services import UserService as _UserService, DataSourceTokenService as _DataSourceTokenService
+from api.helpers import (ErrorObject, SuccessObject, is_user_check,
+                         jwt_required_extended)
+from api.services import (UserService as _UserService, DataSourceTokenService
+                          as _DataSourceTokenService)
 
 api = Namespace('user', description="User related operations")
 
@@ -14,10 +16,8 @@ _user_service = _UserService
 _data_source_token_service = _DataSourceTokenService
 
 username_dto = api.model(
-    'User\'s username', {
-        'username': fields.String(description="Username", example="hunter2")
-    }
-)
+    'User\'s username',
+    {'username': fields.String(description="Username", example="hunter2")})
 
 
 @jwt_required_extended
@@ -33,13 +33,10 @@ class UserResource(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _user_service.set_username(
-                        self, token['user']['id'], api.payload['username'])
-                )
-            )
+                    _user_service.set_username(self, token['user']['id'],
+                                               api.payload['username'])))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
-
 
 
 @jwt_required_extended
@@ -54,11 +51,12 @@ class UserDataSourceTokensResource(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _user_service.get_data_source_tokens_by_user(self, token['user']['id'])
-                )
-            )
+                    _user_service.get_data_source_tokens_by_user(
+                        self, token['user']['id'])))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
+
+
 @jwt_required_extended
 @api.doc(security='JWT')
 @api.route('/tokens/<id>/revoke')
@@ -71,11 +69,10 @@ class UserDataSourceTokenRevokeResource(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _data_source_token_service.revoke_token(self, id)
-                )
-            )
+                    _data_source_token_service.revoke_token(self, id)))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
+
 
 @jwt_required_extended
 @api.doc(security='JWT')
@@ -108,6 +105,7 @@ class UserDataSourcesResource(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _user_service.get_data_source_by_user(self, username=name)))
+                    _user_service.get_data_source_by_user(self,
+                                                          username=name)))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])

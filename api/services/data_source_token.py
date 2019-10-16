@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from http import HTTPStatus
 
 from dateutil.relativedelta import relativedelta
@@ -19,13 +19,13 @@ _data_source_service = _DataSourceService
 class DataSourceTokenService():
     def get_token_by_id(self, id: int):
         """Retrieves data source token by id
-        
+
         Arguments:
             id {int} -- data source token id
-        
+
         Raises:
             ValueError: Id does not exist
-        
+
         Returns:
             DataSourceToken -- DataSourceToken object
         """
@@ -35,19 +35,16 @@ class DataSourceTokenService():
             raise ValueError(HTTPStatus.NOT_FOUND,
                              'Token with id {} does not exist'.format(id))
 
-    def create_token_for_data_source(
-            self,
-            data_source_id: int,
-            user_id: int):
+    def create_token_for_data_source(self, data_source_id: int, user_id: int):
         """Creates a JWT for an data source
-        
+
         Arguments:
             data_source_id {int} -- Id of data source
             user_id {int} -- Id of user
-        
+
         Raises:
             ValueError: Unable to create token for data source
-        
+
         Returns:
             JWT -- Returns an JWT
         """
@@ -55,19 +52,22 @@ class DataSourceTokenService():
         data_source: DataSource = None
         try:
             if user_id:
-                user = _user_service.get_user_by_id(
-                    self, user_id)
+                user = _user_service.get_user_by_id(self, user_id)
         except Exception:
             raise
 
         try:
             if data_source_id:
                 data_source = dict_to_model(
-                    DataSource, _data_source_service.get_data_source_by_id(self, data_source_id))
+                    DataSource,
+                    _data_source_service.get_data_source_by_id(
+                        self, data_source_id))
         except Exception:
             raise
 
-        if user is not None and isinstance(user, User) and data_source is not None and isinstance(data_source, DataSource):
+        if user is not None and isinstance(
+                user, User) and data_source is not None and isinstance(
+                    data_source, DataSource):
             created_date = to_utc_datetime()
             last_activity_date = None
             # Set validity of token to 1 year
@@ -83,28 +83,30 @@ class DataSourceTokenService():
                         last_activity_date=last_activity_date,
                         expiry_date=expiry_date,
                         no_of_usage=no_of_usage,
-                        is_active=True
-                    )
-                )
+                        is_active=True))
                 identity_object = {
                     "is_user_token": False,
                     "data_source_token": result
                 }
-                return create_access_token(identity=identity_object, expires_delta=relativedelta(years=1))
+                return create_access_token(
+                    identity=identity_object,
+                    expires_delta=relativedelta(years=1))
             except Exception:
-                raise ValueError(HTTPStatus.INTERNAL_SERVER_ERROR, 'Unable to create token for data source {}'.format(
-                    data_source_id))
+                raise ValueError(
+                    HTTPStatus.INTERNAL_SERVER_ERROR,
+                    'Unable to create token for data source {}'.format(
+                        data_source_id))
 
     def update_hit_count_and_date(self, data_source_token_id: int):
         """Update the hit counter of an data source token
-        
+
         Arguments:
             data_source_token_id {int} -- Id of data source token
-        
+
         Returns:
             HTTPstatus code -- 204 No Content
         """
-        data_source_token: DataSourceToken = DataSourceTokenService.get_token_by_id(
+        data_source_token = DataSourceTokenService.get_token_by_id(
             self, data_source_token_id)
         if data_source_token is not None:
             data_source_token.no_of_usage += 1
@@ -116,14 +118,14 @@ class DataSourceTokenService():
 
     def check_if_token_is_active(self, data_source_token_id: int):
         """Check if token is active
-        
+
         Arguments:
             data_source_token_id {int} -- Id of data source token
-        
+
         Returns:
             Boolean -- True if token is active, else False
         """
-        data_source_token: DataSourceToken = DataSourceTokenService.get_token_by_id(
+        data_source_token = DataSourceTokenService.get_token_by_id(
             self, data_source_token_id)
         if data_source_token is not None:
             if data_source_token.is_active:
@@ -135,14 +137,14 @@ class DataSourceTokenService():
 
     def revoke_token(self, data_source_token_id: int):
         """Revokes token of data source
-        
+
         Arguments:
             data_source_token_id {int} -- Id of data source token
-        
+
         Returns:
             DataSourceToken -- Deactivated DataSourceToken object
         """
-        data_source_token: DataSourceToken = DataSourceTokenService.get_token_by_id(
+        data_source_token = DataSourceTokenService.get_token_by_id(
             self, data_source_token_id)
         if data_source_token is not None:
             data_source_token.is_active = False

@@ -40,12 +40,14 @@ class DataSourceService():
         try:
             return model_to_dict(DataSource.get_by_id(id))
         except DoesNotExist:
-            raise ValueError(HTTPStatus.NOT_FOUND, 'Data source with id {} does not exist'.format(id))
+            raise ValueError(
+                HTTPStatus.NOT_FOUND,
+                'Data source with id {} does not exist'.format(id))
 
     def add_data_source(self,
-                         create_data_source_dto: CreateDataSourceDto,
-                         user_id=None,
-                         username=None):
+                        create_data_source_dto: CreateDataSourceDto,
+                        user_id=None,
+                        username=None):
         """Creates a new data source
 
         Arguments:
@@ -84,4 +86,5 @@ class DataSourceService():
                         source=create_data_source_dto.source,
                         user=result))
             except Exception:
-                raise ValueError(HTTPStatus.INTERNAL_SERVER_ERROR, "Unable to create data source")
+                raise ValueError(HTTPStatus.INTERNAL_SERVER_ERROR,
+                                 "Unable to create data source")
