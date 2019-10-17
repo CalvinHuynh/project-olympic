@@ -1,13 +1,16 @@
-FROM python:alpine
+FROM fedora:30
 
 RUN mkdir -p /api
 WORKDIR /api
 ENV FLASK_APP app.py
-RUN apk add --no-cache gcc musl-dev linux-headers libffi-dev openssl-dev
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN dnf install python3 \
+        python3-pip \
+        chromium \
+        firefox \
+        -y
 
 COPY . .
+RUN pip3 install --no-cache-dir -r requirements.txt
 
 CMD [ "flask", "run" ]

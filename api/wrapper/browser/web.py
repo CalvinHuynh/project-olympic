@@ -1,14 +1,13 @@
-import json
 import os as _os
 import pickle
 import time
+from enum import Enum
 from pathlib import Path as _Path
 
 from dotenv import load_dotenv as _load_dotenv
 from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.chrome.options import Options as _ChromeOptions
+from selenium.webdriver.firefox.options import Options as _FirefoxOptions
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
@@ -16,7 +15,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 _env_path = _Path('.') / '.env'
 _load_dotenv(dotenv_path=_env_path)
 
-_cookie_path = _os.path.join(_os.path.abspath(_os.path.dirname(__file__)), '.cookies.pkl')
+_cookie_path = _os.path.join(_os.path.abspath(_os.path.dirname(__file__)),
+                             '.cookies.pkl')
 
 # Retrieve Unifi cloud address
 _UNIFI_ADDRESS = _os.getenv("UNIFI_ADDRESS")
@@ -26,23 +26,76 @@ _UNIFI_USER = _os.getenv("UNIFI_USER")
 _UNIFI_PASSWORD = _os.getenv("UNIFI_PASSWORD")
 
 
+class WebDriverType(Enum):
+    """
+    The types of currently supported web drivers
+    """
+
+    # Returns the value of the enum
+
+    def __str__(self):
+        return str(self.value)
+
+    CHROME = 'chromedriver'
+    FIREFOX = 'geckodriver'
+
+
+def _get_driver_path(driver_name: str):
+    return str((_Path(__file__).parent / f'../../bin/{driver_name}').resolve())
+
+
+def _initialize_driver(driver_name: WebDriverType,
+                       path_to_executable: str = None,
+                       run_headless: bool = True):
+    if driver_name == WebDriverType.CHROME:
+        _driver_path = _get_driver_path(driver_name)
+        _options = _ChromeOptions()
+        _options.headless = run_headless
+        _options.add_argument("--no-sandbox")
+        _options.add_argument("--window-size=1920,1080")
+        _options.add_argument('--disable-dev-shm-usage')
+        driver = webdriver.Chrome(options=_options,
+                                  executable_path=_driver_path,
+                                  service_log_path=f'/tmp/{driver_name}.log')
+        return driver
+    elif driver_name == WebDriverType.FIREFOX:
+        _driver_path = _get_driver_path(driver_name)
+        _options = _FirefoxOptions()
+        _options.headless = run_headless
+        driver = webdriver.Firefox(options=_options,
+                                   executable_path=_driver_path,
+                                   service_log_path=f'/tmp/{driver_name}.log')
+        return driver
+    else:
+        raise ValueError('driver_name is required')
+
+
 class AutomatedWebDriver():
-    def __init__(self, url: str, run_headless: bool = True, explicit_wait_time: int = 60, implicit_wait_time: int = 10):
-        """Initializes the web driver class to make requests to the Ubiquiti cloud frontend
-        
+    def __init__(self,
+                 url: str,
+                 driver_name: WebDriverType,
+                 run_headless: bool = True,
+                 explicit_wait_time: int = 60,
+                 implicit_wait_time: int = 10):
+        """
+        Initializes the web driver class to make requests to the Ubiquiti
+        cloud frontend
+
         Arguments:
             url {str} -- url to visit
-        
+            driver_name {WebDriverType} -- type of web driver to use
+            (currently supports firefox and chrome)
+
         Keyword Arguments:
-            run_headless {bool} -- Sets whether the browser should run headlessly (default: True)
-            explicit_wait_time {int} -- wait maximum of X time for condition to be true, this is used to find 
-            certain elements that might take a long time to load (default: {60})
-            implicit_wait_time {int} -- wait maximum of X time for an element to be found (default: {10})
+            run_headless {bool} -- Sets whether the browser should run
+            headlessly (default: True)
+            explicit_wait_time {int} -- wait maximum of X time for condition
+            to be true, this is used to find certain elements that might take
+            a long time to load (default: {60})
+            implicit_wait_time {int} -- wait maximum of X time for an element
+            to be found (default: {10})
         """
-        self.options = Options()
-        self.options.headless = run_headless
-        self.driver = webdriver.Firefox(options=self.options, executable_path=_os.path.join(_os.path.abspath(
-            _os.path.dirname(__file__)), '../../bin/geckodriver'), service_log_path='/tmp/geckodriver.log')
+        self.driver = _initialize_driver(driver_name, run_headless)
         self.wait = WebDriverWait(self.driver, explicit_wait_time)
         self.url = url
         self.driver.implicitly_wait(implicit_wait_time)
@@ -57,9 +110,10 @@ class AutomatedWebDriver():
                 cookies = pickle.load(open(_cookie_path, "rb"))
                 for cookie in cookies:
                     self.driver.add_cookie(cookie)
-                # Refresh the page so that the site gets loaded with the added cookies
+                # Refresh the page so that the site gets loaded with
+                # the added cookies
                 self.driver.refresh()
-            except:
+            except BaseException:
                 raise
         else:
             try:
@@ -83,20 +137,23 @@ class AutomatedWebDriver():
 
                 pickle.dump(self.driver.get_cookies(),
                             open(_cookie_path, "wb"))
-            except:
+            except BaseException:
                 raise
 
         try:
             self.wait.until(EC.title_contains("UniFi Cloud Access Portal"))
-            # stop the execution of the program so that the cloud interface can load the values
+            # stop the execution of the program so that the cloud
+            # interface can load the values
             time.sleep(10)
 
-            pickle.dump(self.driver.get_cookies(), open(
-                _cookie_path, "wb"))  # dump the new cookies
+            pickle.dump(self.driver.get_cookies(),
+                        open(_cookie_path, "wb"))  # dump the new cookies
 
-            incentro_element_clients = self.driver.find_element_by_xpath(
-                "//td[@class='controllerClients visible--mdUp ng-binding']").text
+            number_of_clients = self.driver.find_element_by_xpath(
+                "//td[@class='controllerClients visible--mdUp ng-binding']"
+            ).text
             self.driver.quit()
-            return(incentro_element_clients)
-        except:
+            print(number_of_clients)
+            return (number_of_clients)
+        except BaseException:
             raise
