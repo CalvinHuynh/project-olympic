@@ -1,9 +1,13 @@
-# Project project
+# Project Olympic
+This is an API that periodically looks up the number of clients that are currently connected to the network. It also retrieves the current weather and the weather forecast from [OpenWeatherMap](https://openweathermap.org/).
+
+## Technologies
 Exploratory project to experiment with unfamiliar technologies such as:
 * Docker (and Docker-compose)
 * Python
 * Flask web framework (and other extensions extending Flask)
-* Peewee ORM.
+* Peewee ORM
+* Google Cloud (Cloud SQL and Compute Engine)
 
 ## Requirement
 * Python 3.3 or higher
