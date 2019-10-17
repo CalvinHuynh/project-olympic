@@ -29,7 +29,7 @@ def get_weather_forecast():
     _weather_service.get_weather_forecast_5d_3h(_weather_service)
 
 
-@bg_scheduler.scheduled_job('cron', minute='*')
+@bg_scheduler.scheduled_job('cron', minute='*/10')
 def get_clients():
     from api.dto import CreateDataSourceDataDto
     web_driver = AutomatedWebDriver(UNIFI_ADDRESS, WebDriverType.FIREFOX)
