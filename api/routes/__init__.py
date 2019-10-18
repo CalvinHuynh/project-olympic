@@ -3,7 +3,7 @@ from flask_restplus import Api
 from loginpass import create_flask_blueprint, Google, GitHub
 
 from api.routes.data_source import api as data_source_api
-from api.routes.oauth import api as oauth_api, handle_authorize
+from api.routes.login import api as login_api, handle_authorize
 from api.routes.user import api as user_api
 # from api.routes.assets import api as assets_api
 from api.routes.index import api as index_api
@@ -42,7 +42,7 @@ api = Api(blueprint,
 
 api.add_namespace(data_source_api)
 api.add_namespace(user_api)
-api.add_namespace(oauth_api)
+api.add_namespace(login_api)
 api.add_namespace(data_source_data_api)
 # api.add_namespace(assets_api)
 

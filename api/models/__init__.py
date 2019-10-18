@@ -12,8 +12,8 @@ def create_tables(database: MySQLDatabase, models):
             database.create_tables(models, safe=True)
     else:
         raise ValueError(
-            "Please provide a database class that is an instance of MySQLDatabase"
-        )
+            "Please provide a database class that is an instance of \
+                MySQLDatabase")
 
 
 def _seed():
@@ -32,7 +32,8 @@ def _seed():
         defaults={
             'source': 'system_scheduled_task',
             'description':
-            'A data source that is used to send the result from the scheduled task',
+            'A data source that is used to send the result from the scheduled \
+                task',
             'user': user[0].id
         })
 

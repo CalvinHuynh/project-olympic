@@ -32,8 +32,9 @@ class DataSourceTokenService():
         try:
             return DataSourceToken.get_by_id(id)
         except DoesNotExist:
-            raise ValueError(HTTPStatus.NOT_FOUND,
-                             'Token with id {} does not exist'.format(id))
+            raise ValueError(
+                HTTPStatus.NOT_FOUND,
+                'Token with id {} does not exist'.format(id))
 
     def create_token_for_data_source(self, data_source_id: int, user_id: int):
         """Creates a JWT for an data source

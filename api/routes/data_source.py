@@ -45,7 +45,6 @@ class AllDataSourcesResources(Resource):
     # TODO: implement actual usage of docs according to
     # https://flask-restplus.readthedocs.io/en/stable/swagger.html
     @jwt_required_extended
-    # @api.marshal_list_with({object}) # marshal is able to format the responses
     def get(self):
         """Fetches all data sources"""
         try:

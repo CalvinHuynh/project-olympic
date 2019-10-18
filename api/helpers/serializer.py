@@ -55,7 +55,8 @@ def to_rfc3339_datetime(when: str = 'now', obj_to_convert: datetime = None):
         return obj_to_convert.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
     else:
         raise ValueError(
-            "When parameter can only accept the keyword 'now' or given datetime object is not of type datetime"
+            "When parameter can only accept the keyword 'now' or given \
+                datetime object is not of type datetime"
         )
 
 
