@@ -1,15 +1,23 @@
+import sys
+
 from flask import (Response, make_response, redirect, render_template)
 from flask_jwt_extended import create_access_token
 from flask_restplus import Namespace, Resource
-from loginpass import GitHub, Google
+from loginpass import __all__ as _LOGINPASS_OAUTH_BACKENDS
 from playhouse.shortcuts import dict_to_model, model_to_dict
 
 from api.helpers import ErrorObject, to_utc_datetime
 from api.models import User
 from api.services import UserService
+from api.settings import ALLOWED_OAUTH_CLIENTS as _ALLOWED_OAUTH_CLIENTS
 
 api = Namespace('auth', description="Auth related operations")
-SUPPORTED_OAUTH_PROVIDERS = [Google, GitHub]
+_CLIENTS = [
+    i for i in _LOGINPASS_OAUTH_BACKENDS if i.lower() in _ALLOWED_OAUTH_CLIENTS
+]
+SUPPORTED_OAUTH_PROVIDERS = []
+for client in _CLIENTS:
+    SUPPORTED_OAUTH_PROVIDERS.append(getattr(sys.modules['loginpass'], client))
 
 user_service = UserService
 
@@ -40,10 +48,6 @@ def handle_authorize(remote, token, user_info):
         success_response.set_cookie('jwt', access_token)
 
         return success_response
-        # return jsonify(
-        #     SuccessObject.create_response(
-        #         UserService, HTTPStatus.OK, {"jwt": access_token})
-        # )
     except Exception as err:
         return ErrorObject.create_response(UserService, err.args[0],
                                            err.args[1])
@@ -53,12 +57,12 @@ def handle_authorize(remote, token, user_info):
 class SetupLoginRoutes(Resource):
     def get(self):
         """Retrieves login providers"""
-        tpl = '<a href="/{}/login"><button type="button">{}</button></a><br/><br/>'
+        tpl = '<a href="/{}/login"><button type="button">{}</button>\
+            </a><br/><br/>'
         lis = [
             tpl.format(b.OAUTH_NAME, b.OAUTH_NAME)
             for b in SUPPORTED_OAUTH_PROVIDERS
         ]
-        print(lis)
         resp = Response(
             render_template('login.html',
                             SUPPORTED_OAUTH_PROVIDERS='<ul>{}</ul>'.format(

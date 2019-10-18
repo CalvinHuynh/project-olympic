@@ -12,6 +12,22 @@ def GET_PATH():
     return _os.path.dirname(_os.path.abspath(__file__))
 
 
+def _split_string(input_to_split: str, delimiter: str = ','):
+    """Split a given input string by given delimiter
+
+    Arguments:
+        input_to_split {str} -- String to split
+
+    Keyword Arguments:
+        delimiter {str} -- Delimiter to use (default: {','})
+
+    Returns:
+        {list} -- List of splitted strings
+    """
+    splitted_string = input_to_split.lower().replace(' ', '').split(delimiter)
+    return splitted_string
+
+
 FLASK_APP_NAME = _os.getenv("FLASK_APP_NAME")
 FLASK_ENV = _os.getenv("FLASK_ENV")
 FLASK_RUN_HOST = _os.getenv("FLASK_RUN_HOST")
@@ -24,6 +40,8 @@ NUMBER_OF_BACKGROUND_WORKERS = _os.getenv("NUMBER_OF_BACKGROUND_WORKERS")
 JWT_SECRET_KEY = _os.getenv("JWT_SECRET_KEY")
 
 SWAGGER_DOC_ENDPOINT = _os.getenv("SWAGGER_DOC_ENDPOINT")
+
+ALLOWED_OAUTH_CLIENTS = _split_string(_os.getenv('ALLOWED_OAUTH_CLIENTS'))
 
 GITHUB_CLIENT_ID = _os.getenv("GITHUB_CLIENT_ID")
 GITHUB_CLIENT_SECRET = _os.getenv("GITHUB_CLIENT_SECRET")
