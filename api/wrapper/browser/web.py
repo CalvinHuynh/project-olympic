@@ -153,7 +153,6 @@ class AutomatedWebDriver():
                 "//td[@class='controllerClients visible--mdUp ng-binding']"
             ).text
             self.driver.quit()
-            print(number_of_clients)
             return (number_of_clients)
         except BaseException:
             raise

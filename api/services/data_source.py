@@ -1,6 +1,6 @@
 from http import HTTPStatus
 
-from peewee import DoesNotExist
+from peewee import DoesNotExist, IntegrityError
 from playhouse.shortcuts import model_to_dict
 
 from api.dto import CreateDataSourceDto
@@ -61,7 +61,7 @@ class DataSourceService():
         result = None
         # try to lookup the user
         try:
-            if create_data_source_dto.user:
+            if hasattr(create_data_source_dto, 'user'):
                 if create_data_source_dto.user.id:
                     result = _user_service.get_user_by_id(
                         self, create_data_source_dto.user.id)
@@ -85,6 +85,12 @@ class DataSourceService():
                         description=create_data_source_dto.description,
                         source=create_data_source_dto.source,
                         user=result))
+
+            except IntegrityError:
+                raise IntegrityError(
+                    HTTPStatus.CONFLICT,
+                    f'Data source with name \"{create_data_source_dto.source}\"'
+                    f' already exists')
             except Exception:
                 raise ValueError(HTTPStatus.INTERNAL_SERVER_ERROR,
                                  "Unable to create data source")

@@ -23,15 +23,16 @@ user_dto = api.inherit(
     })
 
 create_data_source_dto = api.model(
-    'CreateDataSource', {
+    'CreateDataSource',
+    {
         'source':
         fields.String(description="description of the data source",
                       example="cronjob @ localhost"),
         'description':
         fields.String(description="Description of the data source",
                       example="Running on localhost"),
-        'user':
-        fields.Nested(user_dto)
+        # 'user':
+        # fields.Nested(user_dto)
     })
 
 # TODO: Add DI
