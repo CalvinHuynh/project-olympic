@@ -52,7 +52,7 @@ class AllDataSourcesResources(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _data_source_service.get_all_data_sources(self)))
+                    _data_source_service.get_all_data_sources(self), True))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
 

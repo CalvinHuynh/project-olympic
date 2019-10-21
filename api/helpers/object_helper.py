@@ -27,5 +27,15 @@ class SuccessObject:
         SuccessObject -- Object containg the data when the response is
         successful
     """
-    def create_response(self, status_code, data: object):
-        return {"apiVersion": api_version, "data": data}
+    def create_response(self,
+                        status_code,
+                        data: object,
+                        return_count: bool = False):
+        response = {
+            "apiVersion": api_version,
+            "data": data
+        }
+
+        if return_count:
+            response['count'] = len(data)
+        return response

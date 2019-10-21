@@ -30,7 +30,7 @@ class DataResources(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _data_source_data_service.get_all_data(self)))
+                    _data_source_data_service.get_all_data(self), True))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
 
@@ -78,6 +78,6 @@ class WeatherResources(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _weather_service.retrieve_all_weather_data(self)))
+                    _weather_service.retrieve_all_weather_data(self), True))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
