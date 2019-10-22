@@ -21,3 +21,7 @@ Exploratory project to experiment with unfamiliar technologies such as:
   * Optionally change the ports in the `docker-compose.yml` file.
 * Start the docker containers by running the following command `$ docker-compose up`
 * Go to `localhost:${PORT_NUMBER}` to access the API.
+
+## Formatting and Linting
+In this project [yapf](https://github.com/google/yapf) is used to format the code.  
+For linting [flake8](https://gitlab.com/pycqa/flake8) is used. Before commiting, please ensure that the code base contains no linting errors. To do so, run the following command `$ flake8` at the root of the project.
