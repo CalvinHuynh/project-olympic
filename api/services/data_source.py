@@ -11,6 +11,24 @@ from .user import UserService as _UserService
 _user_service = _UserService
 
 
+def _get_user(create_data_source_dto: CreateDataSourceDto, user_id: int,
+              username: str):
+    if hasattr(create_data_source_dto, 'user'):
+        if create_data_source_dto.user.id:
+            return _user_service.get_user_by_id(_user_service,
+                                                create_data_source_dto.user.id)
+        elif create_data_source_dto.user.username:
+            return _user_service.get_user_by_username(
+                _user_service, create_data_source_dto.user.username)
+        else:
+            print("Skipping as user has no fields")
+            pass
+    elif user_id:
+        return _user_service.get_user_by_id(_user_service, user_id)
+    else:
+        return _user_service.get_user_by_username(_user_service, username)
+
+
 class DataSourceService():
     def get_all_data_sources(self):
         """Retrieves all the data sources
@@ -61,20 +79,7 @@ class DataSourceService():
         result = None
         # try to lookup the user
         try:
-            if hasattr(create_data_source_dto, 'user'):
-                if create_data_source_dto.user.id:
-                    result = _user_service.get_user_by_id(
-                        self, create_data_source_dto.user.id)
-                elif create_data_source_dto.user.username:
-                    result = _user_service.get_user_by_username(
-                        self, create_data_source_dto.user.username)
-                else:
-                    print("Skipping as user has no fields")
-                    pass
-            elif user_id:
-                result = _user_service.get_user_by_id(self, user_id)
-            else:
-                result = _user_service.get_user_by_username(self, username)
+            result = _get_user(create_data_source_dto, user_id, username)
         except Exception:
             raise
 
@@ -89,7 +94,8 @@ class DataSourceService():
             except IntegrityError:
                 raise IntegrityError(
                     HTTPStatus.CONFLICT,
-                    f'Data source with name \"{create_data_source_dto.source}\"'
+                    f'Data source with name'
+                    f' \"{create_data_source_dto.source}\"'
                     f' already exists')
             except Exception:
                 raise ValueError(HTTPStatus.INTERNAL_SERVER_ERROR,
