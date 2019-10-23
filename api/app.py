@@ -1,10 +1,10 @@
-from api.jobs import bg_scheduler
 from http import HTTPStatus
 
 from authlib.flask.client import OAuth
 from flask import Flask
 from flask_jwt_extended import JWTManager
 
+from api.jobs import bg_scheduler
 from api.models import initialize_database
 from api.routes import blueprint as api_v1
 from api.routes import blueprint_index as index
@@ -23,6 +23,7 @@ app.config['GITHUB_CLIENT_ID'] = GITHUB_CLIENT_ID
 app.config['GITHUB_CLIENT_SECRET'] = GITHUB_CLIENT_SECRET
 app.config['GOOGLE_CLIENT_ID'] = GOOGLE_CLIENT_ID
 app.config['GOOGLE_CLIENT_SECRET'] = GOOGLE_CLIENT_SECRET
+app.config['PROPAGATE_EXCEPTIONS'] = True
 
 # Initializes oauth
 oauth = OAuth(app)

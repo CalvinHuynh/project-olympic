@@ -1,12 +1,9 @@
 from functools import wraps
 from http import HTTPStatus
 
-from flask_jwt_extended import (get_jwt_identity, jwt_required,
-                                verify_jwt_in_request)
+from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
 
 from .object_helper import ErrorObject
-
-original_jwt_required = jwt_required
 
 
 def _token_usage_counter_add(token_id: int):
