@@ -41,7 +41,7 @@ _data_source_token_service = _DataSourceTokenService
 
 
 @api.doc(security='JWT')
-@api.route('/')
+@api.route('')
 class AllDataSourcesResources(Resource):
     # TODO: implement actual usage of docs according to
     # https://flask-restplus.readthedocs.io/en/stable/swagger.html

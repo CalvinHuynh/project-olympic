@@ -22,7 +22,7 @@ username_dto = api.model(
 
 @jwt_required_extended
 @api.doc(security='JWT')
-@api.route('/')
+@api.route('')
 class UserResource(Resource):
     @api.expect(username_dto)
     @is_user_check

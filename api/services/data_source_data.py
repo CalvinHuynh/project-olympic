@@ -9,6 +9,7 @@ from api.models import DataSource, DataSourceData
 
 from .data_source import DataSourceService as _DataSourceService
 
+_ALLOWED_ORDER_BY_VALUES = ['asc', 'desc']
 _data_source_service = _DataSourceService
 
 
@@ -31,7 +32,7 @@ class DataSourceDataService():
             raise ValueError(HTTPStatus.NOT_FOUND,
                              'Data with id {} does not exist'.format(id))
 
-    def get_all_data(self):
+    def get_all_data(self, limit: int = 20, order_by: str = 'desc'):
         """Retrieves all data
 
         Returns:
@@ -39,7 +40,28 @@ class DataSourceDataService():
         """
         all_data_array = []
 
-        for data in DataSourceData.select():
+        query = DataSourceData.select()
+
+        # Build the query based on the query params
+        if order_by.lower() in _ALLOWED_ORDER_BY_VALUES:
+            if order_by.lower() == _ALLOWED_ORDER_BY_VALUES[0]:
+                query = query.order_by(DataSourceData.id.asc())
+            else:
+                query = query.order_by(DataSourceData.id.desc())
+        else:
+            raise ValueError(
+                HTTPStatus.BAD_REQUEST,
+                'Invalid order_by value, only "asc" or "desc" are allowed')
+        try:
+            casted_limit = int(limit)
+        except ValueError:
+            raise ValueError(
+                HTTPStatus.BAD_REQUEST,
+                'Invalid limit value, only values of type <int> are allowed')
+
+        query = query.limit(casted_limit)
+
+        for data in query:
             all_data_array.append(model_to_dict(data))
 
         return all_data_array

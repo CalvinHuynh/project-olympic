@@ -1,6 +1,6 @@
 from http import HTTPStatus
 
-from flask import jsonify
+from flask import jsonify, request
 from flask_jwt_extended import get_jwt_identity
 from flask_restplus import Namespace, Resource, fields
 
@@ -21,16 +21,23 @@ _weather_service = _WeatherService
 
 
 @api.doc(security='JWT')
-@api.route('/')
+@api.route('')
 class DataResources(Resource):
     @jwt_required_extended
+    @api.param('limit', description='limits the result, accepted type: {int}')
+    @api.param('order_by',
+               description='orders the result by primary key,\
+               allowed keywords are ( asc | desc )')
     def get(self):
         """Fetches all data points"""
         try:
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _data_source_data_service.get_all_data(self), True))
+                    _data_source_data_service.get_all_data(
+                        self,
+                        limit=request.args.get('limit'),
+                        order_by=request.args.get('order_by')), True))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
 
