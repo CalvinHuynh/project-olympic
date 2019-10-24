@@ -19,14 +19,21 @@ def jwt_required_extended(fn):
     """
     @wraps(fn)
     def wrapper(*args, **kwargs):
-        verify_jwt_in_request()
-        token = get_jwt_identity()
-        if token['is_user_token'] is False:
-            from api.services.data_source_token import DataSourceTokenService
-            if DataSourceTokenService.check_if_token_is_active(
-                    DataSourceTokenService, token['data_source_token']['id']):
-                _token_usage_counter_add(token['data_source_token']['id'])
-        return fn(*args, **kwargs)
+        try:
+            verify_jwt_in_request()
+            token = get_jwt_identity()
+            if token['is_user_token'] is False:
+                from api.services.data_source_token import \
+                    DataSourceTokenService
+                if DataSourceTokenService.check_if_token_is_active(
+                        DataSourceTokenService,
+                        token['data_source_token']['id']):
+                    _token_usage_counter_add(token['data_source_token']['id'])
+            return fn(*args, **kwargs)
+        except IndexError:
+            return ErrorObject.create_response(
+                ErrorObject, HTTPStatus.FORBIDDEN,
+                'No token provided in the format of "Bearer <JWT>"')
 
     return wrapper
 
