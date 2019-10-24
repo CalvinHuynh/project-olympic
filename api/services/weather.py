@@ -8,6 +8,7 @@ from api.models import Weather, Forecast
 from api.settings import OPEN_WEATHER_API_KEY
 from api.wrapper import OpenWeatherClient
 
+_ALLOWED_ORDER_BY_VALUES = ['asc', 'desc']
 _client = OpenWeatherClient(OPEN_WEATHER_API_KEY, 'Amsterdam', 'NL')
 
 
@@ -36,15 +37,55 @@ class WeatherService():
         except BaseException:
             raise
 
-    def retrieve_all_weather_data(self):
+    def retrieve_all_weather_data(self, limit: int, order_by: str,
+                                  forecast_type: str):
         """Retrieves all weather data
+
+        Arguments:
+            limit {int} -- limits the number of results
+            order_by {str} -- order the result by id
+            forecast_type {str} -- forecast type
 
         Returns:
             WeatherData -- An array of all weather data
         """
         all_data_array = []
+
+        query = Weather.select()
+
+        # Set defaults
+        if not limit:
+            limit = 20
+        if not order_by:
+            order_by = 'desc'
+
+        if order_by.lower() in _ALLOWED_ORDER_BY_VALUES:
+            if order_by.lower() == _ALLOWED_ORDER_BY_VALUES[0]:
+                query = query.order_by(Weather.id.asc())
+            else:
+                query = query.order_by(Weather.id.desc())
+        else:
+            raise ValueError(
+                HTTPStatus.BAD_REQUEST,
+                'Invalid order_by value, only "asc" or "desc" are allowed')
+
         try:
-            for result in Weather.select():
+            casted_limit = int(limit)
+        except ValueError:
+            raise ValueError(
+                HTTPStatus.BAD_REQUEST,
+                'Invalid limit value, only values of type <int> are allowed')
+
+        query = query.limit(casted_limit)
+
+        if forecast_type == 'hourly':
+            query = query.where(Weather.weather_forecast_type == 'HOURLY')
+        elif forecast_type == 'weekly':
+            query = query.where(
+                Weather.weather_forecast_type == 'FIVE_DAYS_THREE_HOUR')
+
+        try:
+            for result in query:
                 result.data = json.loads(result.data)  # escapes json data
                 all_data_array.append(model_to_dict(result))
             return all_data_array

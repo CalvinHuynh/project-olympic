@@ -32,15 +32,23 @@ class DataSourceDataService():
             raise ValueError(HTTPStatus.NOT_FOUND,
                              'Data with id {} does not exist'.format(id))
 
-    def get_all_data(self, limit: int = 20, order_by: str = 'desc'):
+    def get_all_data(self, limit: int, order_by: str):
         """Retrieves all data
+
+        Arguments:
+            limit {int} -- limits the number of results
+            order_by {str} -- orders the result by id
 
         Returns:
             DataSourceData -- An array of all data source data will be returned
         """
         all_data_array = []
-
         query = DataSourceData.select()
+        # Set defaults
+        if not limit:
+            limit = 20
+        if not order_by:
+            order_by = 'desc'
 
         # Build the query based on the query params
         if order_by.lower() in _ALLOWED_ORDER_BY_VALUES:

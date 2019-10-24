@@ -24,10 +24,15 @@ _weather_service = _WeatherService
 @api.route('')
 class DataResources(Resource):
     @jwt_required_extended
-    @api.param('limit', description='limits the result, accepted type: {int}')
+    @api.param('limit',
+               type=int,
+               default=20,
+               description='Limits the number of result to return')
     @api.param('order_by',
-               description='orders the result by primary key,\
-               allowed keywords are ( asc | desc )')
+               type=str,
+               default='desc',
+               enum=('desc', 'asc'),
+               description='orders the result by primary key')
     def get(self):
         """Fetches all data points"""
         try:
@@ -79,12 +84,31 @@ class SincleDataResources(Resource):
 @api.route('/weather')
 class WeatherResources(Resource):
     @jwt_required_extended
+    @api.param('limit',
+               type=int,
+               default=20,
+               description='Limits the number of results')
+    @api.param('order_by',
+               type=str,
+               default='desc',
+               enum=('desc', 'asc'),
+               description='Orders the result by id')
+    @api.param('forecast_type',
+               type=str,
+               default='all',
+               enum=('hourly', 'weekly', 'all'),
+               help='Filters result by type.')
     def get(self):
         """Fetches all weather data"""
         try:
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _weather_service.retrieve_all_weather_data(self), True))
+                    _weather_service.retrieve_all_weather_data(
+                        self,
+                        limit=request.args.get('limit'),
+                        order_by=request.args.get('order_by'),
+                        forecast_type=request.args.get('forecast_type')),
+                    True))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
