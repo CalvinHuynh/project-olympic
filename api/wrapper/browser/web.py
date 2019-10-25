@@ -95,7 +95,8 @@ class AutomatedWebDriver():
             implicit_wait_time {int} -- wait maximum of X time for an element
             to be found (default: {10})
         """
-        self.driver = _initialize_driver(driver_name, run_headless)
+        self.driver = _initialize_driver(driver_name,
+                                         run_headless=run_headless)
         self.wait = WebDriverWait(self.driver, explicit_wait_time)
         self.url = url
         self.driver.implicitly_wait(implicit_wait_time)
