@@ -16,7 +16,7 @@ _user_service = _UserService
 _data_source_token_service = _DataSourceTokenService
 
 username_dto = api.model(
-    'User\'s username',
+    'SetUsernameDto',
     {'username': fields.String(description="Username", example="hunter2")})
 
 

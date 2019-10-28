@@ -23,7 +23,7 @@ user_dto = api.inherit(
     })
 
 create_data_source_dto = api.model(
-    'CreateDataSource',
+    'CreateDataSourceDto',
     {
         'source':
         fields.String(description="description of the data source",
