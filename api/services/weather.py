@@ -37,6 +37,7 @@ class WeatherService():
         except BaseException:
             raise
 
+    # flake8: noqa: C901
     def retrieve_all_weather_data(self, limit: int, order_by: str,
                                   forecast_type: str):
         """Retrieves all weather data
