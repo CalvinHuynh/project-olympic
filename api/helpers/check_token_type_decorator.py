@@ -23,7 +23,7 @@ def jwt_required_extended(fn):
             verify_jwt_in_request()
         except IndexError:
             return ErrorObject.create_response(
-                ErrorObject, HTTPStatus.FORBIDDEN,
+                ErrorObject, HTTPStatus.UNAUTHORIZED,
                 'No token provided in the format of "Bearer <JWT>"')
         token = get_jwt_identity()
         if token['is_user_token'] is False:
