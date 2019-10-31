@@ -9,7 +9,8 @@ from playhouse.shortcuts import dict_to_model, model_to_dict
 from api.helpers import ErrorObject, to_utc_datetime
 from api.models import User
 from api.services import UserService
-from api.settings import ALLOWED_OAUTH_CLIENTS as _ALLOWED_OAUTH_CLIENTS
+from api.settings import (ALLOWED_OAUTH_CLIENTS as _ALLOWED_OAUTH_CLIENTS,
+                          FLASK_APP_NAME as _FLASK_APP_NAME)
 
 api = Namespace('auth', description="Auth related operations")
 _CLIENTS = [
@@ -57,16 +58,15 @@ def handle_authorize(remote, token, user_info):
 class SetupLoginRoutes(Resource):
     def get(self):
         """Retrieves login providers"""
-        tpl = '<a href="/{}/login"><button type="button">{}</button>\
-            </a><br/><br/>'
-        lis = [
-            tpl.format(b.OAUTH_NAME, b.OAUTH_NAME)
-            for b in SUPPORTED_OAUTH_PROVIDERS
-        ]
+
+        providers = []
+        for provider in SUPPORTED_OAUTH_PROVIDERS:
+            providers.append(provider.OAUTH_NAME)
+        print(providers)
         resp = Response(
             render_template('login.html',
-                            SUPPORTED_OAUTH_PROVIDERS='<ul>{}</ul>'.format(
-                                ''.join(lis))))
+                            SUPPORTED_OAUTH_PROVIDERS=providers,
+                            FLASK_TITLE=_FLASK_APP_NAME))
         return resp
 
 

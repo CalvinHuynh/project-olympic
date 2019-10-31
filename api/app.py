@@ -14,7 +14,9 @@ from api.settings import (FLASK_APP_NAME, FLASK_SECRET_KEY, GITHUB_CLIENT_ID,
 
 initialize_database()
 
-app = Flask(FLASK_APP_NAME if FLASK_APP_NAME else __name__)
+app = Flask(FLASK_APP_NAME if FLASK_APP_NAME else __name__,
+            static_url_path='',
+            static_folder='api/static')
 
 app.config['RESTPLUS_VALIDATE'] = True
 app.config['SECRET_KEY'] = FLASK_SECRET_KEY

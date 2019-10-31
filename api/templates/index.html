@@ -1,35 +1,20 @@
-<h1 style="font-family: sans-serif; text-align: center; margin-top: 10rem;">
+{% extends "layout.html" %}
+{% block content %}
+<h1 style="font-family: sans-serif; text-align: center">
     Welcome to the {{ FLASK_APP_NAME }} API
     <br>
     <br>
     <a href="/api/v1/docs/">
-        <button type="button" style="
-            font-size: 2rem;
-            padding: 10px 20px;
-            border-radius: 5px;
-            color: white;
-            background-color: #89bf04;
-            box-shadow: 0px 1px 2px 1px #00000021;
-            border: 0px;
-            cursor: pointer;
-        ">
+        <button type="button" class="swagger-button">
             Go to Swagger API doc
         </button>
     </a>
     <br>
     <br>
     <a href="/api/v1/auth/">
-        <button type="button" style="
-            font-size: 2rem;
-            padding: 10px 20px;
-            border-radius: 5px;
-            color: white;
-            background-color: gray;
-            box-shadow: 0px 1px 2px 1px #00000021;
-            border: 0px;
-            cursor: pointer;
-        ">
+        <button type="button" class="login-button ">
             Go to Login
         </button>
     </a>
 </h1>
+{% endblock %}
