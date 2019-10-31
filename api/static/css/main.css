@@ -1,6 +1,12 @@
 /* Google Identity and Google+ Sign in buttons
  https://developers.google.com/+/branding-guidelines */
 
+.container {
+    text-align: center;
+    margin-top: 10rem;
+    font-family: 'Roboto', arial, sans-serif;
+}
+
 .button {
     height: 40px;
     border-width: 0;
@@ -86,7 +92,6 @@ body {
 body {
     background-color: #f0f0f0;
     display: flex;
-    margin-top: 10rem;
     justify-content: center;
 }
 

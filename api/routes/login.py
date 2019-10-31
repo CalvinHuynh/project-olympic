@@ -62,7 +62,6 @@ class SetupLoginRoutes(Resource):
         providers = []
         for provider in SUPPORTED_OAUTH_PROVIDERS:
             providers.append(provider.OAUTH_NAME)
-        print(providers)
         resp = Response(
             render_template('login.html',
                             SUPPORTED_OAUTH_PROVIDERS=providers,

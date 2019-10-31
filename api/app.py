@@ -8,15 +8,16 @@ from api.jobs import bg_scheduler
 from api.models import initialize_database
 from api.routes import blueprint as api_v1
 from api.routes import blueprint_index as index
-from api.settings import (FLASK_APP_NAME, FLASK_SECRET_KEY, GITHUB_CLIENT_ID,
-                          GITHUB_CLIENT_SECRET, GOOGLE_CLIENT_ID,
-                          GOOGLE_CLIENT_SECRET, JWT_SECRET_KEY)
+from api.settings import (FLASK_APP_NAME, FLASK_SECRET_KEY, GET_PATH,
+                          GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET,
+                          GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
+                          JWT_SECRET_KEY)
 
 initialize_database()
 
 app = Flask(FLASK_APP_NAME if FLASK_APP_NAME else __name__,
             static_url_path='',
-            static_folder='./static')
+            static_folder=GET_PATH() + '/static')
 
 app.config['RESTPLUS_VALIDATE'] = True
 app.config['SECRET_KEY'] = FLASK_SECRET_KEY
