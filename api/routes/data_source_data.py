@@ -28,6 +28,13 @@ class DataResources(Resource):
                type=int,
                default=20,
                description='Limits the number of result to return')
+    @api.param('start_date',
+               type=str,
+               description='Start date in YYYY-mm-dd format, e.g: "2019-12-31"'
+               )
+    @api.param('end_date',
+               type=str,
+               description='End date in YYYY-mm-dd format, e.g: "2019-12-31"')
     @api.param('order_by',
                type=str,
                default='desc',
@@ -42,6 +49,8 @@ class DataResources(Resource):
                     _data_source_data_service.get_all_data(
                         self,
                         limit=request.args.get('limit'),
+                        start_date=request.args.get('start_date'),
+                        end_date=request.args.get('end_date'),
                         order_by=request.args.get('order_by')), True))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
@@ -88,6 +97,13 @@ class WeatherResources(Resource):
                type=int,
                default=20,
                description='Limits the number of results')
+    @api.param('start_date',
+               type=str,
+               description='Start date in YYYY-mm-dd format, e.g: "2019-12-31"'
+               )
+    @api.param('end_date',
+               type=str,
+               description='End date in YYYY-mm-dd format, e.g: "2019-12-31"')
     @api.param('order_by',
                type=str,
                default='desc',
@@ -107,6 +123,8 @@ class WeatherResources(Resource):
                     _weather_service.retrieve_all_weather_data(
                         self,
                         limit=request.args.get('limit'),
+                        start_date=request.args.get('start_date'),
+                        end_date=request.args.get('end_date'),
                         order_by=request.args.get('order_by'),
                         forecast_type=request.args.get('forecast_type')),
                     True))

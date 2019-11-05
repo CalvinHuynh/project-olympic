@@ -32,11 +32,14 @@ class DataSourceDataService():
             raise ValueError(HTTPStatus.NOT_FOUND,
                              'Data with id {} does not exist'.format(id))
 
-    def get_all_data(self, limit: int, order_by: str):
+    def get_all_data(self, limit: int, start_date: str, end_date: str,
+                     order_by: str):
         """Retrieves all data
 
         Arguments:
             limit {int} -- limits the number of results
+            start_date {str} -- start date
+            end_date {str} -- end date
             order_by {str} -- orders the result by id
 
         Returns:
@@ -49,6 +52,11 @@ class DataSourceDataService():
             limit = 20
         if not order_by:
             order_by = 'desc'
+
+        if start_date:
+            query = query.where(DataSourceData.created_date >= start_date)
+        if end_date:
+            query = query.where(DataSourceData.created_date <= end_date)
 
         # Build the query based on the query params
         if order_by.lower() in _ALLOWED_ORDER_BY_VALUES:
@@ -104,7 +112,7 @@ class DataSourceDataService():
                         data_source=dict_to_model(DataSource, data_source),
                         no_of_clients=create_data_source_data_dto.
                         no_of_clients,
-                        creation_date=to_utc_datetime()))
+                        created_date=to_utc_datetime()))
             else:
                 raise ValueError(HTTPStatus.BAD_REQUEST, 'Body is required')
         except IntegrityError:

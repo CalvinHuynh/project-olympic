@@ -38,12 +38,15 @@ class WeatherService():
             raise
 
     # flake8: noqa: C901
-    def retrieve_all_weather_data(self, limit: int, order_by: str,
+    def retrieve_all_weather_data(self, limit: int, start_date: str,
+                                  end_date: str, order_by: str,
                                   forecast_type: str):
         """Retrieves all weather data
 
         Arguments:
             limit {int} -- limits the number of results
+            start_date {str} -- start date
+            end_date {str} -- end date
             order_by {str} -- order the result by id
             forecast_type {str} -- forecast type
 
@@ -59,6 +62,11 @@ class WeatherService():
             limit = 20
         if not order_by:
             order_by = 'desc'
+
+        if start_date:
+            query = query.where(Weather.created_date >= start_date)
+        if end_date:
+            query = query.where(Weather.created_date <= end_date)
 
         if order_by.lower() in _ALLOWED_ORDER_BY_VALUES:
             if order_by.lower() == _ALLOWED_ORDER_BY_VALUES[0]:

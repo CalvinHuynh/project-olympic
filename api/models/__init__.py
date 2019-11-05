@@ -6,10 +6,32 @@ from .user import User
 from .weather import Weather, Forecast
 
 
-def create_tables(database: MySQLDatabase, models):
+def create_tables(database: MySQLDatabase, migrations: bool = False):
+    """Creates database tables
+    
+    Arguments:
+        database {MySQLDatabase} -- MySQL database connection
+    
+    Keyword Arguments:
+        migrations {bool} -- Run migrations (in this case only a rename of \
+            a column is run) (default: {False})
+    
+    Raises:
+        ValueError: Provide a MySQLDatabase class
+    """
     if isinstance(database, MySQLDatabase):
         with database:
-            database.create_tables(models, safe=True)
+            database.create_tables(Base.__subclasses__(), safe=True)
+            if migrations:
+                from playhouse.migrate import MySQLMigrator, migrate
+                migrator = MySQLMigrator(database)
+                try:
+                    migrate(
+                        migrator.rename_column('data_source_data',
+                                               'creation_date',
+                                               'created_date'))
+                except:
+                    pass
     else:
         raise ValueError(
             "Please provide a database class that is an instance of \
@@ -39,5 +61,5 @@ def _seed():
 
 
 def initialize_database():
-    create_tables(database, Base.__subclasses__())
+    create_tables(database, migrations=True)
     _seed()

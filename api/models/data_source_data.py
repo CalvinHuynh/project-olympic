@@ -9,4 +9,4 @@ class DataSourceData(Base):
     id = PrimaryKeyField()
     data_source = ForeignKeyField(DataSource, related_name='send_by')
     no_of_clients = IntegerField()
-    creation_date = DateTimeField()
+    created_date = DateTimeField()
