@@ -24,6 +24,22 @@ username_dto = api.model(
 @api.doc(security='JWT')
 @api.route('')
 class UserResource(Resource):
+    @is_user_check
+    def get(self):
+        """Retrieves the information of the logged in user"""
+        token = get_jwt_identity()
+        try:
+            return jsonify(
+                SuccessObject.create_response(
+                    self, HTTPStatus.OK,
+                    _user_service.get_user_by_id(
+                        self,
+                        token['user']['id'],
+                        True
+                    )))
+        except Exception as err:
+            return ErrorObject.create_response(self, err.args[0], err.args[1])
+
     @api.expect(username_dto)
     @is_user_check
     def post(self):

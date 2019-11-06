@@ -8,7 +8,7 @@ from api.models import DataSource, DataSourceToken, User
 
 
 class UserService():
-    def get_user_by_id(self, id: int):
+    def get_user_by_id(self, id: int, to_dict: bool = False):
         """Get user by id
 
         Arguments:
@@ -21,6 +21,8 @@ class UserService():
             User -- User object
         """
         try:
+            if to_dict:
+                return model_to_dict(User.get_by_id(id))
             return User.get_by_id(id)
         except DoesNotExist:
             raise ValueError(HTTPStatus.NOT_FOUND,

@@ -78,7 +78,7 @@ class DataSourceDataService():
         query = query.limit(casted_limit)
 
         for data in query:
-            all_data_array.append(model_to_dict(data))
+            all_data_array.append(model_to_dict(data, recurse=False))
 
         return all_data_array
 
