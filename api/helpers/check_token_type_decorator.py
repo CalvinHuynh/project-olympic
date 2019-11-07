@@ -30,8 +30,7 @@ def jwt_required_extended(fn):
             from api.services.data_source_token import \
                 DataSourceTokenService
             if DataSourceTokenService.check_if_token_is_active(
-                    DataSourceTokenService,
-                    token['data_source_token']['id']):
+                    DataSourceTokenService, token['data_source_token']['id']):
                 _token_usage_counter_add(token['data_source_token']['id'])
         return fn(*args, **kwargs)
 
@@ -57,28 +56,56 @@ def is_user_check(fn):
     return wrapper
 
 
-def token_is_active_check(fn):
-    """
-    A wrapper that checks if the provided JWT is an access token
-    """
-    @wraps(fn)
-    def wrapper(*args, **kwargs):
-        verify_jwt_in_request()
-        token = get_jwt_identity()
-        if token['is_user_token'] is False:
-            from api.services.data_source_token import DataSourceTokenService
-            _token_usage_counter_add(token['data_source_token']['id'])
-            if DataSourceTokenService.check_if_token_is_active(
-                    DataSourceTokenService,
-                    token['data_source_token']['id']) is False:
-                return ErrorObject.create_response(ErrorObject,
-                                                   HTTPStatus.FORBIDDEN,
-                                                   'Token has been revoked')
-            else:
-                return fn(*args, **kwargs)
-        else:
-            return ErrorObject.create_response(
-                ErrorObject, HTTPStatus.FORBIDDEN,
-                'Unable to access this resource with provided token')
+def check_for(argument: str):
+    """A decorator that allows the user to set what type of token to check for.
+    If the provided argument equals 'machine'. The decorator will check if the
+    token is a machine token (this means that the field 'is_user_token' must
+    be false). If it is a machine token, the decorator will check if it is
+    active.
 
-    return wrapper
+    Arguments:
+        argument {str} -- type of token to check, accepted values are 'machine'
+        or 'user'
+
+    Raises:
+        ValueError: Unsupported argument provided
+    """
+    def check(fn):
+        """
+        A wrapper that checks if the provided JWT is an user token.
+        """
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            verify_jwt_in_request()
+            token = get_jwt_identity()
+            if argument.lower() == 'machine':
+                if token['is_user_token'] is False:
+                    from api.services.data_source_token import \
+                        DataSourceTokenService
+                    _token_usage_counter_add(token['data_source_token']['id'])
+                    if DataSourceTokenService.check_if_token_is_active(
+                            DataSourceTokenService,
+                            token['data_source_token']['id']) is False:
+                        return ErrorObject.create_response(
+                            ErrorObject, HTTPStatus.FORBIDDEN,
+                            'Token has been revoked')
+                    else:
+                        return fn(*args, **kwargs)
+                else:
+                    return ErrorObject.create_response(
+                        ErrorObject, HTTPStatus.FORBIDDEN,
+                        'Unable to access this resource with provided token')
+            elif argument.lower() == 'user':
+                if token['is_user_token'] is False:
+                    _token_usage_counter_add(token['data_source_token']['id'])
+                    return ErrorObject.create_response(
+                        ErrorObject, HTTPStatus.FORBIDDEN,
+                        'Unable to access this resource with provided token')
+                else:
+                    return fn(*args, **kwargs)
+            else:
+                raise ValueError('Unsupported argument provided')
+
+        return wrapper
+
+    return check

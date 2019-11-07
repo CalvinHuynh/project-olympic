@@ -1,9 +1,10 @@
+from .base import Base, MySQLDatabase, database
 from .data_source import DataSource
 from .data_source_data import DataSourceData
 from .data_source_token import DataSourceToken
-from .base import Base, MySQLDatabase, database
+# from .role import Role
 from .user import User
-from .weather import Weather, Forecast
+from .weather import Forecast, Weather
 
 
 def create_tables(database: MySQLDatabase, migrations: bool = False):

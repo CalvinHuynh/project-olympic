@@ -5,7 +5,7 @@ from flask_restplus import Namespace, Resource, fields
 from flask_jwt_extended import get_jwt_identity
 
 from api.helpers import (ErrorObject, SuccessObject, convert_input_to_tuple,
-                         is_user_check, jwt_required_extended)
+                         jwt_required_extended, check_for)
 from api.services import (DataSourceService as _DataSourceService,
                           DataSourceTokenService as _DataSourceTokenService)
 
@@ -59,7 +59,7 @@ class AllDataSourcesResources(Resource):
     @jwt_required_extended
     @api.expect(create_data_source_dto)
     @convert_input_to_tuple
-    @is_user_check
+    @check_for("User")
     def post(self, **kwargs):
         """Creates a new data source"""
         token = get_jwt_identity()
@@ -74,24 +74,25 @@ class AllDataSourcesResources(Resource):
 
 
 @api.doc(security='JWT')
-@api.route('/<id>')
-@api.param('id', 'The identifier of the data source')
+@api.route('/<data_source_id>')
+@api.param('data_source_id', 'The identifier of the data source')
 # @api.response(404, 'Data source not found')
 class SingleDataSourceResource(Resource):
     @jwt_required_extended
-    def get(self, id):
+    def get(self, data_source_id):
         """Fetch a single data source"""
         try:
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _data_source_service.get_data_source_by_id(self, id)))
+                    _data_source_service.get_data_source_by_id(
+                        self, data_source_id)))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
 
     @jwt_required_extended
-    @is_user_check
-    def post(self, id):
+    @check_for("User")
+    def post(self, data_source_id):
         """Creates a token for data source"""
         token = get_jwt_identity()
         try:
@@ -99,6 +100,8 @@ class SingleDataSourceResource(Resource):
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
                     _data_source_token_service.create_token_for_data_source(
-                        self, data_source_id=id, user_id=token['user']['id'])))
+                        self,
+                        data_source_id=data_source_id,
+                        user_id=token['user']['id'])))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])

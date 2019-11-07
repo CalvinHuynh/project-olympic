@@ -32,9 +32,8 @@ class DataSourceTokenService():
         try:
             return DataSourceToken.get_by_id(id)
         except DoesNotExist:
-            raise ValueError(
-                HTTPStatus.NOT_FOUND,
-                'Token with id {} does not exist'.format(id))
+            raise ValueError(HTTPStatus.NOT_FOUND,
+                             'Token with id {} does not exist'.format(id))
 
     def create_token_for_data_source(self, data_source_id: int, user_id: int):
         """Creates a JWT for an data source
@@ -76,15 +75,15 @@ class DataSourceTokenService():
                 (datetime.utcnow() + relativedelta(years=1)))
             no_of_usage = 0
             try:
-                result = model_to_dict(
-                    DataSourceToken.create(
-                        user=user,
-                        data_source=data_source,
-                        created_date=created_date,
-                        last_activity_date=last_activity_date,
-                        expiry_date=expiry_date,
-                        no_of_usage=no_of_usage,
-                        is_active=True))
+                result = model_to_dict(DataSourceToken.create(
+                    user=user,
+                    data_source=data_source,
+                    created_date=created_date,
+                    last_activity_date=last_activity_date,
+                    expiry_date=expiry_date,
+                    no_of_usage=no_of_usage,
+                    is_active=True),
+                    recurse=False)
                 identity_object = {
                     "is_user_token": False,
                     "data_source_token": result
@@ -136,8 +135,8 @@ class DataSourceTokenService():
         else:
             raise
 
-    def revoke_token(self, data_source_token_id: int):
-        """Revokes token of data source
+    def admin_revoke_token(self, data_source_token_id: int):
+        """Revokes token of data source as an admin.
 
         Arguments:
             data_source_token_id {int} -- Id of data source token
@@ -148,9 +147,16 @@ class DataSourceTokenService():
         data_source_token = DataSourceTokenService.get_token_by_id(
             self, data_source_token_id)
         if data_source_token is not None:
-            data_source_token.is_active = False
-            data_source_token.deactivated_since = to_utc_datetime()
-            data_source_token.save()
-            return model_to_dict(data_source_token)
+            if data_source_token.is_active:
+                data_source_token.is_active = False
+                data_source_token.deactivated_since = to_utc_datetime()
+                data_source_token.save()
+                return model_to_dict(data_source_token, recurse=False)
+            else:
+                return_dict = model_to_dict(data_source_token, recurse=False)
+                return_dict['_extra_fields'] = {}
+                return_dict['_extra_fields']['message'] = f'Token with id '\
+                    f'{data_source_token_id} has already been deactivated.'
+                return return_dict
         else:
             raise

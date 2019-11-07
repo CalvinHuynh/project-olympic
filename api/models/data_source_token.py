@@ -1,11 +1,13 @@
-from peewee import BooleanField, DateTimeField, ForeignKeyField, IntegerField
+from peewee import (BooleanField, DateTimeField, ForeignKeyField, IntegerField,
+                    PrimaryKeyField)
 
-from .user import User
 from .base import Base
 from .data_source import DataSource
+from .user import User
 
 
 class DataSourceToken(Base):
+    id = PrimaryKeyField()
     user = ForeignKeyField(User)
     data_source = ForeignKeyField(DataSource)
     created_date = DateTimeField()

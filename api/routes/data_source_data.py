@@ -5,7 +5,7 @@ from flask_jwt_extended import get_jwt_identity
 from flask_restplus import Namespace, Resource, fields
 
 from api.helpers import (ErrorObject, SuccessObject, convert_input_to_tuple,
-                         token_is_active_check, jwt_required_extended)
+                         jwt_required_extended, check_for)
 from api.services import (DataSourceDataService as _DataSourceDataService,
                           WeatherService as _WeatherService)
 
@@ -58,7 +58,7 @@ class DataResources(Resource):
     @jwt_required_extended
     @api.expect(create_data_source_data_dto)
     @convert_input_to_tuple
-    @token_is_active_check
+    @check_for("Machine")
     def post(self, **kwargs):
         """Creates new data"""
         token = get_jwt_identity()
@@ -67,24 +67,25 @@ class DataResources(Resource):
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
                     _data_source_data_service.post_data(
-                        self, token['data_source_token']['data_source']['id'],
+                        self, token['data_source_token']['data_source'],
                         kwargs['tupled_output'])))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
 
 
 @api.doc(security='JWT')
-@api.route('/<id>')
-@api.param('id', 'The identifier of the data point')
+@api.route('/<data_id>')
+@api.param('data_id', 'The identifier of the data point')
 class SincleDataResources(Resource):
     @jwt_required_extended
-    def get(self, id):
+    def get(self, data_id):
         """Fetch a single data point"""
         try:
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _data_source_data_service.get_one_data_point(self, id)))
+                    _data_source_data_service.get_one_data_point(
+                        self, data_id)))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
 

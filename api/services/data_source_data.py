@@ -14,11 +14,11 @@ _data_source_service = _DataSourceService
 
 
 class DataSourceDataService():
-    def get_one_data_point(self, id: int):
+    def get_one_data_point(self, data_id: int):
         """Retrieves a single data point
 
         Arguments:
-            id {int} -- Id of data point
+            data_id {int} -- Id of data point
 
         Raises:
             ValueError: Data point not found with given id
@@ -27,10 +27,10 @@ class DataSourceDataService():
             DataSourceData -- An data source data object will be returned
         """
         try:
-            return model_to_dict(DataSourceData.get_by_id(id))
+            return model_to_dict(DataSourceData.get_by_id(data_id))
         except DoesNotExist:
             raise ValueError(HTTPStatus.NOT_FOUND,
-                             'Data with id {} does not exist'.format(id))
+                             'Data with id {} does not exist'.format(data_id))
 
     def get_all_data(self, limit: int, start_date: str, end_date: str,
                      order_by: str):
