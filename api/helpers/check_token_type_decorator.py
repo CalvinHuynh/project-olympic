@@ -3,7 +3,7 @@ from http import HTTPStatus
 
 from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
 
-from .object_helper import ErrorObject
+from .response_helper import ErrorObject
 
 
 def _token_usage_counter_add(token_id: int):
@@ -29,9 +29,12 @@ def jwt_required_extended(fn):
         if token['is_user_token'] is False:
             from api.services.data_source_token import \
                 DataSourceTokenService
-            if DataSourceTokenService.check_if_token_is_active(
+            _token_usage_counter_add(token['data_source_token']['id'])
+            if not DataSourceTokenService.check_if_token_is_active(
                     DataSourceTokenService, token['data_source_token']['id']):
-                _token_usage_counter_add(token['data_source_token']['id'])
+                return ErrorObject.create_response(ErrorObject,
+                                                   HTTPStatus.FORBIDDEN,
+                                                   'Token has been revoked')
         return fn(*args, **kwargs)
 
     return wrapper
