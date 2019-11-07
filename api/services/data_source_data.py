@@ -82,6 +82,59 @@ class DataSourceDataService():
 
         return all_data_array
 
+    def get_all_data_from_data_source(self, data_source_id: int, limit: int,
+                                      start_date: str, end_date: str,
+                                      order_by: str):
+        """Retrieves all data from a specific data source
+
+        Arguments:
+            data_source_id {int} -- data source id
+            limit {int} -- limits the number of results
+            start_date {str} -- start date
+            end_date {str} -- end date
+            order_by {str} -- orders the result by id
+
+        Returns:
+            DataSourceData -- An array of all data source data will be returned
+        """
+        all_data_array = []
+        query = DataSourceData.select().where(
+            DataSourceData.data_source_id == data_source_id)
+        # Set defaults
+        if not limit:
+            limit = 20
+        if not order_by:
+            order_by = 'desc'
+
+        if start_date:
+            query = query.where(DataSourceData.created_date >= start_date)
+        if end_date:
+            query = query.where(DataSourceData.created_date <= end_date)
+
+        # Build the query based on the query params
+        if order_by.lower() in _ALLOWED_ORDER_BY_VALUES:
+            if order_by.lower() == _ALLOWED_ORDER_BY_VALUES[0]:
+                query = query.order_by(DataSourceData.id.asc())
+            else:
+                query = query.order_by(DataSourceData.id.desc())
+        else:
+            raise ValueError(
+                HTTPStatus.BAD_REQUEST,
+                'Invalid order_by value, only "asc" or "desc" are allowed')
+        try:
+            casted_limit = int(limit)
+        except ValueError:
+            raise ValueError(
+                HTTPStatus.BAD_REQUEST,
+                'Invalid limit value, only values of type <int> are allowed')
+
+        query = query.limit(casted_limit)
+
+        for data in query:
+            all_data_array.append(model_to_dict(data, recurse=False))
+
+        return all_data_array
+
     def post_data(self, data_source_id: int,
                   create_data_source_data_dto: CreateDataSourceDataDto):
         """Creates a data point

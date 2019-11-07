@@ -74,6 +74,44 @@ class DataResources(Resource):
 
 
 @api.doc(security='JWT')
+@api.route('/source/<data_source_id>')
+@api.param('data_source_id', 'The identifier of the data source')
+class SpecificDataSourceResource(Resource):
+    @jwt_required_extended
+    @api.param('limit',
+               type=int,
+               default=20,
+               description='Limits the number of result to return')
+    @api.param('start_date',
+               type=str,
+               description='Start date in YYYY-mm-dd format, e.g: "2019-12-31"'
+               )
+    @api.param('end_date',
+               type=str,
+               description='End date in YYYY-mm-dd format, e.g: "2019-12-31"')
+    @api.param('order_by',
+               type=str,
+               default='desc',
+               enum=('desc', 'asc'),
+               description='orders the result by primary key')
+    def get(self, data_source_id):
+        """Fetches all data from a single data source"""
+        try:
+            return jsonify(
+                SuccessObject.create_response(
+                    self, HTTPStatus.OK,
+                    _data_source_data_service.get_all_data_from_data_source(
+                        self,
+                        data_source_id=data_source_id,
+                        limit=request.args.get('limit'),
+                        start_date=request.args.get('start_date'),
+                        end_date=request.args.get('end_date'),
+                        order_by=request.args.get('order_by')), True))
+        except Exception as err:
+            return ErrorObject.create_response(self, err.args[0], err.args[1])
+
+
+@api.doc(security='JWT')
 @api.route('/<data_id>')
 @api.param('data_id', 'The identifier of the data point')
 class SincleDataResources(Resource):
