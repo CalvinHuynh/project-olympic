@@ -24,7 +24,7 @@ authorizations = {
 }
 
 templates_folder_path = GET_PATH() + '/templates'
-blueprint_index = Blueprint('index',
+blueprint_index = Blueprint('index_blueprint',
                             __name__,
                             url_prefix='',
                             template_folder=templates_folder_path)
@@ -32,7 +32,7 @@ api_index = Api(blueprint_index)
 
 api_index.add_namespace(index_api)
 
-blueprint_api = Blueprint('api', __name__, url_prefix='/api/v1')
+blueprint_api = Blueprint('api_blueprint', __name__, url_prefix='/api/v1')
 api = Api(blueprint_api,
           version=FLASK_API_VERSION if FLASK_API_VERSION else "1.0.0",
           title=f"{FLASK_APP_NAME} API",

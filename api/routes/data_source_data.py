@@ -41,7 +41,7 @@ class DataResources(Resource):
                enum=('desc', 'asc'),
                description='orders the result by primary key')
     def get(self):
-        """Fetches all data points"""
+        """Fetches data from all sources"""
         try:
             return jsonify(
                 SuccessObject.create_response(

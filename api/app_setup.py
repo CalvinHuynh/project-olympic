@@ -1,6 +1,7 @@
 from http import HTTPStatus
 
 from authlib.flask.client import OAuth
+from dash import Dash
 from flask import Flask
 from flask_jwt_extended import JWTManager
 
@@ -12,9 +13,29 @@ from api.settings import (FLASK_APP_NAME, FLASK_SECRET_KEY, GET_PATH,
                           GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
                           JWT_SECRET_KEY)
 
-
 jwt = None
 oauth = None
+
+
+def register_dashapps(app):
+    from api.dashboard.dash_app_1 import layout
+    from api.dashboard.dash_app_1 import register_callbacks
+
+    # Meta tags for viewport responsiveness
+    meta_viewport = {
+        "name": "viewport",
+        "content": "width=device-width, initial-scale=1, shrink-to-fit=no"
+    }
+
+    dashapp1 = Dash(__name__,
+                    server=app,
+                    url_base_pathname='/dashboard/',
+                    meta_tags=[meta_viewport])
+
+    with app.app_context():
+        dashapp1.title = 'Dashapp 1'
+        dashapp1.layout = layout
+        register_callbacks(dashapp1)
 
 
 def register_config(app: Flask):
@@ -44,6 +65,7 @@ def create_app():
     initialize_database()
     register_config(app)
     register_extensions(app)
+    register_dashapps(app)
     # Initializes the routes
     app.register_blueprint(index)
     app.register_blueprint(api_v1)
