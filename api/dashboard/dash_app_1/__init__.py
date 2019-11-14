@@ -1,2 +1,1 @@
-from .callbacks import *
-from .layout import *
+from .dash_app_1 import *

@@ -1,10 +1,13 @@
 /* Google Identity and Google+ Sign in buttons
  https://developers.google.com/+/branding-guidelines */
 
-.container {
-    text-align: center;
-    margin-top: 10rem;
+/* .container {
     font-family: 'Roboto', arial, sans-serif;
+} */
+
+.push-content-down {
+    margin-top: 10rem;
+    text-align: center;
 }
 
 .button {
@@ -19,6 +22,7 @@
     transition-duration: 150ms;
     transition-timing-function: ease-in-out;
     padding: 0;
+    font-size: initial;
 }
 
 .button:focus {
@@ -87,6 +91,7 @@
 html,
 body {
     height: 100%;
+    font-family: Work Sans, sans-serif;
 }
 
 body {
