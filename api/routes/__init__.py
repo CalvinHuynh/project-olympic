@@ -32,8 +32,8 @@ api_index = Api(blueprint_index)
 
 api_index.add_namespace(index_api)
 
-blueprint = Blueprint('api', __name__, url_prefix='/api/v1')
-api = Api(blueprint,
+blueprint_api = Blueprint('api', __name__, url_prefix='/api/v1')
+api = Api(blueprint_api,
           version=FLASK_API_VERSION if FLASK_API_VERSION else "1.0.0",
           title=f"{FLASK_APP_NAME} API",
           description='All the available endpoints of Project Olympic',
@@ -50,7 +50,8 @@ api.add_namespace(data_source_data_api)
 SUPPORTED_OAUTH_PROVIDERS = [Google, GitHub]
 
 for backend in SUPPORTED_OAUTH_PROVIDERS:
-    from api.app import oauth, app
+    from api.app import app
+    from api.app_setup import oauth
 
     bp = create_flask_blueprint(backend, oauth, handle_authorize)
     app.register_blueprint(bp, url_prefix='/{}'.format(backend.OAUTH_NAME))
