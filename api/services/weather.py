@@ -96,7 +96,7 @@ class WeatherService():
         try:
             for result in query:
                 result.data = json.loads(result.data)  # escapes json data
-                all_data_array.append(model_to_dict(result))
+                all_data_array.append(model_to_dict(result, recurse=False))
             return all_data_array
         except BaseException:
             raise

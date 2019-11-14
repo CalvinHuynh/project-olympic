@@ -14,11 +14,11 @@ _data_source_service = _DataSourceService
 
 
 class DataSourceDataService():
-    def get_one_data_point(self, id: int):
+    def get_one_data_point(self, data_id: int):
         """Retrieves a single data point
 
         Arguments:
-            id {int} -- Id of data point
+            data_id {int} -- Id of data point
 
         Raises:
             ValueError: Data point not found with given id
@@ -27,10 +27,10 @@ class DataSourceDataService():
             DataSourceData -- An data source data object will be returned
         """
         try:
-            return model_to_dict(DataSourceData.get_by_id(id))
+            return model_to_dict(DataSourceData.get_by_id(data_id))
         except DoesNotExist:
             raise ValueError(HTTPStatus.NOT_FOUND,
-                             'Data with id {} does not exist'.format(id))
+                             'Data with id {} does not exist'.format(data_id))
 
     def get_all_data(self, limit: int, start_date: str, end_date: str,
                      order_by: str):
@@ -78,7 +78,60 @@ class DataSourceDataService():
         query = query.limit(casted_limit)
 
         for data in query:
-            all_data_array.append(model_to_dict(data))
+            all_data_array.append(model_to_dict(data, recurse=False))
+
+        return all_data_array
+
+    def get_all_data_from_data_source(self, data_source_id: int, limit: int,
+                                      start_date: str, end_date: str,
+                                      order_by: str):
+        """Retrieves all data from a specific data source
+
+        Arguments:
+            data_source_id {int} -- data source id
+            limit {int} -- limits the number of results
+            start_date {str} -- start date
+            end_date {str} -- end date
+            order_by {str} -- orders the result by id
+
+        Returns:
+            DataSourceData -- An array of all data source data will be returned
+        """
+        all_data_array = []
+        query = DataSourceData.select().where(
+            DataSourceData.data_source_id == data_source_id)
+        # Set defaults
+        if not limit:
+            limit = 20
+        if not order_by:
+            order_by = 'desc'
+
+        if start_date:
+            query = query.where(DataSourceData.created_date >= start_date)
+        if end_date:
+            query = query.where(DataSourceData.created_date <= end_date)
+
+        # Build the query based on the query params
+        if order_by.lower() in _ALLOWED_ORDER_BY_VALUES:
+            if order_by.lower() == _ALLOWED_ORDER_BY_VALUES[0]:
+                query = query.order_by(DataSourceData.id.asc())
+            else:
+                query = query.order_by(DataSourceData.id.desc())
+        else:
+            raise ValueError(
+                HTTPStatus.BAD_REQUEST,
+                'Invalid order_by value, only "asc" or "desc" are allowed')
+        try:
+            casted_limit = int(limit)
+        except ValueError:
+            raise ValueError(
+                HTTPStatus.BAD_REQUEST,
+                'Invalid limit value, only values of type <int> are allowed')
+
+        query = query.limit(casted_limit)
+
+        for data in query:
+            all_data_array.append(model_to_dict(data, recurse=False))
 
         return all_data_array
 

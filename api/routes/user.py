@@ -4,7 +4,7 @@ from flask import jsonify
 from flask_restplus import Namespace, Resource, fields
 from flask_jwt_extended import get_jwt_identity
 
-from api.helpers import (ErrorObject, SuccessObject, is_user_check,
+from api.helpers import (ErrorObject, SuccessObject, check_for,
                          jwt_required_extended)
 from api.services import (UserService as _UserService, DataSourceTokenService
                           as _DataSourceTokenService)
@@ -24,8 +24,21 @@ username_dto = api.model(
 @api.doc(security='JWT')
 @api.route('')
 class UserResource(Resource):
+    @check_for("User")
+    def get(self):
+        """Retrieves the information of the logged in user"""
+        token = get_jwt_identity()
+        try:
+            return jsonify(
+                SuccessObject.create_response(
+                    self, HTTPStatus.OK,
+                    _user_service.get_user_by_id(self, token['user']['id'],
+                                                 True)))
+        except Exception as err:
+            return ErrorObject.create_response(self, err.args[0], err.args[1])
+
     @api.expect(username_dto)
-    @is_user_check
+    @check_for("User")
     def post(self):
         """Sets the username of the logged in user"""
         token = get_jwt_identity()
@@ -43,7 +56,7 @@ class UserResource(Resource):
 @api.doc(security='JWT')
 @api.route('/tokens')
 class UserDataSourceTokensResource(Resource):
-    @is_user_check
+    @check_for("User")
     def get(self):
         """Retrieves data source tokens created by the logged in user"""
         token = get_jwt_identity()
@@ -59,17 +72,44 @@ class UserDataSourceTokensResource(Resource):
 
 @jwt_required_extended
 @api.doc(security='JWT')
-@api.route('/tokens/<id>/revoke')
-@api.param('id', 'Id of token to revoke')
-class UserDataSourceTokenRevokeResource(Resource):
-    @is_user_check
-    def post(self, id: int):
+@api.route('/tokens/<token_id>/admin-revoke')
+@api.param('token_id', 'Id of token to revoke')
+class UserDataSourceTokenAdminRevokeResource(Resource):
+    @check_for("User")
+    def post(self, token_id: int):
         """Deactivates a specific data source token"""
+        token = get_jwt_identity()
+        if token['user']['id'] == 1:
+            try:
+                return jsonify(
+                    SuccessObject.create_response(
+                        self, HTTPStatus.OK,
+                        _data_source_token_service.admin_revoke_token(
+                            self, token_id)))
+            except Exception as err:
+                return ErrorObject.create_response(self, err.args[0],
+                                                   err.args[1])
+        else:
+            return ErrorObject.create_response(
+                self, HTTPStatus.FORBIDDEN,
+                "You are unable to access this endpoint.")
+
+
+@jwt_required_extended
+@api.doc(security='JWT')
+@api.route('/tokens/<token_id>/revoke')
+@api.param('token_id', 'Id of token to revoke')
+class UserDataSourceTokenRevokeResource(Resource):
+    @check_for("User")
+    def post(self, token_id: int):
+        """Deactivates a specific data source token"""
+        token = get_jwt_identity()
         try:
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _data_source_token_service.revoke_token(self, id)))
+                    _user_service.deactivate_token_of_user(
+                        self, token['user']['id'], token_id)))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
 
@@ -80,7 +120,7 @@ class UserDataSourceTokenRevokeResource(Resource):
 @api.param('name', 'Username of the user')
 class GetUserResource(Resource):
     # @api.doc('get_user_by_username')
-    @is_user_check
+    @check_for("User")
     def get(self, name: str):
         """Retrieves user by username"""
         try:
@@ -98,7 +138,7 @@ class GetUserResource(Resource):
 @api.param('name', 'Username of user')
 class UserDataSourcesResource(Resource):
     # @api.marshal_list_with(base_model)
-    @is_user_check
+    @check_for("User")
     def get(self, name: str):
         """Retrieves data sources created by user"""
         try:

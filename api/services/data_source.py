@@ -39,7 +39,8 @@ class DataSourceService():
         all_data_source_array = []
 
         for data_source in DataSource.select():
-            all_data_source_array.append(model_to_dict(data_source))
+            all_data_source_array.append(
+                model_to_dict(data_source, recurse=False))
 
         return all_data_source_array
 
@@ -93,8 +94,7 @@ class DataSourceService():
 
             except IntegrityError:
                 raise IntegrityError(
-                    HTTPStatus.CONFLICT,
-                    f'Data source with name'
+                    HTTPStatus.CONFLICT, f'Data source with name'
                     f' \"{create_data_source_dto.source}\"'
                     f' already exists')
             except Exception:
