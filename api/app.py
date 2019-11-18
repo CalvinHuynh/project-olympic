@@ -1,4 +1,3 @@
-
 from api.app_setup import create_app
 from api.jobs import bg_scheduler
 

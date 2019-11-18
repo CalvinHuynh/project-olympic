@@ -1,7 +1,8 @@
 import sys
 
 from flask import (Response, make_response, redirect, render_template)
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import (create_access_token, set_access_cookies,
+                                unset_access_cookies)
 from flask_restplus import Namespace, Resource
 from loginpass import __all__ as _LOGINPASS_OAUTH_BACKENDS
 from playhouse.shortcuts import dict_to_model, model_to_dict
@@ -45,10 +46,10 @@ def handle_authorize(remote, token, user_info):
             "user": user
         }
         access_token = create_access_token(identity=identity_object)
-        success_response = make_response(redirect('/api/v1/docs'))
-        success_response.set_cookie('jwt', access_token)
+        response = make_response(redirect('/api/v1/docs'))
+        set_access_cookies(response, access_token)
 
-        return success_response
+        return response
     except Exception as err:
         return ErrorObject.create_response(UserService, err.args[0],
                                            err.args[1])
@@ -62,14 +63,17 @@ class SetupLoginRoutes(Resource):
         providers = []
         for provider in SUPPORTED_OAUTH_PROVIDERS:
             providers.append(provider.OAUTH_NAME)
-        resp = Response(
+        response = Response(
             render_template('login.html',
                             SUPPORTED_OAUTH_PROVIDERS=providers,
                             FLASK_TITLE=_FLASK_APP_NAME))
-        return resp
+        return response
 
 
 @api.route('/logout')
 class LogOut(Resource):
-    # TODO: Clear session on logout
-    pass
+    def get(self):
+        """Log out the current user"""
+        response = make_response(redirect('/'))
+        unset_access_cookies(response)
+        return response
