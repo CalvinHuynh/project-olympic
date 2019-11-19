@@ -7,6 +7,7 @@ from dash import Dash
 from dash.dependencies import Input, Output
 
 from api.dashboard.dash_function import apply_layout_with_auth
+from api.helpers.check_token_type_decorator import jwt_required_extended
 
 url_base = '/dash/stock/'
 
@@ -34,6 +35,7 @@ def add_dash(server):
 
     @app.callback(Output('my-graph', 'figure'),
                   [Input('my-dropdown', 'value')])
+    @jwt_required_extended
     def update_graph(selected_dropdown_value):
         df = pdr.get_data_yahoo(selected_dropdown_value,
                                 start=dt(2017, 1, 1),

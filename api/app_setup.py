@@ -5,7 +5,7 @@ from authlib.flask.client import OAuth
 from flask import Flask
 from flask_jwt_extended import JWTManager
 
-from api.dashboard.dash_app_1 import add_dash
+from api.dashboard.dash_app_1 import add_dash as dash_1
 from api.dashboard.dash_routes import blueprint as dash_blueprint
 from api.models import initialize_database
 from api.routes import blueprint_api as api_v1
@@ -55,7 +55,8 @@ def create_app():
     app.register_blueprint(index)
     app.register_blueprint(api_v1)
     app.register_blueprint(dash_blueprint)
-    app = add_dash(app)
+    # Initializes the dash graphs
+    app = dash_1(app)
 
     # Overwrite default error handling
     @jwt.invalid_token_loader
