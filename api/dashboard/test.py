@@ -1,9 +1,7 @@
 import os as _os
 from enum import Enum
-from json import dumps, loads
 
 from dotenv import load_dotenv as _load_dotenv
-from jmespath import search
 from pandas import DataFrame
 from pandas.io.json import json_normalize
 from peewee import (CharField, DateTimeField, ForeignKeyField, IntegerField,
@@ -78,7 +76,25 @@ class Forecast(Enum):
     FIVE_DAYS_THREE_HOUR = 2
 
 
-# # database.connection()
+def filter_json(json_filter: str, json_data: object):
+    """Filters json data using JMESPath
+
+    Arguments:
+        json_filter {str} -- filter query
+        json_data {object} -- json data to filter
+
+    Returns:
+        json -- filtered json data
+    """
+    from jmespath import search
+    from json import dumps, loads
+    try:
+        return search(json_filter, loads(json_data))
+    except Exception:
+        data = dumps(json_data)
+        return search(json_filter, loads(data))
+
+
 data_source_query = DataSourceData.select().where(
     DataSourceData.data_source_id == 2)
 # print(query.dicts())
@@ -98,23 +114,25 @@ data_source_df = DataFrame(list(data_source_query.dicts()))
 
 weather_hourly_query = Weather.select().where(
     Weather.weather_forecast_type == Forecast.HOURLY)
-hourly_filter = "{dt: dt, weather_description: weather[0].description, main: main, wind: wind, rain: rain, clouds: clouds}"
+hourly_filter = "{dt: dt, weather_description: weather[0].description,"\
+    "main: main, wind: wind, rain: rain, clouds: clouds}"
 
-# all_weather = list(weather_hourly_query)
-# print(f'length is {len(all_weather)}')
 
 all_weather_array = []
 for weather in weather_hourly_query:
     all_weather_array.append(model_to_dict(weather, recurse=False))
 
-# testing_df = DataFrame(all_weather_array)
 testing_df_1 = DataFrame(all_weather_array)
 
 for i in range(len(testing_df_1)):
-    testing_df_1['data'].values[i] = search(
-        hourly_filter, loads(testing_df_1['data'].values[i]))
+    testing_df_1['data'].values[i] = filter_json(
+        hourly_filter, testing_df_1['data'].values[i])
 
-testing_df_2 = json_normalize(testing_df_1)
+testing_df_2 = testing_df_1.join(
+    json_normalize(testing_df_1['data'].tolist()).add_prefix('data.')).drop(
+        ['data'], axis=1)
+
+print(testing_df_2)
 
 # TODO: flatten json and create a graph for thesis
 
