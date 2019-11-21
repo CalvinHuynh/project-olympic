@@ -77,8 +77,8 @@ class UserService():
         """Retrieves data source from an user
 
         Arguments:
-            username {str} -- (Optional) Username
-            id {int} -- (Optional) Id of user
+            username {str} -- Optional Username
+            id {int} -- Optional Id of user
 
         Returns:
             DataSource[] -- An array of data sources

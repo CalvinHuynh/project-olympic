@@ -7,7 +7,7 @@ from pandas.io.json import json_normalize
 from peewee import (CharField, DateTimeField, ForeignKeyField, IntegerField,
                     Model, MySQLDatabase, PrimaryKeyField)
 from playhouse.mysql_ext import JSONField
-from playhouse.shortcuts import dict_to_model, model_to_dict
+from playhouse.shortcuts import model_to_dict
 
 env_path = '/home/calvin/Projects/afstuderen/project-olympic/.env'
 _load_dotenv(dotenv_path=env_path)
@@ -76,11 +76,11 @@ class Forecast(Enum):
     FIVE_DAYS_THREE_HOUR = 2
 
 
-def filter_json(json_filter: str, json_data: object):
+def filter_json(expression: str, json_data: object):
     """Filters json data using JMESPath
 
     Arguments:
-        json_filter {str} -- filter query
+        expression {str} -- filter query
         json_data {object} -- json data to filter
 
     Returns:
@@ -89,10 +89,52 @@ def filter_json(json_filter: str, json_data: object):
     from jmespath import search
     from json import dumps, loads
     try:
-        return search(json_filter, loads(json_data))
+        return search(expression, loads(json_data))
     except Exception:
         data = dumps(json_data)
-        return search(json_filter, loads(data))
+        return search(expression, loads(data))
+
+
+def filter_column_json_data(data_frame: DataFrame, column_to_filter: str,
+                            expression: str):
+    """Filter all the json data of the data frame using JMESPath
+
+    Arguments:
+        data_frame {DataFrame} -- input dataframe
+        column_to_filter {str} -- column to filter
+        expression {str} -- filter query
+    """
+    for index in range(len(data_frame)):
+        data_frame[column_to_filter].values[index] = filter_json(
+            expression, data_frame[column_to_filter].values[index])
+    return data_frame
+
+
+def flatten_json_data_in_column(data_frame: DataFrame,
+                                column_to_flatten: str,
+                                custom_prefix: str = None):
+    """Flattens the json of a specific column of the given dataframe
+
+    Arguments:
+        data_frame {DataFrame} -- input dataframe
+        column_to_flatten {str} -- column to flatten
+
+    Keyword Arguments:
+        custom_prefix {str} -- custom prefix for the flattened output (default: column)
+
+    Returns:
+        [type] -- [description]
+    """
+    prefix = None
+    if custom_prefix:
+        prefix = custom_prefix
+    else:
+        prefix = f'{column_to_flatten}.'
+
+    return data_frame.join(
+        json_normalize(
+            data_frame[column_to_flatten].tolist()).add_prefix(prefix)).drop(
+                [column_to_flatten], axis=1)
 
 
 data_source_query = DataSourceData.select().where(
@@ -101,55 +143,46 @@ data_source_query = DataSourceData.select().where(
 data_source_df = DataFrame(list(data_source_query.dicts()))
 # print(data_source_df)
 
-# weather_forecast_weekly_query = Weather.select().where(
-#     Weather.weather_forecast_type == Forecast.FIVE_DAYS_THREE_HOUR)
-# weather_forecast_df = DataFrame(list(weather_forecast_weekly_query.dicts()))
-# print(weather_forecast_df)
+weekly_weather_query = Weather.select().where(
+    Weather.weather_forecast_type == Forecast.FIVE_DAYS_THREE_HOUR)
 
-# weekly_filter = "{\"5_days_3_hour_forecast\": list[].{dt: dt, main: main,"\
-#     "weather: {description: [weather[*].description]}, clouds: clouds,"\
-#     "wind: wind, rain: rain}}"
-# print("filtered weekly")
-# print(search(weekly_filter, loads(weather_forecast_df.iloc[1]['data'])))
+weekly_filter = "{\"5_days_3_hour_forecast\": list[].{dt: dt, main: main,"\
+    "weather: {description: [weather[*].description]}, clouds: clouds,"\
+    "wind: wind, rain: rain}}"
 
-weather_hourly_query = Weather.select().where(
+weekly_weather_array = []
+for weather in weekly_weather_query:
+    weekly_weather_array.append(model_to_dict(weather, recurse=False))
+
+weekly_weather_df = DataFrame(weekly_weather_array)
+# print('before')
+# print(weekly_weather_df.iloc[0]['data'])
+weekly_weather_df = filter_column_json_data(weekly_weather_df, 'data',
+                                            weekly_filter)
+# print('after')
+# print(weekly_weather_df.iloc[0]['data'])
+# weekly_weather_df = flatten_json_data_in_column(weekly_filter, 'data') # does not work yet
+# print('weekly weather df')
+# print(weekly_weather_df)
+
+hourly_weather_query = Weather.select().where(
     Weather.weather_forecast_type == Forecast.HOURLY)
 hourly_filter = "{dt: dt, weather_description: weather[0].description,"\
     "main: main, wind: wind, rain: rain, clouds: clouds}"
 
+hourly_weather_array = []
+for weather in hourly_weather_query:
+    hourly_weather_array.append(model_to_dict(weather, recurse=False))
 
-all_weather_array = []
-for weather in weather_hourly_query:
-    all_weather_array.append(model_to_dict(weather, recurse=False))
+hourly_weater_df = DataFrame(hourly_weather_array)
+# print('before')
+# print(hourly_weater_df.iloc[0]['data'])
+hourly_weater_df = filter_column_json_data(hourly_weater_df, 'data',
+                                           hourly_filter)
+# print('after')
+# print(hourly_weater_df.iloc[0]['data'])
+hourly_weater_df = flatten_json_data_in_column(hourly_weater_df, 'data')
+# print('hourly weather df')
+# print(hourly_weater_df.iloc[0])
 
-testing_df_1 = DataFrame(all_weather_array)
-
-for i in range(len(testing_df_1)):
-    testing_df_1['data'].values[i] = filter_json(
-        hourly_filter, testing_df_1['data'].values[i])
-
-testing_df_2 = testing_df_1.join(
-    json_normalize(testing_df_1['data'].tolist()).add_prefix('data.')).drop(
-        ['data'], axis=1)
-
-print(testing_df_2)
-
-# TODO: flatten json and create a graph for thesis
-
-## flatten json
-# testing_df_2 = testing_df_1.join(
-#     json_normalize(
-#         testing_df_1['data'].map(loads).tolist()).add_prefix('data.')).drop(
-#             ['data'], axis=1)
-
-# print(testing_df_2)
-
-# weather_hourly_df = DataFrame(list(weather_hourly_query.dicts()))
-
-# print(weather_hourly_df)
-# print(weather_hourly_df.iloc[3170]['data'])
-# print("filtered hourly")
-# filtered_result = search(hourly_filter,
-#                          loads(weather_hourly_df.iloc[3170]['data']))
-# print(dumps(filtered_result))
-# print(json_normalize(filtered_result))
+# TODO: create a graph for thesis
