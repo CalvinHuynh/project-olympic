@@ -2,12 +2,14 @@ import os as _os
 from enum import Enum
 
 from dotenv import load_dotenv as _load_dotenv
-from pandas import DataFrame
+from pandas import DataFrame, Series
 from pandas.io.json import json_normalize
 from peewee import (CharField, DateTimeField, ForeignKeyField, IntegerField,
                     Model, MySQLDatabase, PrimaryKeyField)
 from playhouse.mysql_ext import JSONField
 from playhouse.shortcuts import model_to_dict
+
+# from cytoolz.dicttoolz import merge
 
 env_path = '/home/calvin/Projects/afstuderen/project-olympic/.env'
 _load_dotenv(dotenv_path=env_path)
@@ -112,6 +114,7 @@ def filter_column_json_data(data_frame: DataFrame, column_to_filter: str,
 
 def flatten_json_data_in_column(data_frame: DataFrame,
                                 column_to_flatten: str,
+                                range_to_flatten: int = None,
                                 custom_prefix: str = None):
     """Flattens the json of a specific column of the given dataframe
 
@@ -120,21 +123,49 @@ def flatten_json_data_in_column(data_frame: DataFrame,
         column_to_flatten {str} -- column to flatten
 
     Keyword Arguments:
+        range_to_flatten {int} -- able to flatten multiple columns that uses an index as identifier (default: None)
         custom_prefix {str} -- custom prefix for the flattened output (default: column)
 
     Returns:
         [type] -- [description]
     """
+    output = None
     prefix = None
     if custom_prefix:
         prefix = custom_prefix
     else:
-        prefix = f'{column_to_flatten}.'
+        prefix = f'{column_to_flatten}_'
 
-    return data_frame.join(
-        json_normalize(
-            data_frame[column_to_flatten].tolist()).add_prefix(prefix)).drop(
-                [column_to_flatten], axis=1)
+    if range_to_flatten:
+        prefix = f'{column_to_flatten}_'
+        for index in range(range_to_flatten):
+            print(f"outside try: index is {index}")
+            try:
+                print(f"currently on run {index}")
+                output = data_frame.join(
+                    json_normalize(
+                        data_frame[column_to_flatten + "_" +
+                                    str(index)].tolist()).add_prefix(prefix + str(index) + "_")).drop(
+                                        [column_to_flatten + "_" + str(index)], axis=1)
+                # print(list(output))
+                return output
+            except BaseException as e:
+                print(e)
+                pass
+    else:
+        output = data_frame.join(
+            json_normalize(data_frame[column_to_flatten].tolist()).add_prefix(
+                prefix)).drop([column_to_flatten], axis=1)
+
+    return output
+
+
+def _rename_column(col_name):
+    if isinstance(col_name, int):
+        return f'data_{col_name}'
+    else:
+        pass
+    return col_name
 
 
 data_source_query = DataSourceData.select().where(
@@ -147,42 +178,77 @@ weekly_weather_query = Weather.select().where(
     Weather.weather_forecast_type == Forecast.FIVE_DAYS_THREE_HOUR)
 
 weekly_filter = "{\"5_days_3_hour_forecast\": list[].{dt: dt, main: main,"\
-    "weather: {description: [weather[*].description]}, clouds: clouds,"\
-    "wind: wind, rain: rain}}"
+    "weather: {main: weather[0].main, description: weather[0].description },"\
+    "clouds: clouds, wind: wind, rain: rain}}"
 
 weekly_weather_array = []
 for weather in weekly_weather_query:
     weekly_weather_array.append(model_to_dict(weather, recurse=False))
 
 weekly_weather_df = DataFrame(weekly_weather_array)
-# print('before')
-# print(weekly_weather_df.iloc[0]['data'])
+# print('before weekly filter')
+# print(weekly_weather_df.iloc[0])
 weekly_weather_df = filter_column_json_data(weekly_weather_df, 'data',
                                             weekly_filter)
-# print('after')
-# print(weekly_weather_df.iloc[0]['data'])
-# weekly_weather_df = flatten_json_data_in_column(weekly_filter, 'data') # does not work yet
-# print('weekly weather df')
+# print('after weekly filter')
+# print(weekly_weather_df.iloc[0])
+weekly_weather_df = flatten_json_data_in_column(weekly_weather_df, 'data')
 # print(weekly_weather_df)
+# weekly_weather_df.pipe(
+#     lambda x: x.drop('data.5_days_3_hour_forecast', 1).join(
+#         x['data.5_days_3_hour_forecast'].apply(lambda y: Series(merge(y)))
+#     )
+# )
+
+# print('before splitting data_5_days_3_hour_forecast')
+# print(weekly_weather_df)
+
+weekly_weather_df = weekly_weather_df['data_5_days_3_hour_forecast'].apply(
+    Series).merge(weekly_weather_df, left_index=True,
+                  right_index=True).drop(['data_5_days_3_hour_forecast'],
+                                         axis=1)
+
+# print('after splitting data_5_days_3_hour_forecast')
+# print(weekly_weather_df)
+# weekly_weather_df = weekly_weather_df.rename(columns=_rename_column)
+weekly_weather_df.columns = map(_rename_column, weekly_weather_df.columns)
+df = weekly_weather_df.iloc[[0]]
+print(list(weekly_weather_df))
+# print(type(df))
+# print('headers are')
+# print(list(df))
+# print('types are')
+# print(df.dtypes)
+print(df)
+flatest_df = flatten_json_data_in_column(weekly_weather_df, 'data', 40)
+print(flatest_df)
+print(list(flatest_df))
+# print(weekly_weather_df)
+# print('after weekly flatten')
+# print(weekly_weather_df.iloc[0])
+
+# TODO: If column is of type object and it contains a json array, need to unpack it using the Series function
+# and flatten it afterwards. This needs to be done recursively to flatten all the json arrays
 
 hourly_weather_query = Weather.select().where(
     Weather.weather_forecast_type == Forecast.HOURLY)
-hourly_filter = "{dt: dt, weather_description: weather[0].description,"\
-    "main: main, wind: wind, rain: rain, clouds: clouds}"
+hourly_filter = "{dt: dt,  weather: {main: weather[*].main,"\
+    "description: weather[*].description}, main: main, wind: wind"\
+    ", rain: rain, clouds: clouds}"
 
 hourly_weather_array = []
 for weather in hourly_weather_query:
     hourly_weather_array.append(model_to_dict(weather, recurse=False))
 
 hourly_weater_df = DataFrame(hourly_weather_array)
-# print('before')
-# print(hourly_weater_df.iloc[0]['data'])
+# print('before hourly filter')
+# print(hourly_weater_df.iloc[0])
 hourly_weater_df = filter_column_json_data(hourly_weater_df, 'data',
                                            hourly_filter)
-# print('after')
-# print(hourly_weater_df.iloc[0]['data'])
+# print('after hourly filter')
+# print(hourly_weater_df.iloc[0])
 hourly_weater_df = flatten_json_data_in_column(hourly_weater_df, 'data')
-# print('hourly weather df')
+# print('after hourly flatten')
 # print(hourly_weater_df.iloc[0])
 
 # TODO: create a graph for thesis
