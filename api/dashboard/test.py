@@ -123,13 +123,14 @@ def flatten_json_data_in_column(data_frame: DataFrame,
         column_to_flatten {str} -- column to flatten
 
     Keyword Arguments:
-        range_to_flatten {int} -- able to flatten multiple columns that uses an index as identifier (default: None)
-        custom_prefix {str} -- custom prefix for the flattened output (default: column)
+        range_to_flatten {int} -- able to flatten multiple columns that uses an
+         index as identifier (default: None)
+        custom_prefix {str} -- custom prefix for the flattened output
+         (default: column)
 
     Returns:
         [type] -- [description]
     """
-    output = None
     prefix = None
     if custom_prefix:
         prefix = custom_prefix
@@ -139,28 +140,38 @@ def flatten_json_data_in_column(data_frame: DataFrame,
     if range_to_flatten:
         prefix = f'{column_to_flatten}_'
         for index in range(range_to_flatten):
-            print(f"outside try: index is {index}")
             try:
-                print(f"currently on run {index}")
-                output = data_frame.join(
-                    json_normalize(
-                        data_frame[column_to_flatten + "_" +
-                                    str(index)].tolist()).add_prefix(prefix + str(index) + "_")).drop(
-                                        [column_to_flatten + "_" + str(index)], axis=1)
-                # print(list(output))
-                return output
-            except BaseException as e:
-                print(e)
+                data_frame = data_frame.join(
+                    json_normalize(data_frame[column_to_flatten + "_" +
+                                              str(index)].tolist()).
+                    add_prefix(prefix + str(index) + "_")).drop(
+                        [column_to_flatten + "_" + str(index)], axis=1)
+            except BaseException:
                 pass
     else:
-        output = data_frame.join(
+        data_frame = data_frame.join(
             json_normalize(data_frame[column_to_flatten].tolist()).add_prefix(
                 prefix)).drop([column_to_flatten], axis=1)
 
-    return output
+    return data_frame
 
 
-def _rename_column(col_name):
+def unpack_json_array(data_frame: DataFrame, column_to_unpack: str):
+    """Unpack json data of a specific column in the dataframe
+
+    Arguments:
+        data_frame {DataFrame} -- input dataframe
+        column_to_unpack {str} -- column to unpack the json array from
+
+    Returns:
+        data_frame -- modified dataframe
+    """
+    return data_frame[column_to_unpack].apply(Series).merge(
+        data_frame, left_index=True, right_index=True).drop([column_to_unpack],
+                                                            axis=1)
+
+
+def _rename_columns(col_name):
     if isinstance(col_name, int):
         return f'data_{col_name}'
     else:
@@ -203,15 +214,21 @@ weekly_weather_df = flatten_json_data_in_column(weekly_weather_df, 'data')
 # print('before splitting data_5_days_3_hour_forecast')
 # print(weekly_weather_df)
 
-weekly_weather_df = weekly_weather_df['data_5_days_3_hour_forecast'].apply(
-    Series).merge(weekly_weather_df, left_index=True,
-                  right_index=True).drop(['data_5_days_3_hour_forecast'],
-                                         axis=1)
+# Flattens the json array that resides in the specified column and removes it
+# after it is done
+
+# weekly_weather_df = weekly_weather_df['data_5_days_3_hour_forecast'].apply(
+#     Series).merge(weekly_weather_df, left_index=True,
+#                   right_index=True).drop(['data_5_days_3_hour_forecast'],
+#                                          axis=1)
+
+weekly_weather_df = unpack_json_array(weekly_weather_df,
+                                      'data_5_days_3_hour_forecast')
 
 # print('after splitting data_5_days_3_hour_forecast')
 # print(weekly_weather_df)
 # weekly_weather_df = weekly_weather_df.rename(columns=_rename_column)
-weekly_weather_df.columns = map(_rename_column, weekly_weather_df.columns)
+weekly_weather_df.columns = map(_rename_columns, weekly_weather_df.columns)
 df = weekly_weather_df.iloc[[0]]
 print(list(weekly_weather_df))
 # print(type(df))
@@ -226,9 +243,6 @@ print(list(flatest_df))
 # print(weekly_weather_df)
 # print('after weekly flatten')
 # print(weekly_weather_df.iloc[0])
-
-# TODO: If column is of type object and it contains a json array, need to unpack it using the Series function
-# and flatten it afterwards. This needs to be done recursively to flatten all the json arrays
 
 hourly_weather_query = Weather.select().where(
     Weather.weather_forecast_type == Forecast.HOURLY)
