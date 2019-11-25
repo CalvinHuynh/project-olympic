@@ -4,6 +4,7 @@ from authlib.flask.client import OAuth
 # from dash import Dash
 from flask import Flask, render_template
 from flask_jwt_extended import JWTManager
+from flask_wtf import CSRFProtect
 
 from api.dashboard.dash_app_1 import add_dash as dash_1
 from api.dashboard.dash_routes import blueprint as dash_blueprint
@@ -17,6 +18,7 @@ from api.settings import (FLASK_APP_NAME, FLASK_SECRET_KEY, GET_PATH,
 
 jwt = None
 oauth = None
+csrf = None
 
 
 def register_config(app: Flask):
@@ -34,6 +36,8 @@ def register_config(app: Flask):
     app.config['GOOGLE_CLIENT_SECRET'] = GOOGLE_CLIENT_SECRET
     app.config['PROPAGATE_EXCEPTIONS'] = True
 
+    return app
+
 
 def register_extensions(app: Flask):
     # Initializes oauth
@@ -42,17 +46,24 @@ def register_extensions(app: Flask):
     # Initializes JWT
     global jwt
     jwt = JWTManager(app)
+    # Initializes CSRF
+    # global csrf
+    # csrf = CSRFProtect(app)
+
+    return app
 
 
 def register_errorpages(app: Flask):
     @app.errorhandler(HTTPStatus.NOT_FOUND)
     def page_not_found(e):
-        return render_template('error_pages/404.html'), HTTPStatus.NOT_FOUND
+        return render_template('error_pages/404.html',
+                               msg=e.description), HTTPStatus.NOT_FOUND
 
     # 401 errors are not being intercepted
     @app.errorhandler(HTTPStatus.UNAUTHORIZED)
     def unauthorized(e):
-        return render_template('error_pages/401.html'), HTTPStatus.UNAUTHORIZED
+        return render_template('error_pages/401.html',
+                               msg=e.description), HTTPStatus.UNAUTHORIZED
 
     return app
 
@@ -62,12 +73,15 @@ def create_app():
                 static_url_path='',
                 static_folder=GET_PATH() + '/static')
     initialize_database()
-    register_config(app)
-    register_extensions(app)
-    register_errorpages(app)
+    app = register_config(app)
+    app = register_extensions(app)
+    app = register_errorpages(app)
     # Initializes the routes
     app.register_blueprint(index)
     app.register_blueprint(api_v1)
+    # # Exempt dash routes from CSRF check
+    # csrf.exempt(dash_blueprint)
+    # csrf.exempt(dash_1)
     app.register_blueprint(dash_blueprint)
     # Initializes the dash graphs
     app = dash_1(app)
@@ -90,7 +104,11 @@ def create_app():
     @jwt.unauthorized_loader
     def custom_unauthorized_loader(self):
         from api.helpers import ErrorObject
-        return ErrorObject.create_response(self, HTTPStatus.UNAUTHORIZED,
-                                           'No access token provided')
+        if 'CSRF' in self:
+            return ErrorObject.create_response(self, HTTPStatus.BAD_REQUEST,
+                                               'CSRF token missing')
+        else:
+            return ErrorObject.create_response(self, HTTPStatus.UNAUTHORIZED,
+                                               'Access token missing')
 
     return app

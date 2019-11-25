@@ -180,11 +180,14 @@ def _rename_columns(col_name):
     return col_name
 
 
-data_source_query = DataSourceData.select().where(
-    DataSourceData.data_source_id == 2)
-# print(query.dicts())
-data_source_df = DataFrame(list(data_source_query.dicts()))
+# data_source_query = DataSourceData.select().where(
+#     DataSourceData.data_source_id == 2).dicts()
+# # print(query.dicts())
+# data_source_df = DataFrame(list(data_source_query))
 # print(data_source_df)
+data_source_df = DataFrame(
+    list(DataSourceData.select().where(
+        DataSourceData.data_source_id == 2).dicts()))
 
 weekly_weather_query = Weather.select().where(
     Weather.weather_forecast_type == Forecast.FIVE_DAYS_THREE_HOUR)
@@ -245,7 +248,6 @@ flatest_df = flatten_json_data_in_column(weekly_weather_df, 'data', 40)
 # print('after weekly flatten')
 # print(weekly_weather_df.iloc[0])
 
-
 hourly_weather_query = Weather.select().where(
     Weather.weather_forecast_type == Forecast.HOURLY)
 hourly_filter = "{dt: dt,  weather: {main: weather[*].main,"\
@@ -267,24 +269,17 @@ hourly_weater_df = flatten_json_data_in_column(hourly_weater_df, 'data')
 print('after hourly flatten')
 print(hourly_weater_df.iloc[0])
 
-
 print(hourly_weater_df[['created_date', 'data_main.temp']])
 # TODO: create a graph for thesis
 figure = go.Figure()
 figure.add_trace(
-    go.Scatter(
-        x=hourly_weater_df['created_date'],
-        y=hourly_weater_df['data_main.temp'],
-        name="Temperature in Celcius"
-    )
-)
+    go.Scatter(x=hourly_weater_df['created_date'],
+               y=hourly_weater_df['data_main.temp'],
+               name="Temperature in Celcius"))
 
 figure.add_trace(
-    go.Bar(
-        x=data_source_df['created_date'],
-        y=data_source_df['no_of_clients'],
-        name="Number of clients"
-    )
-)
+    go.Bar(x=data_source_df['created_date'],
+           y=data_source_df['no_of_clients'],
+           name="Number of clients"))
 
 figure.show()
