@@ -267,13 +267,23 @@ hourly_weater_df = flatten_json_data_in_column(hourly_weater_df, 'data')
 print('after hourly flatten')
 print(hourly_weater_df.iloc[0])
 
+
 print(hourly_weater_df[['created_date', 'data_main.temp']])
 # TODO: create a graph for thesis
 figure = go.Figure()
 figure.add_trace(
-    go.scatter(
-        x=hourly_weater_df[['created_date']],
-        y=hourly_weater_df[['data_main.temp']]
+    go.Scatter(
+        x=hourly_weater_df['created_date'],
+        y=hourly_weater_df['data_main.temp'],
+        name="Temperature in Celcius"
+    )
+)
+
+figure.add_trace(
+    go.Bar(
+        x=data_source_df['created_date'],
+        y=data_source_df['no_of_clients'],
+        name="Number of clients"
     )
 )
 

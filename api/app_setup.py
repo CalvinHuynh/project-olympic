@@ -2,7 +2,7 @@ from http import HTTPStatus
 
 from authlib.flask.client import OAuth
 # from dash import Dash
-from flask import Flask
+from flask import Flask, render_template
 from flask_jwt_extended import JWTManager
 
 from api.dashboard.dash_app_1 import add_dash as dash_1
@@ -44,6 +44,19 @@ def register_extensions(app: Flask):
     jwt = JWTManager(app)
 
 
+def register_errorpages(app: Flask):
+    @app.errorhandler(HTTPStatus.NOT_FOUND)
+    def page_not_found(e):
+        return render_template('error_pages/404.html'), HTTPStatus.NOT_FOUND
+
+    # 401 errors are not being intercepted
+    @app.errorhandler(HTTPStatus.UNAUTHORIZED)
+    def unauthorized(e):
+        return render_template('error_pages/401.html'), HTTPStatus.UNAUTHORIZED
+
+    return app
+
+
 def create_app():
     app = Flask(FLASK_APP_NAME if FLASK_APP_NAME else __name__,
                 static_url_path='',
@@ -51,6 +64,7 @@ def create_app():
     initialize_database()
     register_config(app)
     register_extensions(app)
+    register_errorpages(app)
     # Initializes the routes
     app.register_blueprint(index)
     app.register_blueprint(api_v1)

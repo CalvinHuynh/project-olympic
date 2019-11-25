@@ -6,7 +6,7 @@ import pandas_datareader as pdr
 from dash import Dash
 from dash.dependencies import Input, Output
 
-from api.dashboard.dash_function import apply_layout_with_auth
+from api.dashboard.dash_function import apply_layout
 from api.helpers.check_token_type_decorator import jwt_required_extended
 
 url_base = '/dash/stock/'
@@ -31,7 +31,7 @@ layout = html.Div([
 
 def add_dash(server):
     app = Dash(server=server, url_base_pathname=url_base)
-    apply_layout_with_auth(app, layout)
+    apply_layout(app, layout)
 
     @app.callback(Output('my-graph', 'figure'),
                   [Input('my-dropdown', 'value')])
