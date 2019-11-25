@@ -9,6 +9,7 @@ from peewee import (CharField, DateTimeField, ForeignKeyField, IntegerField,
 from playhouse.mysql_ext import JSONField
 from playhouse.shortcuts import model_to_dict
 
+import plotly.graph_objects as go
 # from cytoolz.dicttoolz import merge
 
 env_path = '/home/calvin/Projects/afstuderen/project-olympic/.env'
@@ -236,13 +237,14 @@ print(list(weekly_weather_df))
 # print(list(df))
 # print('types are')
 # print(df.dtypes)
-print(df)
+# print(df)
 flatest_df = flatten_json_data_in_column(weekly_weather_df, 'data', 40)
-print(flatest_df)
-print(list(flatest_df))
+# print(flatest_df)
+# print(list(flatest_df))
 # print(weekly_weather_df)
 # print('after weekly flatten')
 # print(weekly_weather_df.iloc[0])
+
 
 hourly_weather_query = Weather.select().where(
     Weather.weather_forecast_type == Forecast.HOURLY)
@@ -262,7 +264,17 @@ hourly_weater_df = filter_column_json_data(hourly_weater_df, 'data',
 # print('after hourly filter')
 # print(hourly_weater_df.iloc[0])
 hourly_weater_df = flatten_json_data_in_column(hourly_weater_df, 'data')
-# print('after hourly flatten')
-# print(hourly_weater_df.iloc[0])
+print('after hourly flatten')
+print(hourly_weater_df.iloc[0])
 
+print(hourly_weater_df[['created_date', 'data_main.temp']])
 # TODO: create a graph for thesis
+figure = go.Figure()
+figure.add_trace(
+    go.scatter(
+        x=hourly_weater_df[['created_date']],
+        y=hourly_weater_df[['data_main.temp']]
+    )
+)
+
+figure.show()
