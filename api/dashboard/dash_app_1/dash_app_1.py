@@ -28,27 +28,9 @@ layout = html.Div([
                  value='temp'),
     dcc.Graph(id='my-graph')
 ], style={'width': '500'})
-# layout = html.Div([
-#     html.H1('Stock Tickers'),
-#     dcc.Dropdown(id='my-dropdown',
-#                  options=[{
-#                      'label': 'Coke',
-#                      'value': 'COKE'
-#                  }, {
-#                      'label': 'Tesla',
-#                      'value': 'TSLA'
-#                  }, {
-#                      'label': 'Apple',
-#                      'value': 'AAPL'
-#                  }],
-#                  value='COKE'),
-#     dcc.Graph(id='my-graph')
-# ], style={'width': '500'})
-
 
 def add_dash(server):
-    app = Dash(server=server,
-               url_base_pathname=url_base)
+    app = Dash(server=server, url_base_pathname=url_base)
     apply_layout(app, layout)
 
     def retrieve_data():
@@ -89,6 +71,7 @@ def add_dash(server):
         #                         start=dt(2017, 1, 1),
         #                         end=dt.now())
         df = retrieve_data()
+        print(df)
         # return {
         #     'data': [{
         #         'x': df.index,
@@ -105,15 +88,16 @@ def add_dash(server):
         # }
         return {
             'data': [{
-                'x': df['data_source_data_df']['created_date'],
-                'y': df['data_source_data_df']['data_main.temp'],
+                'x': df['data_source_data_df'][['created_date']],
+                'y': df['data_source_data_df'][['no_of_clients']],
                 'name': 'Temperature in Celcius'
             }, {
                 'x':
-                df['hourly_weather_data_df']['created_date'],
+                df['hourly_weather_data_df'][['created_date']],
                 'y':
-                df['data_source_dhourly_weather_data_dfata_df']
-                ['no_of_clients'],
+                df['hourly_weather_data_df'][[
+                    f'data_main.{selected_dropdown_value}'
+                ]],
                 'name':
                 'Number of clients'
             }]
