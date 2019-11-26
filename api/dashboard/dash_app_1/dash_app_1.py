@@ -1,7 +1,8 @@
-# from datetime import datetime as dt
+from datetime import datetime as dt
 
 import dash_core_components as dcc
 import dash_html_components as html
+import pandas_datareader as pdr
 from dash import Dash
 from dash.dependencies import Input, Output
 from pandas import DataFrame
@@ -27,6 +28,22 @@ layout = html.Div([
                  value='temp'),
     dcc.Graph(id='my-graph')
 ], style={'width': '500'})
+# layout = html.Div([
+#     html.H1('Stock Tickers'),
+#     dcc.Dropdown(id='my-dropdown',
+#                  options=[{
+#                      'label': 'Coke',
+#                      'value': 'COKE'
+#                  }, {
+#                      'label': 'Tesla',
+#                      'value': 'TSLA'
+#                  }, {
+#                      'label': 'Apple',
+#                      'value': 'AAPL'
+#                  }],
+#                  value='COKE'),
+#     dcc.Graph(id='my-graph')
+# ], style={'width': '500'})
 
 
 def add_dash(server):

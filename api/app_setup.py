@@ -4,7 +4,7 @@ from authlib.flask.client import OAuth
 # from dash import Dash
 from flask import Flask, render_template
 from flask_jwt_extended import JWTManager
-from flask_wtf import CSRFProtect
+# from flask_wtf import CSRFProtect
 
 from api.dashboard.dash_app_1 import add_dash as dash_1
 from api.dashboard.dash_routes import blueprint as dash_blueprint
@@ -30,11 +30,14 @@ def register_config(app: Flask):
     app.config['SECRET_KEY'] = FLASK_SECRET_KEY
     app.config['JWT_TOKEN_LOCATION'] = jwt_locations
     app.config['JWT_SECRET_KEY'] = JWT_SECRET_KEY
+    app.config['JWT_ACCESS_CSRF_COOKIE_NAME'] = 'X-CSRFToken'
     app.config['GITHUB_CLIENT_ID'] = GITHUB_CLIENT_ID
     app.config['GITHUB_CLIENT_SECRET'] = GITHUB_CLIENT_SECRET
     app.config['GOOGLE_CLIENT_ID'] = GOOGLE_CLIENT_ID
     app.config['GOOGLE_CLIENT_SECRET'] = GOOGLE_CLIENT_SECRET
     app.config['PROPAGATE_EXCEPTIONS'] = True
+    # app.config['WTF_CSRF_CHECK_DEFAULT'] = False
+    # app.config['WTF_CSRF_FIELD_NAME'] = 'X-CSRFToken'
 
     return app
 
@@ -82,6 +85,7 @@ def create_app():
     # # Exempt dash routes from CSRF check
     # csrf.exempt(dash_blueprint)
     # csrf.exempt(dash_1)
+    # csrf.exempt('dash.dash.dispatch')
     app.register_blueprint(dash_blueprint)
     # Initializes the dash graphs
     app = dash_1(app)
