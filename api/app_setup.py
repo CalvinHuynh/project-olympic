@@ -1,10 +1,8 @@
 from http import HTTPStatus
 
 from authlib.flask.client import OAuth
-# from dash import Dash
 from flask import Flask, render_template
 from flask_jwt_extended import JWTManager
-# from flask_wtf import CSRFProtect
 
 from api.dashboard.dash_app_1 import add_dash as dash_1
 from api.dashboard.dash_routes import blueprint as dash_blueprint
@@ -18,7 +16,6 @@ from api.settings import (FLASK_APP_NAME, FLASK_SECRET_KEY, GET_PATH,
 
 jwt = None
 oauth = None
-csrf = None
 
 
 def register_config(app: Flask):
@@ -37,8 +34,6 @@ def register_config(app: Flask):
     app.config['GOOGLE_CLIENT_ID'] = GOOGLE_CLIENT_ID
     app.config['GOOGLE_CLIENT_SECRET'] = GOOGLE_CLIENT_SECRET
     app.config['PROPAGATE_EXCEPTIONS'] = True
-    # app.config['WTF_CSRF_CHECK_DEFAULT'] = False
-    # app.config['WTF_CSRF_FIELD_NAME'] = 'X-CSRFToken'
 
     return app
 
@@ -50,9 +45,6 @@ def register_extensions(app: Flask):
     # Initializes JWT
     global jwt
     jwt = JWTManager(app)
-    # Initializes CSRF
-    # global csrf
-    # csrf = CSRFProtect(app)
 
     return app
 
@@ -72,6 +64,14 @@ def register_errorpages(app: Flask):
     return app
 
 
+def register_blueprints(app: Flask):
+    app.register_blueprint(index)
+    app.register_blueprint(api_v1)
+    app.register_blueprint(dash_blueprint)
+
+    return app
+
+
 def create_app():
     app = Flask(FLASK_APP_NAME if FLASK_APP_NAME else __name__,
                 static_url_path='',
@@ -81,13 +81,7 @@ def create_app():
     app = register_extensions(app)
     app = register_errorpages(app)
     # Initializes the routes
-    app.register_blueprint(index)
-    app.register_blueprint(api_v1)
-    # # Exempt dash routes from CSRF check
-    # csrf.exempt(dash_blueprint)
-    # csrf.exempt(dash_1)
-    # csrf.exempt('dash.dash.dispatch')
-    app.register_blueprint(dash_blueprint)
+    app = register_blueprints(app)
     # Initializes the dash graphs
     app = dash_1(app)
 

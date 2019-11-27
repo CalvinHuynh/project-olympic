@@ -102,3 +102,34 @@ def _rename_columns(col_name):
     else:
         pass
     return col_name
+
+
+def cached_dataframe_outdated(filename: str, time_unit: str, time_int: int):
+    """Check if the cached .pkl dataframe is outdated
+
+    Arguments:
+        filename {str} -- filename of the .pkl dataframe
+        time_unit {str} -- time units, e.g. hours, minutes, seconds
+        time_int {int} -- number in int, this will be used in combination with
+        time_unit. The resulting parameter would be for example: hours=1
+
+    Returns:
+        bool -- Returns True if the cache's timedelta exceeds the threshold.
+    """
+    import os
+    import datetime
+    import time
+
+    cache_threshold = datetime.timedelta(**{time_unit: time_int})
+    file_modify_time = None
+    try:
+        file_modify_time = os.path.getmtime(filename)
+    except BaseException:
+        file_modify_time = time.time()
+        pass
+    now = time.time()
+    delta = datetime.timedelta(seconds=now - file_modify_time)
+    if delta > cache_threshold:
+        return True
+    else:
+        return False
