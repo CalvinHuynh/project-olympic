@@ -12,51 +12,44 @@ from api.helpers.data_frame_helper import cached_dataframe_outdated
 url_base = '/dash/info/'
 _data_initialized = False
 
-# layout = html.Div([
-#     html.H1('Occupancy Viewer'),
-#     dcc.Dropdown(id='my-dropdown',
-#                  options=[{
-#                      'label': 'Current temperature',
-#                      'value': 'temp'
-#                  }, {
-#                      'label': 'Minimum temperature',
-#                      'value': 'temp_min'
-#                  }, {
-#                      'label': 'Maximum temperature',
-#                      'value': 'temp_max'
-#                  }],
-#                  value=['temp'],
-#                  multi=True),
-#     html.Button(
-#         'Refresh data',
-#         id='refresh-data-button',
-#     ),
-#     dcc.Graph(id='occupancy-graph')
-# ],
-#                   style={'width': '500'})
-
-# TODO: add dcc.Graph(id='occupancy-graph')
 layout = html.Div([
     html.H1('Occupancy Viewer'),
-    html.Div([
-        dcc.Dropdown(id='my-dropdown',
-                     options=[{
-                         'label': 'Current temperature',
-                         'value': 'temp'
-                     }, {
-                         'label': 'Minimum temperature',
-                         'value': 'temp_min'
-                     }, {
-                         'label': 'Maximum temperature',
-                         'value': 'temp_max'
-                     }],
-                     value=['temp'],
-                     multi=True)
-    ], style=dict(width='68%', display='table-cell', verticalAlign='middle')),
-    html.Div([html.Button('Refresh data', id='refresh-data-button')],
-             style=dict(
-                 width='30%', display='table-cell', verticalAlign='middle'))
-], style=dict(width='100%', display='table'))
+    html.Div(
+        [
+            html.Div(
+                [
+                    dcc.Dropdown(
+                        id='my-dropdown',
+                        options=[{
+                            'label': 'Current temperature',
+                            'value': 'temp'
+                        }, {
+                            'label': 'Minimum temperature',
+                            'value': 'temp_min'
+                        }, {
+                            'label': 'Maximum temperature',
+                            'value': 'temp_max'
+                        }],
+                        value=['temp'],
+                        multi=True)
+                ],
+                style=dict(
+                    width='68%', display='table-cell',
+                    verticalAlign='middle')),
+            html.Div(
+                [html.Button('Refresh data', id='refresh-data-button')],
+                style=dict(
+                    width='30%', display='table-cell',
+                    verticalAlign='middle')),
+        ],
+        style=dict(width='100%', display='table')),
+    html.Div(
+        [dcc.Graph(id='occupancy-graph')],
+        style={
+            'display': 'inline-block',
+            'width': '100%'
+        })
+])
 
 temperature_label_dict = {
     'temp': 'Current temperature',
