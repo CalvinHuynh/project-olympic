@@ -8,6 +8,7 @@ from pandas import DataFrame, read_pickle
 from api.dashboard.dash_function import apply_layout
 from api.helpers.check_token_type_decorator import jwt_required_extended
 from api.helpers.data_frame_helper import cached_dataframe_outdated
+from api.settings import GET_PATH
 
 url_base = '/dash/info/'
 _data_initialized = False
@@ -37,7 +38,9 @@ layout = html.Div([
                     width='68%', display='table-cell',
                     verticalAlign='middle')),
             html.Div(
-                [html.Button('Refresh data', id='refresh-data-button')],
+                [html.Button('Refresh data', id='refresh-data-button',
+                             type='button', className='button')
+                 ],
                 style=dict(
                     width='30%', display='table-cell',
                     verticalAlign='middle')),
@@ -45,10 +48,10 @@ layout = html.Div([
         style=dict(width='100%', display='table')),
     html.Div(
         [dcc.Graph(id='occupancy-graph')],
-        style={
-            'display': 'inline-block',
-            'width': '100%'
-        })
+        style=dict(
+            display='inline-block',
+            width='100%'
+        ))
 ])
 
 temperature_label_dict = {
@@ -89,7 +92,9 @@ def _retrieve_data(data_source_id: int = 2):
 
 
 def add_dash(server):
-    app = Dash(server=server, url_base_pathname=url_base)
+    app = Dash(__name__, server=server, url_base_pathname=url_base,
+               assets_folder=f'{GET_PATH()}/dashboard/assets')
+
     apply_layout(app, layout)
 
     @app.callback(Output('occupancy-graph', 'figure'), [
