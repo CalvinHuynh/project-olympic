@@ -92,12 +92,12 @@ def _retrieve_data(data_source_id: int = 2):
 
 
 def add_dash(server):
-    app = Dash(__name__, server=server, url_base_pathname=url_base,
-               assets_folder=f'{GET_PATH()}/dashboard/assets')
+    dash_app = Dash(__name__, server=server, url_base_pathname=url_base,
+                    assets_folder=f'{GET_PATH()}/dashboard/assets')
 
-    apply_layout(app, layout)
+    apply_layout(dash_app, layout)
 
-    @app.callback(Output('occupancy-graph', 'figure'), [
+    @dash_app.callback(Output('occupancy-graph', 'figure'), [
         Input('my-dropdown', 'value'),
         Input('refresh-data-button', 'n_clicks')
     ])
@@ -115,7 +115,6 @@ def add_dash(server):
 
         if not _data_initialized:
             if data_source_data_df.empty or hourly_weather_data_df.empty:
-                print('initializing dataframe')
                 dictionary_df = _retrieve_data()
                 data_source_data_df = dictionary_df['data_source_data_df']
                 data_source_data_df.to_pickle('cached_data_source_data_df.pkl')
@@ -126,7 +125,6 @@ def add_dash(server):
             else:
                 if cached_dataframe_outdated('cached_data_source_data_df.pkl',
                                              'hours', 1):
-                    print('cache outdated')
                     dictionary_df = _retrieve_data()
                     data_source_data_df = dictionary_df['data_source_data_df']
                     data_source_data_df.to_pickle(
@@ -135,7 +133,6 @@ def add_dash(server):
                         'hourly_weather_data_df']
                     hourly_weather_data_df.to_pickle(
                         'cached_hourly_weather_data_df.pkl')
-                print('reading from cache')
                 data_source_data_df = read_pickle(
                     'cached_data_source_data_df.pkl')
                 hourly_weather_data_df = read_pickle(
@@ -143,7 +140,6 @@ def add_dash(server):
             _data_initialized = True
 
         if n_clicks is not None:
-            print('click event fired')
             dictionary_df = _retrieve_data()
             data_source_data_df = dictionary_df['data_source_data_df']
             data_source_data_df.to_pickle('cached_data_source_data_df.pkl')
@@ -170,4 +166,4 @@ def add_dash(server):
 
         return figure
 
-    return app.server
+    return dash_app.server
