@@ -77,7 +77,7 @@ def _retrieve_data(data_source_id: int = 2):
     hourly_filter = "{dt: dt,  weather: {main: weather[*].main,"\
         "description: weather[*].description}, main: main, wind: wind"\
         ", rain: rain, clouds: clouds}"
-    hourly_weather_array = []   
+    hourly_weather_array = []
     for weather in hourly_weather_query:
         hourly_weather_array.append(model_to_dict(weather, recurse=False))
 
