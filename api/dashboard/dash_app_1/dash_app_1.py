@@ -77,7 +77,7 @@ def _retrieve_data(data_source_id: int = 2):
     hourly_filter = "{dt: dt,  weather: {main: weather[*].main,"\
         "description: weather[*].description}, main: main, wind: wind"\
         ", rain: rain, clouds: clouds}"
-    hourly_weather_array = []
+    hourly_weather_array = []   
     for weather in hourly_weather_query:
         hourly_weather_array.append(model_to_dict(weather, recurse=False))
 
@@ -156,14 +156,20 @@ def add_dash(server):
                         x=hourly_weather_data_df['created_date'],
                         y=hourly_weather_data_df[
                             f'data_main.{dropdown_value}'],
-                        name=f'{temperature_label_dict.get(dropdown_value)}'
-                        f' in Celcius'))
+                        hovertemplate='<br><b>' +
+                        f'{temperature_label_dict.get(dropdown_value)}</b>:'
+                        ' %{y}℃</br>' +
+                        'date: %{x}',
+                        name=f'{temperature_label_dict.get(dropdown_value)}'))
 
         figure.add_trace(
             go.Bar(x=data_source_data_df['created_date'],
                    y=data_source_data_df['no_of_clients'],
-                   name='Number of clients'))
+                   name='Number of clients',
+                   hovertemplate='<b>Connected clients</b>: %{y}' +
+                   '<br>date: %{x} </br>'))
 
+        figure.update_xaxes(hoverformat='%c')
         return figure
 
     return dash_app.server
