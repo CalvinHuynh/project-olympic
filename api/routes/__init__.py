@@ -46,7 +46,6 @@ api.add_namespace(login_api)
 api.add_namespace(data_source_data_api)
 # api.add_namespace(assets_api)
 
-# TODO: extract to separate file
 SUPPORTED_OAUTH_PROVIDERS = [Google, GitHub]
 
 for backend in SUPPORTED_OAUTH_PROVIDERS:

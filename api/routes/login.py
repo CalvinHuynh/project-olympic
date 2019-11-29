@@ -75,5 +75,6 @@ class LogOut(Resource):
     def get(self):
         """Log out the current user"""
         response = make_response(redirect('/'))
+        # unset_jwt_cookies(response)
         unset_access_cookies(response)
         return response
