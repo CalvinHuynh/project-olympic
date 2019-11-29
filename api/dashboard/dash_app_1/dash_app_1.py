@@ -149,6 +149,16 @@ def add_dash(server):
 
         figure = go.Figure()
 
+        figure.add_trace(
+            go.Bar(x=data_source_data_df['created_date'],
+                   y=data_source_data_df['no_of_clients'],
+                   name='Number of clients',
+                   hovertemplate='<b>Connected clients</b>: %{y}' +
+                   '<br>date: %{x} </br>',
+                   marker=go.bar.Marker(
+                       color='rgb(63, 81, 181)'
+            )))
+
         for dropdown_value in selected_dropdown_value:
             if dropdown_value in temperature_label_dict:
                 figure.add_trace(
@@ -161,13 +171,6 @@ def add_dash(server):
                         ' %{y}℃</br>' +
                         'date: %{x}',
                         name=f'{temperature_label_dict.get(dropdown_value)}'))
-
-        figure.add_trace(
-            go.Bar(x=data_source_data_df['created_date'],
-                   y=data_source_data_df['no_of_clients'],
-                   name='Number of clients',
-                   hovertemplate='<b>Connected clients</b>: %{y}' +
-                   '<br>date: %{x} </br>'))
 
         figure.update_xaxes(hoverformat='%c')
         return figure
