@@ -153,11 +153,6 @@ def add_dash(server):
                     'cached_hourly_weather_data_df.pkl')
             _data_initialized = True
 
-            print('data_source_data_df headers')
-            print(list(data_source_data_df))
-            print('hourly_weather_data_df')
-            print(list(hourly_weather_data_df))
-
         if n_clicks is not None:
             dictionary_df = _retrieve_data()
             data_source_data_df = dictionary_df['data_source_data_df']
@@ -168,10 +163,19 @@ def add_dash(server):
 
         if start_date is not None:
             start_date = dt.strptime(start_date.split(' ')[0], '%Y-%m-%d')
-            print(f'start date is : {start_date}')
+            data_source_data_df = data_source_data_df[(
+                data_source_data_df['created_date'] >= start_date)]
+            hourly_weather_data_df = hourly_weather_data_df[(
+                hourly_weather_data_df['created_date'] >= start_date
+            )]
         if end_date is not None:
             end_date = dt.strptime(end_date.split(' ')[0], '%Y-%m-%d')
-            print(f'end date is : {end_date}')
+            data_source_data_df = data_source_data_df[(
+                data_source_data_df['created_date'] <= end_date)]
+            hourly_weather_data_df = hourly_weather_data_df[(
+                hourly_weather_data_df['created_date'] <= end_date
+            )]
+
         figure = go.Figure()
 
         figure.add_trace(
