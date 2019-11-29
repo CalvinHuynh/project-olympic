@@ -28,7 +28,6 @@ def register_config(app: Flask):
     app.config['JWT_TOKEN_LOCATION'] = jwt_locations
     app.config['JWT_SECRET_KEY'] = JWT_SECRET_KEY
     app.config['JWT_COOKIE_CSRF_PROTECT'] = False
-    # app.config['JWT_ACCESS_CSRF_COOKIE_NAME'] = 'X-CSRFToken'
     app.config['GITHUB_CLIENT_ID'] = GITHUB_CLIENT_ID
     app.config['GITHUB_CLIENT_SECRET'] = GITHUB_CLIENT_SECRET
     app.config['GOOGLE_CLIENT_ID'] = GOOGLE_CLIENT_ID
