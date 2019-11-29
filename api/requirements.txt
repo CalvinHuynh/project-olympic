@@ -3,7 +3,7 @@ APScheduler==3.6.3
 asn1crypto==1.2.0
 astroid==2.3.3
 attrs==19.3.0
-Authlib==0.13
+Authlib==0.12.1
 autopep8==1.4.4
 certifi==2019.9.11
 cffi==1.13.2
