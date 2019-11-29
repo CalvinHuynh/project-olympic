@@ -1,3 +1,5 @@
+from datetime import datetime as dt
+
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objects as go
@@ -35,14 +37,24 @@ layout = html.Div([
                         multi=True)
                 ],
                 style=dict(
-                    width='68%', display='table-cell',
+                    width='50%', display='table-cell',
                     verticalAlign='middle')),
+            html.Div([
+                dcc.DatePickerRange(
+                    id='date-picker-range',
+                    min_date_allowed=dt(2019, 11, 1),
+                    initial_visible_month=dt(2019, 11, 1)
+                ),
+            ], style=dict(
+                width='30%', display='table-cell',
+                verticalAlign='middle'
+            )),
             html.Div(
                 [html.Button('Refresh data', id='refresh-data-button',
                              type='button', className='button')
                  ],
                 style=dict(
-                    width='30%', display='table-cell',
+                    width='10%', display='table-cell',
                     verticalAlign='middle')),
         ],
         style=dict(width='100%', display='table')),
@@ -99,10 +111,12 @@ def add_dash(server):
 
     @dash_app.callback(Output('occupancy-graph', 'figure'), [
         Input('my-dropdown', 'value'),
-        Input('refresh-data-button', 'n_clicks')
+        Input('refresh-data-button', 'n_clicks'),
+        Input('date-picker-range', 'start_date'),
+        Input('date-picker-range', 'end_date')
     ])
     @jwt_required_extended
-    def update_graph(selected_dropdown_value, n_clicks):
+    def update_graph(selected_dropdown_value, n_clicks, start_date, end_date):
         global _data_initialized
         data_source_data_df = DataFrame()
         hourly_weather_data_df = DataFrame()
@@ -139,6 +153,11 @@ def add_dash(server):
                     'cached_hourly_weather_data_df.pkl')
             _data_initialized = True
 
+            print('data_source_data_df headers')
+            print(list(data_source_data_df))
+            print('hourly_weather_data_df')
+            print(list(hourly_weather_data_df))
+
         if n_clicks is not None:
             dictionary_df = _retrieve_data()
             data_source_data_df = dictionary_df['data_source_data_df']
@@ -147,6 +166,12 @@ def add_dash(server):
             hourly_weather_data_df.to_pickle(
                 'cached_hourly_weather_data_df.pkl')
 
+        if start_date is not None:
+            start_date = dt.strptime(start_date.split(' ')[0], '%Y-%m-%d')
+            print(f'start date is : {start_date}')
+        if end_date is not None:
+            end_date = dt.strptime(end_date.split(' ')[0], '%Y-%m-%d')
+            print(f'end date is : {end_date}')
         figure = go.Figure()
 
         figure.add_trace(
