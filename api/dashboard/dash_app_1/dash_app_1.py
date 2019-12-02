@@ -102,7 +102,7 @@ def _retrieve_data(data_source_id: int = 2):
         "hourly_weather_data_df": hourly_weater_df
     }
 
-
+# flake8: noqa: C901
 def add_dash(server):
     dash_app = Dash(__name__, server=server, url_base_pathname=url_base,
                     assets_folder=f'{GET_PATH()}/dashboard/assets')
@@ -120,6 +120,7 @@ def add_dash(server):
         global _data_initialized
         data_source_data_df = DataFrame()
         hourly_weather_data_df = DataFrame()
+        # Try to read data from cache
         try:
             data_source_data_df = read_pickle('cached_data_source_data_df.pkl')
             hourly_weather_data_df = read_pickle(
@@ -127,6 +128,7 @@ def add_dash(server):
         except BaseException:
             pass
 
+        # Initializes the data once on application startup
         if not _data_initialized:
             if data_source_data_df.empty or hourly_weather_data_df.empty:
                 dictionary_df = _retrieve_data()
@@ -137,6 +139,7 @@ def add_dash(server):
                 hourly_weather_data_df.to_pickle(
                     'cached_hourly_weather_data_df.pkl')
             else:
+                # Check if cache is outdated
                 if cached_dataframe_outdated('cached_data_source_data_df.pkl',
                                              'hours', 1):
                     dictionary_df = _retrieve_data()
@@ -153,6 +156,7 @@ def add_dash(server):
                     'cached_hourly_weather_data_df.pkl')
             _data_initialized = True
 
+        # Prevents click event from firing on application startup
         if n_clicks is not None:
             dictionary_df = _retrieve_data()
             data_source_data_df = dictionary_df['data_source_data_df']
