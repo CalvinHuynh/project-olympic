@@ -12,7 +12,7 @@ from api.helpers.check_token_type_decorator import jwt_required_extended
 from api.helpers.data_frame_helper import cached_dataframe_outdated
 from api.settings import GET_PATH
 
-url_base = '/dash/info/'
+url_base = '/dash/app1/'
 _data_initialized = False
 
 layout = html.Div([
