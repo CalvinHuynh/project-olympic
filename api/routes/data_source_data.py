@@ -35,11 +35,11 @@ class DataResources(Resource):
     @api.param('end_date',
                type=str,
                description='End date in YYYY-mm-dd format, e.g: "2019-12-31"')
-    @api.param('order_by',
+    @api.param('sort',
                type=str,
                default='desc',
                enum=('desc', 'asc'),
-               description='orders the result by primary key')
+               description='Sorts the result in ascending or descending order')
     def get(self):
         """Fetches data from all sources"""
         try:
@@ -51,7 +51,7 @@ class DataResources(Resource):
                         limit=request.args.get('limit'),
                         start_date=request.args.get('start_date'),
                         end_date=request.args.get('end_date'),
-                        order_by=request.args.get('order_by')), True))
+                        sort=request.args.get('sort')), True))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
 
@@ -89,11 +89,11 @@ class SpecificDataSourceResource(Resource):
     @api.param('end_date',
                type=str,
                description='End date in YYYY-mm-dd format, e.g: "2019-12-31"')
-    @api.param('order_by',
+    @api.param('sort',
                type=str,
                default='desc',
                enum=('desc', 'asc'),
-               description='orders the result by primary key')
+               description='Sorts the result in ascendig or descending order')
     def get(self, data_source_id):
         """Fetches all data from a single data source"""
         try:
@@ -106,7 +106,7 @@ class SpecificDataSourceResource(Resource):
                         limit=request.args.get('limit'),
                         start_date=request.args.get('start_date'),
                         end_date=request.args.get('end_date'),
-                        order_by=request.args.get('order_by')), True))
+                        sort=request.args.get('sort')), True))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
 
@@ -145,14 +145,19 @@ class WeatherResources(Resource):
                description='End date in YYYY-mm-dd format, e.g: "2019-12-31"')
     @api.param('order_by',
                type=str,
+               default='id',
+               enum=('id', 'created_date'),
+               description='orders the result by field')
+    @api.param('sort',
+               type=str,
                default='desc',
                enum=('desc', 'asc'),
-               description='Orders the result by id')
+               description='Sorts the result in ascending or descending order')
     @api.param('forecast_type',
                type=str,
                default='all',
                enum=('hourly', 'weekly', 'all'),
-               help='Filters result by type.')
+               description='Filters result by type.')
     def get(self):
         """Fetches all weather data"""
         try:
@@ -165,6 +170,7 @@ class WeatherResources(Resource):
                         start_date=request.args.get('start_date'),
                         end_date=request.args.get('end_date'),
                         order_by=request.args.get('order_by'),
+                        sort=request.args.get('sort'),
                         forecast_type=request.args.get('forecast_type')),
                     True))
         except Exception as err:

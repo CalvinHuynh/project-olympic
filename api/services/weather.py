@@ -3,12 +3,12 @@ from http import HTTPStatus
 
 from playhouse.shortcuts import model_to_dict
 
-from api.helpers import to_utc_datetime
+from api.helpers import to_utc_datetime, filter_items_from_list
 from api.models import Weather, Forecast
 from api.settings import OPEN_WEATHER_API_KEY
 from api.wrapper import OpenWeatherClient
 
-_ALLOWED_ORDER_BY_VALUES = ['asc', 'desc']
+_ALLOWED_SORT_VALUES = ['asc', 'desc']
 _client = OpenWeatherClient(OPEN_WEATHER_API_KEY, 'Amsterdam', 'NL')
 
 
@@ -39,7 +39,7 @@ class WeatherService():
 
     # flake8: noqa: C901
     def retrieve_all_weather_data(self, limit: int, start_date: str,
-                                  end_date: str, order_by: str,
+                                  end_date: str, order_by: str, sort: str,
                                   forecast_type: str):
         """Retrieves all weather data
 
@@ -47,7 +47,8 @@ class WeatherService():
             limit {int} -- limits the number of results
             start_date {str} -- start date
             end_date {str} -- end date
-            order_by {str} -- order the result by id
+            order_by {str} -- order result by given key
+            sort {str} -- sorts the data in ascending or descending order
             forecast_type {str} -- forecast type
 
         Returns:
@@ -55,28 +56,39 @@ class WeatherService():
         """
         all_data_array = []
 
+        obj_attributes = filter_items_from_list(dir(Weather), '^__')
+        order_by_field = Weather
+
         query = Weather.select()
 
         # Set defaults
         if not limit:
             limit = 20
         if not order_by:
-            order_by = 'desc'
+            order_by = 'id'
+        if not sort:
+            sort = 'desc'
 
         if start_date:
             query = query.where(Weather.created_date >= start_date)
         if end_date:
             query = query.where(Weather.created_date <= end_date)
 
-        if order_by.lower() in _ALLOWED_ORDER_BY_VALUES:
-            if order_by.lower() == _ALLOWED_ORDER_BY_VALUES[0]:
-                query = query.order_by(Weather.id.asc())
+        if order_by.strip().lower() in obj_attributes:
+            order_by_field = getattr(Weather, order_by.strip().lower())
+        else:
+            raise ValueError(HTTPStatus.BAD_REQUEST,
+                             f'Field {order_by.strip().lower()} does not exist')
+
+        if sort.lower() in _ALLOWED_SORT_VALUES:
+            if sort.lower() == _ALLOWED_SORT_VALUES[0]:
+                query = query.order_by(order_by_field.asc())
             else:
-                query = query.order_by(Weather.id.desc())
+                query = query.order_by(order_by_field.desc())
         else:
             raise ValueError(
                 HTTPStatus.BAD_REQUEST,
-                'Invalid order_by value, only "asc" or "desc" are allowed')
+                'Invalid sort value, only "asc" or "desc" are allowed')
 
         try:
             casted_limit = int(limit)

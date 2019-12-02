@@ -4,6 +4,7 @@ from .json_to_object_decorator import convert_input_to_tuple
 from .response_helper import (ErrorObject, SuccessObject,
                               add_extra_info_to_dict, remove_items_from_dict)
 from .serializer import (date_time_serializer, json_to_object,
-                         to_rfc3339_datetime, to_utc_datetime)
+                         to_rfc3339_datetime, to_utc_datetime,
+                         filter_items_from_list)
 
 # from .flask_jwt_responses import *
