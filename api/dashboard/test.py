@@ -1,6 +1,8 @@
 import os as _os
+from datetime import datetime as dt
 from enum import Enum
 
+import plotly.graph_objects as go
 from dotenv import load_dotenv as _load_dotenv
 from pandas import DataFrame, Series
 from pandas.io.json import json_normalize
@@ -9,7 +11,6 @@ from peewee import (CharField, DateTimeField, ForeignKeyField, IntegerField,
 from playhouse.mysql_ext import JSONField
 from playhouse.shortcuts import model_to_dict
 
-import plotly.graph_objects as go
 # from cytoolz.dicttoolz import merge
 
 env_path = '/home/calvin/Projects/afstuderen/project-olympic/.env'
@@ -180,85 +181,88 @@ def _rename_columns(col_name):
     return col_name
 
 
-# data_source_query = DataSourceData.select().where(
-#     DataSourceData.data_source_id == 2).dicts()
-# # print(query.dicts())
-# data_source_df = DataFrame(list(data_source_query))
-# print(data_source_df)
 data_source_df = DataFrame(
     list(DataSourceData.select().where(
         DataSourceData.data_source_id == 2).dicts()))
 
-weekly_weather_query = Weather.select().where(
-    Weather.weather_forecast_type == Forecast.FIVE_DAYS_THREE_HOUR)
-
-weekly_filter = "{\"5_days_3_hour_forecast\": list[].{dt: dt, main: main,"\
-    "weather: {main: weather[0].main, description: weather[0].description },"\
-    "clouds: clouds, wind: wind, rain: rain}}"
-
-weekly_weather_array = []
-for weather in weekly_weather_query:
-    weekly_weather_array.append(model_to_dict(weather, recurse=False))
-
-weekly_weather_df = DataFrame(weekly_weather_array)
-# print('before weekly filter')
-# print(weekly_weather_df.iloc[0])
-weekly_weather_df = filter_column_json_data(weekly_weather_df, 'data',
-                                            weekly_filter)
-# print('after weekly filter')
-# print(weekly_weather_df.iloc[0])
-weekly_weather_df = flatten_json_data_in_column(weekly_weather_df, 'data')
-# print(weekly_weather_df)
-# weekly_weather_df.pipe(
-#     lambda x: x.drop('data.5_days_3_hour_forecast', 1).join(
-#         x['data.5_days_3_hour_forecast'].apply(lambda y: Series(merge(y)))
-#     )
-# )
-
-# print('before splitting data_5_days_3_hour_forecast')
-# print(weekly_weather_df)
-
-# Flattens the json array that resides in the specified column and removes it
-# after it is done
-
-# weekly_weather_df = weekly_weather_df['data_5_days_3_hour_forecast'].apply(
-#     Series).merge(weekly_weather_df, left_index=True,
-#                   right_index=True).drop(['data_5_days_3_hour_forecast'],
-#                                          axis=1)
-
-weekly_weather_df = unpack_json_array(weekly_weather_df,
-                                      'data_5_days_3_hour_forecast')
-
-# print('after splitting data_5_days_3_hour_forecast')
-# print(weekly_weather_df)
-# weekly_weather_df = weekly_weather_df.rename(columns=_rename_column)
-weekly_weather_df.columns = map(_rename_columns, weekly_weather_df.columns)
-df = weekly_weather_df.iloc[[0]]
-print(list(weekly_weather_df))
-# print(type(df))
-# print('headers are')
-# print(list(df))
-# print('types are')
-# print(df.dtypes)
-# print(df)
-flatest_df = flatten_json_data_in_column(weekly_weather_df, 'data', 40)
-# print(flatest_df)
-# print(list(flatest_df))
-# print(weekly_weather_df)
-# print('after weekly flatten')
-# print(weekly_weather_df.iloc[0])
+start_date = dt.strptime(("2019-11-08").split(' ')[0], '%Y-%m-%d')
 
 hourly_weather_query = Weather.select().where(
+    Weather.created_date >= start_date,
     Weather.weather_forecast_type == Forecast.HOURLY)
-hourly_filter = "{dt: dt,  weather: {main: weather[*].main,"\
-    "description: weather[*].description}, main: main, wind: wind"\
-    ", rain: rain, clouds: clouds}"
 
 hourly_weather_array = []
 for weather in hourly_weather_query:
     hourly_weather_array.append(model_to_dict(weather, recurse=False))
 
 hourly_weater_df = DataFrame(hourly_weather_array)
+
+weekly_weather_query = Weather.select().where(
+    Weather.weather_forecast_type == Forecast.FIVE_DAYS_THREE_HOUR)
+
+weekly_weather_array = []
+for weather in weekly_weather_query:
+    weekly_weather_array.append(model_to_dict(weather, recurse=False))
+
+weekly_weather_df = DataFrame(weekly_weather_array)
+data_source_df = data_source_df[(
+    data_source_df['created_date'] >= start_date)]
+
+data_source_df['created_date'] = data_source_df['created_date'].map(
+    lambda x: x.replace(second=0))
+print(data_source_df.head)
+## Date filter causes an odd behaviour, causing the resulting temperature to be NaN values
+# print(f'size of hourly_weather_df before filtering is {hourly_weater_df.size}')
+# hourly_weater_df = hourly_weater_df[(
+#     hourly_weater_df['created_date'] >= start_date
+# )]
+# print(f'size of hourly_weather_df after filtering is {hourly_weater_df.size}')
+# # print(hourly_weater_df.tail)
+# print(list(hourly_weater_df))
+weekly_filter = "{\"5_days_3_hour_forecast\": list[].{dt: dt, main: main,"\
+    "weather: {main: weather[0].main, description: weather[0].description },"\
+    "clouds: clouds, wind: wind, rain: rain}}"
+
+# # print('before weekly filter')
+# # print(weekly_weather_df.iloc[0])
+# weekly_weather_df = filter_column_json_data(weekly_weather_df, 'data',
+#                                             weekly_filter)
+# # print('after weekly filter')
+# # print(weekly_weather_df.iloc[0])
+# weekly_weather_df = flatten_json_data_in_column(weekly_weather_df, 'data')
+# # print(weekly_weather_df)
+# # weekly_weather_df.pipe(
+# #     lambda x: x.drop('data.5_days_3_hour_forecast', 1).join(
+# #         x['data.5_days_3_hour_forecast'].apply(lambda y: Series(merge(y)))
+# #     )
+# # )
+
+# # print('before splitting data_5_days_3_hour_forecast')
+# # print(weekly_weather_df)
+
+# # Flattens the json array that resides in the specified column and removes it
+# # after it is done
+
+# # weekly_weather_df = weekly_weather_df['data_5_days_3_hour_forecast'].apply(
+# #     Series).merge(weekly_weather_df, left_index=True,
+# #                   right_index=True).drop(['data_5_days_3_hour_forecast'],
+# #                                          axis=1)
+
+# weekly_weather_df = unpack_json_array(weekly_weather_df,
+#                                       'data_5_days_3_hour_forecast')
+
+# # print('after splitting data_5_days_3_hour_forecast')
+# # print(weekly_weather_df)
+# # weekly_weather_df = weekly_weather_df.rename(columns=_rename_column)
+# weekly_weather_df.columns = map(_rename_columns, weekly_weather_df.columns)
+# df = weekly_weather_df.iloc[[0]]
+# # print(list(weekly_weather_df))
+flatest_df = flatten_json_data_in_column(weekly_weather_df, 'data', 40)
+
+hourly_filter = "{dt: dt,  weather: {main: weather[*].main,"\
+    "description: weather[*].description}, main: main, wind: wind"\
+    ", rain: rain, clouds: clouds}"
+
 # print('before hourly filter')
 # print(hourly_weater_df.iloc[0])
 hourly_weater_df = filter_column_json_data(hourly_weater_df, 'data',
@@ -266,19 +270,41 @@ hourly_weater_df = filter_column_json_data(hourly_weater_df, 'data',
 # print('after hourly filter')
 # print(hourly_weater_df.iloc[0])
 hourly_weater_df = flatten_json_data_in_column(hourly_weater_df, 'data')
+# hourly_weater_df["created_date"] = hourly_weater_df["created_date"].round("S")
+hourly_weater_df['created_date'] = hourly_weater_df['created_date'].map(
+    lambda x: x.replace(second=0))
 print('after hourly flatten')
-print(hourly_weater_df.iloc[0])
-
+# print(hourly_weater_df.iloc[0])
+# print(hourly_weater_df.loc[[hourly_weater_df['id'] == 5674], ['id', 'created_date', 'data_main.temp']])
+print(hourly_weater_df.query("id == 5674")[
+      ['id', 'created_date', 'data_main.temp']])
 print(hourly_weater_df[['created_date', 'data_main.temp']])
-# TODO: create a graph for thesis
-figure = go.Figure()
-figure.add_trace(
-    go.Bar(x=data_source_df['created_date'],
-           y=data_source_df['no_of_clients'],
-           name="Number of clients"))
 
-figure.add_trace(
-    go.Scatter(x=hourly_weater_df['created_date'],
-               y=hourly_weater_df['data_main.temp'],
-               name="Temperature in Celcius"))
-figure.show()
+print('types of data_source_df are')
+print(data_source_df.dtypes)
+print(
+    f"type of created_date of data_source_df is {hourly_weater_df['created_date'].dtype}")
+
+print('types of hourly_weather_df are')
+print(hourly_weater_df.dtypes)
+print(
+    f"type of created_date of hourly_wearther_df is {hourly_weater_df['created_date'].dtype}")
+
+# data_source_df.merge(hourly_weater_df)
+merged_df = data_source_df.merge(hourly_weater_df, on='created_date')
+print(f'columns of hourly df {list(hourly_weater_df)}')
+print(f'columns of data source data df {list(data_source_df)}')
+print(list(merged_df))
+print(merged_df.head)
+# TODO: create a graph for thesis
+# figure = go.Figure()
+# figure.add_trace(
+#     go.Bar(x=data_source_df['created_date'],
+#            y=data_source_df['no_of_clients'],
+#            name="Number of clients"))
+
+# figure.add_trace(
+#     go.Scatter(x=hourly_weater_df['created_date'],
+#                y=hourly_weater_df['data_main.temp'],
+#                name="Temperature in Celcius"))
+# figure.show()
