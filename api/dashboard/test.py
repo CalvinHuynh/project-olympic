@@ -2,9 +2,11 @@ import os as _os
 from datetime import datetime as dt
 from enum import Enum
 
+import plotly.express as px
+import plotly.figure_factory as ff
 import plotly.graph_objects as go
 from dotenv import load_dotenv as _load_dotenv
-from pandas import DataFrame, Series
+from pandas import DataFrame, Series, to_datetime
 from pandas.io.json import json_normalize
 from peewee import (CharField, DateTimeField, ForeignKeyField, IntegerField,
                     Model, MySQLDatabase, PrimaryKeyField)
@@ -181,6 +183,14 @@ def _rename_columns(col_name):
     return col_name
 
 
+def drop_columns_with_postfix(df: DataFrame, postfix_to_drop: str = '_y'):
+    all_columns_in_df = list(df)
+    for col in all_columns_in_df:
+        if col.endswith(postfix_to_drop):
+            del df[col]
+    return df
+
+
 data_source_df = DataFrame(
     list(DataSourceData.select().where(
         DataSourceData.data_source_id == 2).dicts()))
@@ -207,10 +217,10 @@ for weather in weekly_weather_query:
 weekly_weather_df = DataFrame(weekly_weather_array)
 data_source_df = data_source_df[(
     data_source_df['created_date'] >= start_date)]
-
+# flooring the seconds
 data_source_df['created_date'] = data_source_df['created_date'].map(
     lambda x: x.replace(second=0))
-print(data_source_df.head)
+
 ## Date filter causes an odd behaviour, causing the resulting temperature to be NaN values
 # print(f'size of hourly_weather_df before filtering is {hourly_weater_df.size}')
 # hourly_weater_df = hourly_weater_df[(
@@ -273,38 +283,79 @@ hourly_weater_df = flatten_json_data_in_column(hourly_weater_df, 'data')
 # hourly_weater_df["created_date"] = hourly_weater_df["created_date"].round("S")
 hourly_weater_df['created_date'] = hourly_weater_df['created_date'].map(
     lambda x: x.replace(second=0))
-print('after hourly flatten')
+# print('after hourly flatten')
 # print(hourly_weater_df.iloc[0])
 # print(hourly_weater_df.loc[[hourly_weater_df['id'] == 5674], ['id', 'created_date', 'data_main.temp']])
+print('------------------ print where id is 5674')
 print(hourly_weater_df.query("id == 5674")[
       ['id', 'created_date', 'data_main.temp']])
 print(hourly_weater_df[['created_date', 'data_main.temp']])
 
-print('types of data_source_df are')
-print(data_source_df.dtypes)
-print(
-    f"type of created_date of data_source_df is {hourly_weater_df['created_date'].dtype}")
-
-print('types of hourly_weather_df are')
-print(hourly_weater_df.dtypes)
-print(
-    f"type of created_date of hourly_wearther_df is {hourly_weater_df['created_date'].dtype}")
-
-# data_source_df.merge(hourly_weater_df)
-merged_df = data_source_df.merge(hourly_weater_df, on='created_date')
-print(f'columns of hourly df {list(hourly_weater_df)}')
-print(f'columns of data source data df {list(data_source_df)}')
+merged_df = data_source_df.merge(
+    hourly_weater_df, on='created_date', how='left')
 print(list(merged_df))
-print(merged_df.head)
-# TODO: create a graph for thesis
-# figure = go.Figure()
-# figure.add_trace(
-#     go.Bar(x=data_source_df['created_date'],
-#            y=data_source_df['no_of_clients'],
-#            name="Number of clients"))
+# Clean dataframe
+merged_df = drop_columns_with_postfix(merged_df)
+merged_df.rename(
+    columns={'id_x': 'id', 'data_source_x': 'data_source'}, inplace=True)
 
-# figure.add_trace(
-#     go.Scatter(x=hourly_weater_df['created_date'],
-#                y=hourly_weater_df['data_main.temp'],
-#                name="Temperature in Celcius"))
+print(merged_df)
+print(merged_df.tail(n=10))
+print(f"columns before resampling are: {list(merged_df)}")
+print(merged_df.info())
+merged_df.created_date = to_datetime(merged_df.created_date, unit='s')
+merged_df = merged_df.resample('H', on='created_date', ).mean().reset_index()
+merged_df['day_of_week'] = merged_df['created_date'].dt.day_name()
+# print(merged_df.info())
+merged_df.data_source.round(0)
+del merged_df['id']
+print(merged_df)
+print(f"type of created_date is {merged_df['data_dt'].dtypes}")
+print(f"columns after resampling are: {list(merged_df)}")
+# nan_rows = merged_df[merged_df['data_main.temp'].notnull()]
+# print('--------------------')
+# print(nan_rows)
+figure = go.Figure()
+figure.add_trace(
+    go.Bar(x=merged_df['created_date'],
+           y=merged_df['no_of_clients'],
+           name="Number of clients"))
+
+figure.add_trace(
+    go.Scatter(x=merged_df['created_date'],
+               y=merged_df['data_main.temp'],
+               name="Temperature in Celcius"))
 # figure.show()
+hovertext = merged_df.corr().round(2)
+heat = go.Heatmap(
+    z=merged_df.corr(),
+    x=list(merged_df),
+    y=list(merged_df),
+    xgap=1, ygap=1,
+    colorscale=px.colors.sequential.Viridis,
+    colorbar_thickness=20,
+    colorbar_ticklen=3,
+    text=merged_df.corr(),
+    hovertext=hovertext,
+    hoverinfo='text',
+)
+
+# test_df = merged_df.groupby(merged_df['created_date'].map(lambda t: t.hour))
+# test_df = merged_df.groupby(merged_df['created_date'].to_period('T'))
+# print(test_df)
+
+# layout = go.Layout(
+#     xaxis_showgrid=False,
+#     yaxis_showgrid=False)
+# #     yaxis_autorange='reversed')
+# figure_2 = go.Figure(data=[heat], layout=layout)
+# figure_2.show()
+
+# corr = merged_df.corr()
+# corr.style.background_gradient(cmap='coolwarm').set_precision(2)
+# corr.show()
+
+# figure_3 = ff.create_annotated_heatmap(
+#     merged_df.corr(), zmin=0)
+
+# figure_3.show()
