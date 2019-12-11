@@ -86,8 +86,8 @@ def _retrieve_data(data_source_id: int = 2):
 
     hourly_weather_query = Weather.select().where(
         Weather.weather_forecast_type == Forecast.HOURLY)
-    hourly_filter = "{dt: dt,  weather: {main: weather[*].main,"\
-        "description: weather[*].description}, main: main, wind: wind"\
+    hourly_filter = "{dt: dt,  weather: {main: weather[0].main,"\
+        "description: weather[0].description}, main: main, wind: wind"\
         ", rain: rain, clouds: clouds}"
     hourly_weather_array = []
     for weather in hourly_weather_query:

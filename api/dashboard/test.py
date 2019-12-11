@@ -269,8 +269,8 @@ weekly_filter = "{\"5_days_3_hour_forecast\": list[].{dt: dt, main: main,"\
 # # print(list(weekly_weather_df))
 flatest_df = flatten_json_data_in_column(weekly_weather_df, 'data', 40)
 
-hourly_filter = "{dt: dt,  weather: {main: weather[*].main,"\
-    "description: weather[*].description}, main: main, wind: wind"\
+hourly_filter = "{dt: dt,  weather: {main: weather[0].main,"\
+    "description: weather[0].description}, main: main, wind: wind"\
     ", rain: rain, clouds: clouds}"
 
 # print('before hourly filter')
@@ -299,17 +299,25 @@ merged_df = drop_columns_with_postfix(merged_df)
 merged_df.rename(
     columns={'id_x': 'id', 'data_source_x': 'data_source'}, inplace=True)
 
-print(merged_df)
-print(merged_df.tail(n=10))
-print(f"columns before resampling are: {list(merged_df)}")
-print(merged_df.info())
+# print(merged_df)
+# print(merged_df.tail(n=10))
+# print(f"columns before resampling are: {list(merged_df)}")
+# print(merged_df.info())
+# print('--- columns are:')
+# for item in list(merged_df):
+#     print(item)
+print(merged_df['data_weather.main'].unique())
+print(merged_df['data_weather.description'].unique())
+main_weather_condition_df = merged_df.resample('H', on='created_date').agg(
+    {'data_weather.main': ', '.join, 'data_weather.description': ', '.join})
+print(main_weather_condition_df.head)
 merged_df.created_date = to_datetime(merged_df.created_date, unit='s')
-merged_df = merged_df.resample('H', on='created_date', ).mean().reset_index()
+merged_df = merged_df.resample('H', on='created_date').mean().reset_index()
 merged_df['day_of_week'] = merged_df['created_date'].dt.day_name()
 # print(merged_df.info())
 merged_df.data_source.round(0)
 del merged_df['id']
-print(merged_df)
+print(merged_df)    
 print(f"type of created_date is {merged_df['data_dt'].dtypes}")
 print(f"columns after resampling are: {list(merged_df)}")
 # nan_rows = merged_df[merged_df['data_main.temp'].notnull()]
