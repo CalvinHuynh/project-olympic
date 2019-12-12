@@ -3,7 +3,7 @@ from datetime import datetime as dt
 from enum import Enum
 
 import plotly.express as px
-import plotly.figure_factory as ff
+# import plotly.figure_factory as ff
 import plotly.graph_objects as go
 from dotenv import load_dotenv as _load_dotenv
 from pandas import DataFrame, Series, to_datetime
@@ -12,6 +12,7 @@ from peewee import (CharField, DateTimeField, ForeignKeyField, IntegerField,
                     Model, MySQLDatabase, PrimaryKeyField)
 from playhouse.mysql_ext import JSONField
 from playhouse.shortcuts import model_to_dict
+import numpy as np
 
 # from cytoolz.dicttoolz import merge
 
@@ -205,7 +206,7 @@ hourly_weather_array = []
 for weather in hourly_weather_query:
     hourly_weather_array.append(model_to_dict(weather, recurse=False))
 
-hourly_weater_df = DataFrame(hourly_weather_array)
+hourly_weather_df = DataFrame(hourly_weather_array)
 
 weekly_weather_query = Weather.select().where(
     Weather.weather_forecast_type == Forecast.FIVE_DAYS_THREE_HOUR)
@@ -275,64 +276,74 @@ hourly_filter = "{dt: dt,  weather: {main: weather[0].main,"\
 
 # print('before hourly filter')
 # print(hourly_weater_df.iloc[0])
-hourly_weater_df = filter_column_json_data(hourly_weater_df, 'data',
-                                           hourly_filter)
+hourly_weather_df = filter_column_json_data(hourly_weather_df, 'data',
+                                            hourly_filter)
 # print('after hourly filter')
 # print(hourly_weater_df.iloc[0])
-hourly_weater_df = flatten_json_data_in_column(hourly_weater_df, 'data')
+hourly_weather_df = flatten_json_data_in_column(hourly_weather_df, 'data')
 # hourly_weater_df["created_date"] = hourly_weater_df["created_date"].round("S")
-hourly_weater_df['created_date'] = hourly_weater_df['created_date'].map(
+hourly_weather_df['created_date'] = hourly_weather_df['created_date'].map(
     lambda x: x.replace(second=0))
 # print('after hourly flatten')
 # print(hourly_weater_df.iloc[0])
 # print(hourly_weater_df.loc[[hourly_weater_df['id'] == 5674], ['id', 'created_date', 'data_main.temp']])
-print('------------------ print where id is 5674')
-print(hourly_weater_df.query("id == 5674")[
-      ['id', 'created_date', 'data_main.temp']])
-print(hourly_weater_df[['created_date', 'data_main.temp']])
-
+# print('------------------ print where id is 5674')
+# print(hourly_weather_df.query("id == 5674")[
+#       ['id', 'created_date', 'data_main.temp']])
+# print(hourly_weather_df.head)
+# Remove data_rain column as it does not contain any data
+del hourly_weather_df['data_rain']
+# print(hourly_weather_df['data_rain.1h'].unique())
+# print(f"wind gust is {hourly_weather_df['data_wind.gust'].unique()}")
+# print(f"wind degree is {hourly_weather_df['data_wind.deg'].unique()}")
+# print(hourly_weather_df['data_weather.main'].unique())
+# print(hourly_weather_df.isna().any())
 merged_df = data_source_df.merge(
-    hourly_weater_df, on='created_date', how='left')
-print(list(merged_df))
+    hourly_weather_df, on='created_date', how='left')
+# print(list(merged_df))
+
 # Clean dataframe
 merged_df = drop_columns_with_postfix(merged_df)
 merged_df.rename(
     columns={'id_x': 'id', 'data_source_x': 'data_source'}, inplace=True)
 
-# print(merged_df)
-# print(merged_df.tail(n=10))
-# print(f"columns before resampling are: {list(merged_df)}")
-# print(merged_df.info())
-# print('--- columns are:')
-# for item in list(merged_df):
-#     print(item)
-print(merged_df['data_weather.main'].unique())
-print(merged_df['data_weather.description'].unique())
-main_weather_condition_df = merged_df.resample('H', on='created_date').agg(
-    {'data_weather.main': ', '.join, 'data_weather.description': ', '.join})
-print(main_weather_condition_df.head)
-merged_df.created_date = to_datetime(merged_df.created_date, unit='s')
+# Subset hourly_weather_df
+weather_description_labels_df = hourly_weather_df[[
+    'created_date', 'data_main.temp',
+    'data_weather.main',
+    'data_weather.description']]
+weather_description_labels_df = weather_description_labels_df.resample(
+    'H', on='created_date').agg({
+        'data_weather.main': lambda x: x.value_counts().keys()[0:3].tolist(),
+        'data_weather.description': lambda x: x.value_counts().keys()[0:3].tolist()
+    }).reset_index()
+weather_description_labels_df['day_of_week'] = weather_description_labels_df['created_date'].dt.day_name()
+# print(weather_description_labels_df.head)
+
+# Calculate the mean of all the values
 merged_df = merged_df.resample('H', on='created_date').mean().reset_index()
-merged_df['day_of_week'] = merged_df['created_date'].dt.day_name()
+merged_df = merged_df.merge(weather_description_labels_df, on='created_date', how='left')
+merged_df['data_source'].round(0)
+merged_df['no_of_clients'].round(2)
 # print(merged_df.info())
-merged_df.data_source.round(0)
 del merged_df['id']
-print(merged_df)    
-print(f"type of created_date is {merged_df['data_dt'].dtypes}")
-print(f"columns after resampling are: {list(merged_df)}")
+# print(merged_df.head)
+# print(f"type of created_date is {merged_df['data_dt'].dtypes}")
+# print(f"columns after resampling are: {list(merged_df)}")
 # nan_rows = merged_df[merged_df['data_main.temp'].notnull()]
 # print('--------------------')
 # print(nan_rows)
-figure = go.Figure()
-figure.add_trace(
-    go.Bar(x=merged_df['created_date'],
-           y=merged_df['no_of_clients'],
-           name="Number of clients"))
 
-figure.add_trace(
-    go.Scatter(x=merged_df['created_date'],
-               y=merged_df['data_main.temp'],
-               name="Temperature in Celcius"))
+# figure = go.Figure()
+# figure.add_trace(
+#     go.Bar(x=merged_df['created_date'],
+#            y=merged_df['no_of_clients'],
+#            name="Number of clients"))
+
+# figure.add_trace(
+#     go.Scatter(x=merged_df['created_date'],
+#                y=merged_df['data_main.temp'],
+#                name="Temperature in Celcius"))
 # figure.show()
 hovertext = merged_df.corr().round(2)
 heat = go.Heatmap(
@@ -352,12 +363,12 @@ heat = go.Heatmap(
 # test_df = merged_df.groupby(merged_df['created_date'].to_period('T'))
 # print(test_df)
 
-# layout = go.Layout(
-#     xaxis_showgrid=False,
-#     yaxis_showgrid=False)
-# #     yaxis_autorange='reversed')
-# figure_2 = go.Figure(data=[heat], layout=layout)
-# figure_2.show()
+layout = go.Layout(
+    xaxis_showgrid=False,
+    yaxis_showgrid=False)
+#     yaxis_autorange='reversed')
+figure_2 = go.Figure(data=[heat], layout=layout)
+figure_2.show()
 
 # corr = merged_df.corr()
 # corr.style.background_gradient(cmap='coolwarm').set_precision(2)
