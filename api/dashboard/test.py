@@ -3,17 +3,15 @@ from datetime import datetime as dt
 from enum import Enum
 
 import plotly.express as px
-# import plotly.figure_factory as ff
+import plotly.figure_factory as ff
 import plotly.graph_objects as go
 from dotenv import load_dotenv as _load_dotenv
-from pandas import DataFrame, Series, to_datetime
+from pandas import DataFrame, Series
 from pandas.io.json import json_normalize
 from peewee import (CharField, DateTimeField, ForeignKeyField, IntegerField,
                     Model, MySQLDatabase, PrimaryKeyField)
 from playhouse.mysql_ext import JSONField
 from playhouse.shortcuts import model_to_dict
-import numpy as np
-
 # from cytoolz.dicttoolz import merge
 
 env_path = '/home/calvin/Projects/afstuderen/project-olympic/.env'
@@ -302,6 +300,10 @@ del hourly_weather_df['data_rain']
 # print(f"wind degree is {hourly_weather_df['data_wind.deg'].unique()}")
 # print(hourly_weather_df['data_weather.main'].unique())
 # print(hourly_weather_df.isna().any())
+
+# Subtract the 8 devices/clients that are always connected
+data_source_df['no_of_clients'] = data_source_df['no_of_clients'] - 8
+data_source_df.loc[data_source_df['no_of_clients'] < 0, 'no_of_clients'] = 0
 merged_df = data_source_df.merge(
     hourly_weather_df, on='created_date', how='left')
 # print(list(merged_df))
@@ -316,7 +318,7 @@ weather_description_labels_df = hourly_weather_df[[
     'created_date', 'data_main.temp',
     'data_weather.main',
     'data_weather.description']]
-# TODO: convert list to string labels for categorical data
+
 weather_description_labels_df = weather_description_labels_df.resample(
     'H', on='created_date').agg({
         'data_weather.main': lambda x: sorted(x.value_counts().keys()[0:3].tolist()),
@@ -340,10 +342,11 @@ del merged_df['id']
 merged_df[['data_weather.main', 'data_weather.description', 'day_of_week']] = merged_df[['data_weather.main', 'data_weather.description', 'day_of_week']].apply(
     lambda x: x.astype('category').cat.codes
 )
-print(merged_df['day_of_week'].unique())
-print(merged_df[['created_date', 'no_of_clients', 'data_weather.main', 'data_weather.description', 'day_of_week']].head)
+# print(merged_df['day_of_week'].unique())
+# print(merged_df[['created_date', 'no_of_clients', 'data_weather.main', 'data_weather.description', 'day_of_week']].head)
 # for col in ['data_weather.main', 'data_weather.description', 'day_of_week']:
 #     merged_df[[col]] = merged_df[[col]].astype('category')
+# print(f"number of clients {merged_df['no_of_clients'].unique()}")
 
 # print(merged_df[''])
 # print(merged_df.head)
@@ -364,6 +367,7 @@ print(merged_df[['created_date', 'no_of_clients', 'data_weather.main', 'data_wea
 #                y=merged_df['data_main.temp'],
 #                name="Temperature in Celcius"))
 # figure.show()
+# print(merged_df.corr().values)
 hovertext = merged_df.corr().round(2)
 heat = go.Heatmap(
     z=merged_df.corr(),
@@ -373,7 +377,7 @@ heat = go.Heatmap(
     colorscale=px.colors.sequential.Viridis,
     colorbar_thickness=20,
     colorbar_ticklen=3,
-    text=merged_df.corr(),
+    text=merged_df.corr().values,
     hovertext=hovertext,
     hoverinfo='text',
 )
@@ -389,11 +393,11 @@ layout = go.Layout(
 figure_2 = go.Figure(data=[heat], layout=layout)
 figure_2.show()
 
+print(merged_df[['no_of_clients', 'day_of_week']].corr())
 # corr = merged_df.corr()
 # corr.style.background_gradient(cmap='coolwarm').set_precision(2)
 # corr.show()
 
-# figure_3 = ff.create_annotated_heatmap(
-#     merged_df.corr(), zmin=0)
+# figure_3 = ff.create_annotated_heatmap(merged_df.corr())
 
 # figure_3.show()
