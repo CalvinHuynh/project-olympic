@@ -192,6 +192,10 @@ def drop_columns_with_postfix(df: DataFrame, postfix_to_drop: str = '_y'):
     return df
 
 
+def convert_list_to_string(list_to_join: list):
+    return ", ".join(list_to_join)
+
+
 data_source_df = DataFrame(
     list(DataSourceData.select().where(
         DataSourceData.data_source_id == 2).dicts()))
@@ -312,21 +316,36 @@ weather_description_labels_df = hourly_weather_df[[
     'created_date', 'data_main.temp',
     'data_weather.main',
     'data_weather.description']]
+# TODO: convert list to string labels for categorical data
 weather_description_labels_df = weather_description_labels_df.resample(
     'H', on='created_date').agg({
-        'data_weather.main': lambda x: x.value_counts().keys()[0:3].tolist(),
-        'data_weather.description': lambda x: x.value_counts().keys()[0:3].tolist()
+        'data_weather.main': lambda x: sorted(x.value_counts().keys()[0:3].tolist()),
+        'data_weather.description': lambda x: sorted(x.value_counts().keys()[0:3].tolist())
     }).reset_index()
 weather_description_labels_df['day_of_week'] = weather_description_labels_df['created_date'].dt.day_name()
-# print(weather_description_labels_df.head)
+
+weather_description_labels_df['data_weather.description'] = weather_description_labels_df['data_weather.description'].apply(
+    lambda x: convert_list_to_string(x))
+
+weather_description_labels_df['data_weather.main'] = weather_description_labels_df['data_weather.main'].apply(
+    lambda x: convert_list_to_string(x))
 
 # Calculate the mean of all the values
 merged_df = merged_df.resample('H', on='created_date').mean().reset_index()
-merged_df = merged_df.merge(weather_description_labels_df, on='created_date', how='left')
+merged_df = merged_df.merge(
+    weather_description_labels_df, on='created_date', how='left')
 merged_df['data_source'].round(0)
 merged_df['no_of_clients'].round(2)
-# print(merged_df.info())
 del merged_df['id']
+merged_df[['data_weather.main', 'data_weather.description', 'day_of_week']] = merged_df[['data_weather.main', 'data_weather.description', 'day_of_week']].apply(
+    lambda x: x.astype('category').cat.codes
+)
+print(merged_df['day_of_week'].unique())
+print(merged_df[['created_date', 'no_of_clients', 'data_weather.main', 'data_weather.description', 'day_of_week']].head)
+# for col in ['data_weather.main', 'data_weather.description', 'day_of_week']:
+#     merged_df[[col]] = merged_df[[col]].astype('category')
+
+# print(merged_df[''])
 # print(merged_df.head)
 # print(f"type of created_date is {merged_df['data_dt'].dtypes}")
 # print(f"columns after resampling are: {list(merged_df)}")
