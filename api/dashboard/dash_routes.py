@@ -8,5 +8,5 @@ from .dash_app_1 import dash_app_1
 
 @blueprint.route('/info')
 @jwt_required_extended
-def app1_template():
+def info_dashboard():
     return render_template('app_1.html', dash_url=dash_app_1.url_base)

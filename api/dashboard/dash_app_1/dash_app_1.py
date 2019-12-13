@@ -37,7 +37,7 @@ layout = html.Div([
                         multi=True)
                 ],
                 style=dict(
-                    width='50%', display='table-cell',
+                    width='40%', display='table-cell',
                     verticalAlign='middle')),
             html.Div([
                 dcc.DatePickerRange(
@@ -48,7 +48,30 @@ layout = html.Div([
 
                 ),
             ], style=dict(
-                width='30%', display='table-cell',
+                width='20%', display='table-cell',
+                verticalAlign='middle'
+            )),
+            html.Div([
+                dcc.Input(
+                    id='time-offset-input',
+                    type='number',
+                    value=0
+                ),
+            ], style=dict(
+                width='10%', display='table-cell',
+                verticalAlign='middle'
+            )),
+            html.Div([
+                dcc.Dropdown(
+                    id='date-offset-dropdown',
+                    options=[
+                        {'label': 'seconds', 'value': 'S'},
+                        {'label': 'minutes', 'value': 'T'},
+                        {'label': 'hours', 'value': 'H'}
+                    ],
+                ),
+            ], style=dict(
+                width='10%', display='table-cell',
                 verticalAlign='middle'
             )),
             html.Div(
@@ -68,6 +91,69 @@ layout = html.Div([
         ))
 ])
 
+alternative_layout = html.Div([
+    html.H1('Occupancy Viewer'),
+    html.Div([
+        html.Label('Show line of'),
+        dcc.Dropdown(
+            id='my-dropdown',
+            options=[{
+                'label': 'Current temperature',
+                'value': 'temp'
+            }, {
+                'label': 'Minimum temperature',
+                'value': 'temp_min'
+            }, {
+                'label': 'Maximum temperature',
+                'value': 'temp_max'
+            }],
+            value=['temp'],
+            multi=True),
+
+        html.Label('View date range'),
+        dcc.DatePickerRange(
+            id='date-picker-range',
+            min_date_allowed=dt(2019, 11, 1),
+            start_date=('2019-11-08'),
+            initial_visible_month=dt(2019, 11, 1),
+        ),
+
+        html.Label('X axis scale'),
+        html.Div([
+            dcc.Input(
+                id='time-offset-input',
+                type='number',
+                value=0,
+            ), dcc.Dropdown(
+                id='date-offset-dropdown',
+                placeholder='Time frame',
+                options=[
+                    {'label': 'seconds', 'value': 'S'},
+                    {'label': 'minutes', 'value': 'T'},
+                    {'label': 'hours', 'value': 'H'}
+                ],
+                style=dict(
+                    minWidth='12rem'
+                )
+            ),
+        ], style=dict(
+            display='inline-flex'
+        )),
+
+        html.Label('Checkboxes'),
+        html.Button('Refresh data', id='refresh-data-button',
+                    type='button', className='button'),
+    ], style={'columnCount': 2}), # it needs to be automatically change to 1 when viewing on mobile
+    html.Div([
+        dcc.Graph(id='occupancy-graph'
+                  )],
+             style=dict(
+        display='inline-block',
+        width='100%'
+    ))
+])
+
+
 temperature_label_dict = {
     'temp': 'Current temperature',
     'temp_min': 'Minimum temperature',
@@ -85,7 +171,10 @@ def _retrieve_data(data_source_id: int = 2):
     data_source_data_df = DataFrame(
         list(DataSourceData.select().where(
             DataSourceData.data_source_id == data_source_id).dicts()))
-
+    # floors the seconds to 0, move it to the server function so that the user can
+    # interact with it.
+    data_source_data_df['created_date'] = data_source_data_df['created_date'].map(
+        lambda x: x.replace(second=0))
     hourly_weather_query = Weather.select().where(
         Weather.weather_forecast_type == Forecast.HOURLY)
     hourly_filter = "{dt: dt,  weather: {main: weather[0].main,"\
@@ -105,20 +194,30 @@ def _retrieve_data(data_source_id: int = 2):
     }
 
 # flake8: noqa: C901
+
+
 def add_dash(server):
     dash_app = Dash(__name__, server=server, url_base_pathname=url_base,
                     assets_folder=f'{GET_PATH()}/dashboard/assets')
 
-    apply_layout(dash_app, layout)
+    apply_layout(dash_app, alternative_layout)
 
     @dash_app.callback(Output('occupancy-graph', 'figure'), [
         Input('my-dropdown', 'value'),
         Input('refresh-data-button', 'n_clicks'),
         Input('date-picker-range', 'start_date'),
-        Input('date-picker-range', 'end_date')
+        Input('date-picker-range', 'end_date'),
+        Input('time-offset-input', 'value'),
+        Input('date-offset-dropdown', 'value')
     ])
     @jwt_required_extended
-    def update_graph(selected_dropdown_value, n_clicks, start_date, end_date):
+    def update_graph(
+            selected_dropdown_value,
+            n_clicks,
+            start_date,
+            end_date,
+            time_input,
+            date_offset):
         global _data_initialized
         data_source_data_df = DataFrame()
         hourly_weather_data_df = DataFrame()

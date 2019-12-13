@@ -2,6 +2,7 @@ import os as _os
 from datetime import datetime as dt
 from enum import Enum
 
+import numpy as np
 import plotly.express as px
 import plotly.figure_factory as ff
 import plotly.graph_objects as go
@@ -12,6 +13,7 @@ from peewee import (CharField, DateTimeField, ForeignKeyField, IntegerField,
                     Model, MySQLDatabase, PrimaryKeyField)
 from playhouse.mysql_ext import JSONField
 from playhouse.shortcuts import model_to_dict
+
 # from cytoolz.dicttoolz import merge
 
 env_path = '/home/calvin/Projects/afstuderen/project-olympic/.env'
@@ -408,8 +410,12 @@ merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_w
 #                name="Temperature in Celcius"))
 # figure.show()
 merged_df_dropped_col = merged_df
-del merged_df_dropped_col['data_source']
-del merged_df_dropped_col['created_date']
+for item in ['data_source', 'created_date', 'data_main.feels_like', 'random_key']:
+    try:
+        del merged_df_dropped_col[item]
+    except KeyError:
+        print(f"key {item} does not exist.")
+
 print(merged_df_dropped_col.corr())
 # merged_df_dropped_col['empty_col'] = ""
 
@@ -460,6 +466,9 @@ heat = go.Heatmap(
 # corr = merged_df.corr()
 # corr.style.background_gradient(cmap='coolwarm').set_precision(2)
 # corr.show()
+
+temp = merged_df_dropped_col.mask(np.tril(np.ones(merged_df_dropped_col.shape)).astype(np.bool))
+print(temp)
 figure_3 = ff.create_annotated_heatmap(
     merged_df_dropped_col.corr().values,
     x=list(merged_df_dropped_col), y=list(merged_df_dropped_col),
