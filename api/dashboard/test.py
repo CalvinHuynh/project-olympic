@@ -334,7 +334,7 @@ hourly_weather_df['created_date'] = hourly_weather_df['created_date'].map(
 # print(hourly_weather_df.head)
 # Remove data_rain column as it does not contain any data
 del hourly_weather_df['data_rain']
-# print(hourly_weather_df['data_rain.1h'].unique())
+# print(hourly_weather_df['data_rain.S'].unique())
 # print(f"wind gust is {hourly_weather_df['data_wind.gust'].unique()}")
 # print(f"wind degree is {hourly_weather_df['data_wind.deg'].unique()}")
 # print(hourly_weather_df['data_weather.main'].unique())
@@ -359,7 +359,7 @@ weather_description_labels_df = hourly_weather_df[[
     'data_weather.description']]
 
 weather_description_labels_df = weather_description_labels_df.resample(
-    'H', on='created_date').agg({
+    'T', on='created_date').agg({
         'data_weather.main': lambda x: sorted(x.value_counts().keys()[0:3].tolist()),
         'data_weather.description': lambda x: sorted(x.value_counts().keys()[0:3].tolist())
     }).reset_index()
@@ -375,7 +375,7 @@ weather_description_labels_df['data_weather.main'] = weather_description_labels_
     lambda x: convert_list_to_string(x))
 
 # Calculate the mean of all the values
-merged_df = merged_df.resample('H', on='created_date').mean().reset_index()
+merged_df = merged_df.resample('T', on='created_date').mean().reset_index()
 merged_df = merged_df.merge(
     weather_description_labels_df, on='created_date', how='left')
 merged_df['data_source'].round(0)
@@ -384,6 +384,7 @@ del merged_df['id']
 merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']] = merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']].apply(
     lambda x: x.astype('category').cat.codes
 )
+print(merged_df.head)
 # print(merged_df['day_of_week'].unique())
 # print(merged_df[['created_date', 'no_of_clients', 'data_weather.main', 'data_weather.description', 'day_of_week']].head)
 # for col in ['data_weather.main', 'data_weather.description', 'day_of_week']:
@@ -450,7 +451,7 @@ heat = go.Heatmap(
 )
 
 # test_df = merged_df.groupby(merged_df['created_date'].map(lambda t: t.hour))
-# test_df = merged_df.groupby(merged_df['created_date'].to_period('T'))
+# test_df = merged_df.groupby(merged_df['created_date'].to_period('S'))
 # print(test_df)
 
 # layout = go.Layout(
@@ -467,11 +468,11 @@ heat = go.Heatmap(
 # corr.style.background_gradient(cmap='coolwarm').set_precision(2)
 # corr.show()
 
-temp = merged_df_dropped_col.mask(np.tril(np.ones(merged_df_dropped_col.shape)).astype(np.bool))
-print(temp)
-figure_3 = ff.create_annotated_heatmap(
-    merged_df_dropped_col.corr().values,
-    x=list(merged_df_dropped_col), y=list(merged_df_dropped_col),
-    annotation_text=merged_df_dropped_col.corr().values.round(4))
+# temp = merged_df_dropped_col.mask(np.tril(np.ones(merged_df_dropped_col.shape)).astype(np.bool))
 
-figure_3.show()
+# figure_3 = ff.create_annotated_heatmap(
+#     merged_df_dropped_col.corr().values,
+#     x=list(merged_df_dropped_col), y=list(merged_df_dropped_col),
+#     annotation_text=merged_df_dropped_col.corr().values.round(4))
+
+# figure_3.show()

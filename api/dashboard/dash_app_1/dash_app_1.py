@@ -128,7 +128,6 @@ alternative_layout = html.Div([
                 id='date-offset-dropdown',
                 placeholder='Time frame',
                 options=[
-                    {'label': 'seconds', 'value': 'S'},
                     {'label': 'minutes', 'value': 'T'},
                     {'label': 'hours', 'value': 'H'}
                 ],
