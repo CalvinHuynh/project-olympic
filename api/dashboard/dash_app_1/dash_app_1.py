@@ -43,7 +43,9 @@ layout = html.Div([
                 dcc.DatePickerRange(
                     id='date-picker-range',
                     min_date_allowed=dt(2019, 11, 1),
-                    initial_visible_month=dt(2019, 11, 1)
+                    start_date=('2019-11-08'),
+                    initial_visible_month=dt(2019, 11, 1),
+
                 ),
             ], style=dict(
                 width='30%', display='table-cell',

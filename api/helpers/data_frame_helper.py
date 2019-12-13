@@ -9,7 +9,7 @@ def filter_json(expression: str, json_data: object):
         json_data {object} -- json data to filter
 
     Returns:
-        json -- filtered json data
+        json -- returns the filtered json data
     """
     from jmespath import search
     from json import dumps, loads
@@ -52,7 +52,7 @@ def flatten_json_data_in_column(data_frame: DataFrame,
          (default: column)
 
     Returns:
-        data_frame -- modified dataframe
+        data_frame -- returns the modified dataframe
     """
     from pandas.io.json import json_normalize
 
@@ -89,7 +89,7 @@ def unpack_json_array(data_frame: DataFrame, column_to_unpack: str):
         column_to_unpack {str} -- column to unpack the json array from
 
     Returns:
-        data_frame -- modified dataframe
+        data_frame -- returns a modified dataframe
     """
     return data_frame[column_to_unpack].apply(Series).merge(
         data_frame, left_index=True, right_index=True).drop([column_to_unpack],
@@ -114,7 +114,7 @@ def cached_dataframe_outdated(filename: str, time_unit: str, time_int: int):
         time_unit. The resulting parameter would be for example: hours=1
 
     Returns:
-        bool -- Returns True if the cache's timedelta exceeds the threshold.
+        bool -- returns True if the cache's timedelta exceeds the threshold.
     """
     import os
     import datetime
@@ -133,3 +133,52 @@ def cached_dataframe_outdated(filename: str, time_unit: str, time_int: int):
         return True
     else:
         return False
+
+
+def drop_columns_with_postfix(df: DataFrame, postfix_to_drop: str = '_y'):
+    """Function to drop common columns after a merge
+
+    Arguments:
+        df {DataFrame} -- dataframe to drop columns from
+
+    Keyword Arguments:
+        postfix_to_drop {str} -- postfix of column to drop (default: {'_y'})
+
+    Returns:
+        {DataFrame} -- returns a dataframe with the matching columns dropped
+    """
+    all_columns_in_df = list(df)
+    for col in all_columns_in_df:
+        if col.endswith(postfix_to_drop):
+            del df[col]
+    return df
+
+
+def convert_list_to_string(list_to_join: list):
+    """Converts a given list to a comma separated string.
+
+    Arguments:
+        list_to_join {list} -- list to convert
+
+    Returns:
+        {str} -- returns a joined together string
+    """
+    return ", ".join(list_to_join)
+
+
+def item_in_list(item: str, item_list: list):
+    """Check if a given item is in a given list.
+    If the given item occurs in a list, an 1 will be returned.
+    Else a 0 will be returned.
+
+    Arguments:
+        item {str} -- item to check
+        item_list {list} -- list of items
+
+    Returns:
+        {int} -- returns an 1 if item is in list, else 0.
+    """
+    if item in item_list:
+        return 1
+    else:
+        return 0

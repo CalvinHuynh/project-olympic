@@ -183,6 +183,17 @@ def _rename_columns(col_name):
 
 
 def drop_columns_with_postfix(df: DataFrame, postfix_to_drop: str = '_y'):
+    """Function to drop common columns after a merge
+
+    Arguments:
+        df {DataFrame} -- dataframe to drop columns from
+
+    Keyword Arguments:
+        postfix_to_drop {str} -- postfix of column to drop (default: {'_y'})
+
+    Returns:
+        {DataFrame} -- returns a dataframe with the matching columns dropped
+    """
     all_columns_in_df = list(df)
     for col in all_columns_in_df:
         if col.endswith(postfix_to_drop):
@@ -191,7 +202,33 @@ def drop_columns_with_postfix(df: DataFrame, postfix_to_drop: str = '_y'):
 
 
 def convert_list_to_string(list_to_join: list):
+    """Converts a given list to a comma separated string.
+
+    Arguments:
+        list_to_join {list} -- list to convert
+
+    Returns:
+        {str} -- returns a joined together string
+    """
     return ", ".join(list_to_join)
+
+
+def item_in_list(item: str, item_list: list):
+    """Check if a given item is in a given list.
+    If the given item occurs in a list, an 1 will be returned.
+    Else a 0 will be returned.
+
+    Arguments:
+        item {str} -- item to check
+        item_list {list} -- list of items
+
+    Returns:
+        {int} -- returns an 1 if item is in list, else 0.
+    """
+    if item in item_list:
+        return 1
+    else:
+        return 0
 
 
 data_source_df = DataFrame(
@@ -315,7 +352,7 @@ merged_df.rename(
 
 # Subset hourly_weather_df
 weather_description_labels_df = hourly_weather_df[[
-    'created_date', 'data_main.temp',
+    'created_date',
     'data_weather.main',
     'data_weather.description']]
 
@@ -325,6 +362,9 @@ weather_description_labels_df = weather_description_labels_df.resample(
         'data_weather.description': lambda x: sorted(x.value_counts().keys()[0:3].tolist())
     }).reset_index()
 weather_description_labels_df['day_of_week'] = weather_description_labels_df['created_date'].dt.day_name()
+weather_description_labels_df['is_weekend'] = weather_description_labels_df['day_of_week'].apply(
+    lambda x: item_in_list(x, ['Saturday', 'Sunday'])
+)
 
 weather_description_labels_df['data_weather.description'] = weather_description_labels_df['data_weather.description'].apply(
     lambda x: convert_list_to_string(x))
@@ -339,7 +379,7 @@ merged_df = merged_df.merge(
 merged_df['data_source'].round(0)
 merged_df['no_of_clients'].round(2)
 del merged_df['id']
-merged_df[['data_weather.main', 'data_weather.description', 'day_of_week']] = merged_df[['data_weather.main', 'data_weather.description', 'day_of_week']].apply(
+merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']] = merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']].apply(
     lambda x: x.astype('category').cat.codes
 )
 # print(merged_df['day_of_week'].unique())
@@ -367,17 +407,38 @@ merged_df[['data_weather.main', 'data_weather.description', 'day_of_week']] = me
 #                y=merged_df['data_main.temp'],
 #                name="Temperature in Celcius"))
 # figure.show()
-# print(merged_df.corr().values)
-hovertext = merged_df.corr().round(2)
+merged_df_dropped_col = merged_df
+del merged_df_dropped_col['data_source']
+del merged_df_dropped_col['created_date']
+print(merged_df_dropped_col.corr())
+# merged_df_dropped_col['empty_col'] = ""
+
+# print(merged_df.corr())
+# print(merged_df.info())
+# hovertext = merged_df.corr().round(4)
+# heat = go.Heatmap(
+#     z=merged_df.corr(),
+#     x=list(merged_df),
+#     y=list(merged_df),
+#     xgap=1, ygap=1,
+#     # colorscale=px.colors.sequential.Plotly3,
+#     colorbar_thickness=20,
+#     colorbar_ticklen=3,
+#     text=merged_df.corr().values,
+#     hovertext=hovertext,
+#     hoverinfo='text',
+# )
+
+hovertext = merged_df_dropped_col.corr().round(4)
 heat = go.Heatmap(
-    z=merged_df.corr(),
-    x=list(merged_df),
-    y=list(merged_df),
+    z=merged_df_dropped_col.corr(),
+    x=list(merged_df_dropped_col),
+    y=list(merged_df_dropped_col),
     xgap=1, ygap=1,
-    colorscale=px.colors.sequential.Viridis,
+    # colorscale=px.colors.sequential.Plotly3,
     colorbar_thickness=20,
     colorbar_ticklen=3,
-    text=merged_df.corr().values,
+    text=merged_df_dropped_col.corr().values,
     hovertext=hovertext,
     hoverinfo='text',
 )
@@ -386,18 +447,22 @@ heat = go.Heatmap(
 # test_df = merged_df.groupby(merged_df['created_date'].to_period('T'))
 # print(test_df)
 
-layout = go.Layout(
-    xaxis_showgrid=False,
-    yaxis_showgrid=False)
-#     yaxis_autorange='reversed')
-figure_2 = go.Figure(data=[heat], layout=layout)
-figure_2.show()
+# layout = go.Layout(
+#     xaxis_showgrid=False,
+#     yaxis_showgrid=False)
+# #     yaxis_autorange='reversed')
+# figure_2 = go.Figure(data=[heat], layout=layout)
+# figure_2.show()
 
-print(merged_df[['no_of_clients', 'day_of_week']].corr())
+# print(merged_df[['no_of_clients', 'day_of_week']].corr())
+# print(merged_df.corr())
+
 # corr = merged_df.corr()
 # corr.style.background_gradient(cmap='coolwarm').set_precision(2)
 # corr.show()
+figure_3 = ff.create_annotated_heatmap(
+    merged_df_dropped_col.corr().values,
+    x=list(merged_df_dropped_col), y=list(merged_df_dropped_col),
+    annotation_text=merged_df_dropped_col.corr().values.round(4))
 
-# figure_3 = ff.create_annotated_heatmap(merged_df.corr())
-
-# figure_3.show()
+figure_3.show()
