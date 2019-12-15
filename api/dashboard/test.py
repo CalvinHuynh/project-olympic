@@ -359,7 +359,7 @@ weather_description_labels_df = hourly_weather_df[[
     'data_weather.description']]
 
 weather_description_labels_df = weather_description_labels_df.resample(
-    'T', on='created_date').agg({
+    '3H', on='created_date').agg({
         'data_weather.main': lambda x: sorted(x.value_counts().keys()[0:3].tolist()),
         'data_weather.description': lambda x: sorted(x.value_counts().keys()[0:3].tolist())
     }).reset_index()
@@ -375,7 +375,7 @@ weather_description_labels_df['data_weather.main'] = weather_description_labels_
     lambda x: convert_list_to_string(x))
 
 # Calculate the mean of all the values
-merged_df = merged_df.resample('T', on='created_date').mean().reset_index()
+merged_df = merged_df.resample('3H', on='created_date').mean().reset_index()
 merged_df = merged_df.merge(
     weather_description_labels_df, on='created_date', how='left')
 merged_df['data_source'].round(0)

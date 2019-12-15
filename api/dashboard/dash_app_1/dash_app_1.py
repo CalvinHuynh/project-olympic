@@ -82,12 +82,17 @@ layout = html.Div([
                     width='10%', display='table-cell',
                     verticalAlign='middle')),
         ],
-        style=dict(width='100%', display='table')),
+        style=dict(
+            width='100%',
+            display='table',
+            className='row'
+        )),
     html.Div(
         [dcc.Graph(id='occupancy-graph')],
         style=dict(
             display='inline-block',
-            width='100%'
+            width='100%',
+            className='row'
         ))
 ])
 
@@ -123,7 +128,7 @@ alternative_layout = html.Div([
             dcc.Input(
                 id='time-offset-input',
                 type='number',
-                value=0,
+                value=1,
             ), dcc.Dropdown(
                 id='date-offset-dropdown',
                 placeholder='Time frame',
@@ -131,6 +136,7 @@ alternative_layout = html.Div([
                     {'label': 'minutes', 'value': 'T'},
                     {'label': 'hours', 'value': 'H'}
                 ],
+                value='H',
                 style=dict(
                     minWidth='12rem'
                 )
