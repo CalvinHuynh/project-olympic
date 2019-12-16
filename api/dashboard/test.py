@@ -238,11 +238,52 @@ def unix_to_datetime(
         col_prefix: str = 'data_',
         col_postfix: str = '_dt',
         length: int = 40):
+    """Converts unix timestamp column to datetime column
+
+    Arguments:
+        data_frame {DataFrame} -- dataframe containing unix timestamps
+
+    Keyword Arguments:
+        col_prefix {str} -- column name prefix (default: {'data_'})
+        col_postfix {str} -- column name postfix (default: {'_dt'})
+        length {int} -- flattened column range (default: {40})
+
+    Returns:
+        {DataFrame} -- returns dataframe containing the converted timestamps
+    """
     for i in range(length):
         data_frame[f"{col_prefix}{i}{col_postfix}"] = to_datetime(
             data_frame[f"{col_prefix}{i}{col_postfix}"], unit='s')
     return data_frame
 
+
+def _find_value_near_datetime(
+        data_frame: DataFrame,
+        column_name: str,
+        value_to_find):
+    idx = data_frame[column_name].sub(value_to_find).abs().idxmin()
+    # format datetime64ns to datetime for comparison
+    nearest_date = dt.strptime(
+        str(data_frame.loc[[idx]]['created_date'].values[0]).split('T')[0], '%Y-%m-%d')
+    # Maybe to an unix timestamp comparison
+    if (nearest_date > value_to_find):
+        return data_frame.loc[[idx - 1]]
+    else:
+        return data_frame.loc[[idx]]
+
+
+def fill_missing_values_using_forecast(
+        data_frame: DataFrame,
+        column_name: str,
+        value_to_find):
+    data_used_to_fill = _find_value_near_datetime(
+        data_frame, column_name, value_to_find
+    )
+
+    pass
+
+
+TIME_UNIT = '3H'
 
 data_source_df = DataFrame(
     list(DataSourceData.select().where(
@@ -324,7 +365,11 @@ flatest_df = flatten_json_data_in_column(weekly_weather_df, 'data', 40)
 flatest_df = unix_to_datetime(flatest_df)
 # weather_description_labels_df['day_of_week'] = weather_description_labels_df['created_date'].dt.day_name()
 set_option('display.max_rows', None)
-print(flatest_df.iloc[-1])
+# print(flatest_df.iloc[-1])
+print(flatest_df.head)
+print('----------------- looking for value -----------------')
+print(_find_value_near_datetime(flatest_df, 'created_date',
+                                dt.strptime(("2019-11-17").split(' ')[0], '%Y-%m-%d')))
 
 hourly_filter = "{dt: dt,  weather: {main: weather[0].main,"\
     "description: weather[0].description}, main: main, wind: wind"\
@@ -367,14 +412,14 @@ merged_df = drop_columns_with_postfix(merged_df)
 merged_df.rename(
     columns={'id_x': 'id', 'data_source_x': 'data_source'}, inplace=True)
 
-# Subset hourly_weather_df
+# Subset of hourly_weather_df for weather labels
 weather_description_labels_df = hourly_weather_df[[
     'created_date',
     'data_weather.main',
     'data_weather.description']]
 
 weather_description_labels_df = weather_description_labels_df.resample(
-    '3H', on='created_date').agg({
+    TIME_UNIT, on='created_date').agg({
         'data_weather.main': lambda x: sorted(x.value_counts().keys()[0:3].tolist()),
         'data_weather.description': lambda x: sorted(x.value_counts().keys()[0:3].tolist())
     }).reset_index()
@@ -389,17 +434,31 @@ weather_description_labels_df['data_weather.description'] = weather_description_
 weather_description_labels_df['data_weather.main'] = weather_description_labels_df['data_weather.main'].apply(
     lambda x: convert_list_to_string(x))
 
+# Subset of hourly_weather_df for sum of rain
+rain_df = hourly_weather_df[['created_date', 'data_rain.1h']]
+rain_df = rain_df.resample(TIME_UNIT, on='created_date').sum().reset_index()
+rain_df = rain_df.rename({'data_rain.1h': 'data_rain.3h'}, axis=1)
+
 # Calculate the mean of all the values
-merged_df = merged_df.resample('3H', on='created_date').mean().reset_index()
+merged_df = merged_df.resample(
+    TIME_UNIT, on='created_date').mean().reset_index()
 merged_df = merged_df.merge(
     weather_description_labels_df, on='created_date', how='left')
+merged_df = merged_df.merge(
+    rain_df, on='created_date', how='left')
 merged_df['data_source'].round(0)
 merged_df['no_of_clients'].round(2)
 del merged_df['id']
+del merged_df['data_rain.1h']
 merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']] = merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']].apply(
     lambda x: x.astype('category').cat.codes
 )
 print(merged_df.head)
+
+print('dataframe with null values in temperature')
+print(merged_df[merged_df['data_main.temp'].isnull()])
+# print(merged_df.info())
+
 # print(merged_df['day_of_week'].unique())
 # print(merged_df[['created_date', 'no_of_clients', 'data_weather.main', 'data_weather.description', 'day_of_week']].head)
 # for col in ['data_weather.main', 'data_weather.description', 'day_of_week']:
@@ -432,7 +491,8 @@ for item in ['data_source', 'created_date', 'data_main.feels_like', 'random_key'
     except KeyError:
         print(f"key {item} does not exist.")
 
-print(merged_df_dropped_col.corr())
+# print(merged_df_dropped_col.corr())
+
 # merged_df_dropped_col['empty_col'] = ""
 
 # print(merged_df.corr())
