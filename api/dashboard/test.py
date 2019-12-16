@@ -7,7 +7,7 @@ import plotly.express as px
 import plotly.figure_factory as ff
 import plotly.graph_objects as go
 from dotenv import load_dotenv as _load_dotenv
-from pandas import DataFrame, Series
+from pandas import DataFrame, Series, set_option, to_datetime
 from pandas.io.json import json_normalize
 from peewee import (CharField, DateTimeField, ForeignKeyField, IntegerField,
                     Model, MySQLDatabase, PrimaryKeyField)
@@ -233,6 +233,17 @@ def item_in_list(item: str, item_list: list):
         return 0
 
 
+def unix_to_datetime(
+        data_frame: DataFrame,
+        col_prefix: str = 'data_',
+        col_postfix: str = '_dt',
+        length: int = 40):
+    for i in range(length):
+        data_frame[f"{col_prefix}{i}{col_postfix}"] = to_datetime(
+            data_frame[f"{col_prefix}{i}{col_postfix}"], unit='s')
+    return data_frame
+
+
 data_source_df = DataFrame(
     list(DataSourceData.select().where(
         DataSourceData.data_source_id == 2).dicts()))
@@ -275,41 +286,45 @@ weekly_filter = "{\"5_days_3_hour_forecast\": list[].{dt: dt, main: main,"\
     "weather: {main: weather[0].main, description: weather[0].description },"\
     "clouds: clouds, wind: wind, rain: rain}}"
 
-# # print('before weekly filter')
-# # print(weekly_weather_df.iloc[0])
-# weekly_weather_df = filter_column_json_data(weekly_weather_df, 'data',
-#                                             weekly_filter)
-# # print('after weekly filter')
-# # print(weekly_weather_df.iloc[0])
-# weekly_weather_df = flatten_json_data_in_column(weekly_weather_df, 'data')
-# # print(weekly_weather_df)
-# # weekly_weather_df.pipe(
-# #     lambda x: x.drop('data.5_days_3_hour_forecast', 1).join(
-# #         x['data.5_days_3_hour_forecast'].apply(lambda y: Series(merge(y)))
-# #     )
-# # )
+# print('before weekly filter')
+# print(weekly_weather_df.iloc[0])
+weekly_weather_df = filter_column_json_data(weekly_weather_df, 'data',
+                                            weekly_filter)
+# print('after weekly filter')
+# print(weekly_weather_df.iloc[0])
+weekly_weather_df = flatten_json_data_in_column(weekly_weather_df, 'data')
+# print(weekly_weather_df)
+# weekly_weather_df.pipe(
+#     lambda x: x.drop('data.5_days_3_hour_forecast', 1).join(
+#         x['data.5_days_3_hour_forecast'].apply(lambda y: Series(merge(y)))
+#     )
+# )
 
-# # print('before splitting data_5_days_3_hour_forecast')
-# # print(weekly_weather_df)
+# print('before splitting data_5_days_3_hour_forecast')
+# print(weekly_weather_df)
 
-# # Flattens the json array that resides in the specified column and removes it
-# # after it is done
+# Flattens the json array that resides in the specified column and removes it
+# after it is done
 
-# # weekly_weather_df = weekly_weather_df['data_5_days_3_hour_forecast'].apply(
-# #     Series).merge(weekly_weather_df, left_index=True,
-# #                   right_index=True).drop(['data_5_days_3_hour_forecast'],
-# #                                          axis=1)
+# weekly_weather_df = weekly_weather_df['data_5_days_3_hour_forecast'].apply(
+#     Series).merge(weekly_weather_df, left_index=True,
+#                   right_index=True).drop(['data_5_days_3_hour_forecast'],
+#                                          axis=1)
 
-# weekly_weather_df = unpack_json_array(weekly_weather_df,
-#                                       'data_5_days_3_hour_forecast')
+weekly_weather_df = unpack_json_array(weekly_weather_df,
+                                      'data_5_days_3_hour_forecast')
 
-# # print('after splitting data_5_days_3_hour_forecast')
-# # print(weekly_weather_df)
-# # weekly_weather_df = weekly_weather_df.rename(columns=_rename_column)
-# weekly_weather_df.columns = map(_rename_columns, weekly_weather_df.columns)
+# print('after splitting data_5_days_3_hour_forecast')
+# print(weekly_weather_df)
+# weekly_weather_df = weekly_weather_df.rename(columns=_rename_column)
+weekly_weather_df.columns = map(_rename_columns, weekly_weather_df.columns)
 # df = weekly_weather_df.iloc[[0]]
-# # print(list(weekly_weather_df))
+print(list(weekly_weather_df))
 flatest_df = flatten_json_data_in_column(weekly_weather_df, 'data', 40)
+flatest_df = unix_to_datetime(flatest_df)
+# weather_description_labels_df['day_of_week'] = weather_description_labels_df['created_date'].dt.day_name()
+set_option('display.max_rows', None)
+print(flatest_df.iloc[-1])
 
 hourly_filter = "{dt: dt,  weather: {main: weather[0].main,"\
     "description: weather[0].description}, main: main, wind: wind"\
