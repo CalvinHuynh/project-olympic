@@ -479,22 +479,21 @@ merged_df['data_source'].round(0)
 merged_df['no_of_clients'].round(2)
 del merged_df['id']
 del merged_df['data_rain.1h']
-# merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']] = merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']].apply(
-#     lambda x: x.astype('category').cat.codes
-# )
-    
+
 filled_data_frame = fill_missing_values_using_forecast(
     merged_df[merged_df['data_main.temp'].isnull()],
     weekly_weather_forecast_df, 'created_date')
 
-merged_df = merged_df.join(
-    filled_data_frame, how='left'
+merged_df = merged_df.combine_first(filled_data_frame)
+merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']] = merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']].apply(
+    lambda x: x.astype('category').cat.codes
 )
-print(merged_df.info())
-print(filled_data_frame.info())
+
 print(merged_df.head)
-# print(f"weather main {merged_df['data_weather.main'].unique()}")
-# print(merged_df.head)
+
+print(f"weather main {merged_df['data_weather.main'].unique()}")
+
+print(merged_df.info())
 
 # print('dataframe with null values in temperature')
 
@@ -594,9 +593,9 @@ heat = go.Heatmap(
 
 # temp = merged_df_dropped_col.mask(np.tril(np.ones(merged_df_dropped_col.shape)).astype(np.bool))
 
-# figure_3 = ff.create_annotated_heatmap(
-#     merged_df_dropped_col.corr().values,
-#     x=list(merged_df_dropped_col), y=list(merged_df_dropped_col),
-#     annotation_text=merged_df_dropped_col.corr().values.round(4))
+figure_3 = ff.create_annotated_heatmap(
+    merged_df_dropped_col.corr().values,
+    x=list(merged_df_dropped_col), y=list(merged_df_dropped_col),
+    annotation_text=merged_df_dropped_col.corr().values.round(4))
 
-# figure_3.show()
+figure_3.show()
