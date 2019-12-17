@@ -2,6 +2,7 @@ import os as _os
 from datetime import datetime as dt
 from enum import Enum
 
+from numpy import int as np_int
 import numpy as np
 import plotly.express as px
 import plotly.figure_factory as ff
@@ -257,30 +258,44 @@ def unix_to_datetime(
     return data_frame
 
 
+def strip_from_string(string_to_split: str, index: int = 2, strip_character: str = '_'):
+    return strip_character.join(string_to_split.split(strip_character)[:index])
+
+
 def _find_value_near_datetime(
         data_frame: DataFrame,
         column_name: str,
         value_to_find):
     idx = data_frame[column_name].sub(value_to_find).abs().idxmin()
-    # format datetime64ns to datetime for comparison
-    nearest_date = dt.strptime(
-        str(data_frame.loc[[idx]]['created_date'].values[0]).split('T')[0], '%Y-%m-%d')
-    # Maybe to an unix timestamp comparison
-    if (nearest_date > value_to_find):
+    nearest_date = str(
+        data_frame.loc[[idx]]['created_date'].values[0].astype(np_int) // 10**9
+    )
+    if (nearest_date > value_to_find.strftime('%s')):
+        # print(list(data_frame.loc[[idx - 1]]))
         return data_frame.loc[[idx - 1]]
     else:
+        # print(list(data_frame.loc[[idx]]))
         return data_frame.loc[[idx]]
 
 
 def fill_missing_values_using_forecast(
-        data_frame: DataFrame,
-        column_name: str,
-        value_to_find):
-    data_used_to_fill = _find_value_near_datetime(
-        data_frame, column_name, value_to_find
-    )
+        missing_val_data_frame: DataFrame,
+        forecast_data_frame: DataFrame,
+        column_name: str):
+    for index, row in missing_val_data_frame.iterrows():
+        print(
+            f"{row['created_date'].value // 10**9} datetime is {type(row['created_date'])}")
+        forecast_row = _find_value_near_datetime(
+            forecast_data_frame, column_name, row['created_date']
+        )
+        matching_col = forecast_row[forecast_row.columns[forecast_row.iloc[(
+            0)] == row['created_date']]]
+        if not matching_col.empty:
+            print(
+                f"result is {matching_col} \n type is {type(matching_col)} \n column name is {list(matching_col)[0]} \n extracted name is {strip_from_string(list(matching_col)[0])}")
 
-    pass
+        # TODO: use extracted column to fill in the values of the missing_val_data_frame
+    # pass
 
 
 TIME_UNIT = '3H'
@@ -361,14 +376,15 @@ weekly_weather_df = unpack_json_array(weekly_weather_df,
 weekly_weather_df.columns = map(_rename_columns, weekly_weather_df.columns)
 # df = weekly_weather_df.iloc[[0]]
 print(list(weekly_weather_df))
-flatest_df = flatten_json_data_in_column(weekly_weather_df, 'data', 40)
-flatest_df = unix_to_datetime(flatest_df)
+weekly_weather_forecast_df = flatten_json_data_in_column(
+    weekly_weather_df, 'data', 40)
+weekly_weather_forecast_df = unix_to_datetime(weekly_weather_forecast_df)
 # weather_description_labels_df['day_of_week'] = weather_description_labels_df['created_date'].dt.day_name()
 set_option('display.max_rows', None)
 # print(flatest_df.iloc[-1])
-print(flatest_df.head)
+print(weekly_weather_forecast_df.head)
 print('----------------- looking for value -----------------')
-print(_find_value_near_datetime(flatest_df, 'created_date',
+print(_find_value_near_datetime(weekly_weather_forecast_df, 'created_date',
                                 dt.strptime(("2019-11-17").split(' ')[0], '%Y-%m-%d')))
 
 hourly_filter = "{dt: dt,  weather: {main: weather[0].main,"\
@@ -453,10 +469,17 @@ del merged_df['data_rain.1h']
 merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']] = merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']].apply(
     lambda x: x.astype('category').cat.codes
 )
-print(merged_df.head)
+# print(merged_df.head)
 
-print('dataframe with null values in temperature')
-print(merged_df[merged_df['data_main.temp'].isnull()])
+# print('dataframe with null values in temperature')
+# print(merged_df[merged_df['data_main.temp'].isnull()])
+
+print(
+    fill_missing_values_using_forecast(
+        merged_df[merged_df['data_main.temp'].isnull()],
+        weekly_weather_forecast_df,
+        'created_date'))
+
 # print(merged_df.info())
 
 # print(merged_df['day_of_week'].unique())
