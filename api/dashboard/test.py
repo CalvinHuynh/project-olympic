@@ -271,10 +271,8 @@ def _find_value_near_datetime(
         data_frame.loc[[idx]]['created_date'].values[0].astype(np_int) // 10**9
     )
     if (nearest_date > value_to_find.strftime('%s')):
-        # print(list(data_frame.loc[[idx - 1]]))
         return data_frame.loc[[idx - 1]]
     else:
-        # print(list(data_frame.loc[[idx]]))
         return data_frame.loc[[idx]]
 
 
@@ -282,6 +280,19 @@ def fill_missing_values_using_forecast(
         missing_val_data_frame: DataFrame,
         forecast_data_frame: DataFrame,
         column_name: str):
+    """
+    Fill missing weather values using saved forecast data
+
+    Arguments:
+        missing_val_data_frame {DataFrame} -- data frame that contains missing
+         weather values
+        forecast_data_frame {DataFrame} -- data frame that contains the
+         weather forecast, this data frame will be used to fill the missing
+         weather values
+        column_name {str} -- column name will be used to match the data frames
+    Returns:
+        {DataFrame} -- data frame that has been filled in using forecast data
+    """
     for index, row in missing_val_data_frame.iterrows():
         forecast_row = _find_value_near_datetime(
             forecast_data_frame, column_name, row['created_date']
@@ -343,42 +354,14 @@ data_source_df = data_source_df[(
 data_source_df['created_date'] = data_source_df['created_date'].map(
     lambda x: x.replace(second=0))
 
-## Date filter causes an odd behaviour, causing the resulting temperature to be NaN values
-# print(f'size of hourly_weather_df before filtering is {hourly_weater_df.size}')
-# hourly_weater_df = hourly_weater_df[(
-#     hourly_weater_df['created_date'] >= start_date
-# )]
-# print(f'size of hourly_weather_df after filtering is {hourly_weater_df.size}')
-# # print(hourly_weater_df.tail)
-# print(list(hourly_weater_df))
 weekly_filter = "{\"5_days_3_hour_forecast\": list[].{dt: dt, main: main,"\
     "weather: {main: weather[0].main, description: weather[0].description },"\
     "clouds: clouds, wind: wind, rain: rain}}"
 
-# print('before weekly filter')
-# print(weekly_weather_df.iloc[0])
 weekly_weather_df = filter_column_json_data(weekly_weather_df, 'data',
                                             weekly_filter)
-# print('after weekly filter')
-# print(weekly_weather_df.iloc[0])
+
 weekly_weather_df = flatten_json_data_in_column(weekly_weather_df, 'data')
-# print(weekly_weather_df)
-# weekly_weather_df.pipe(
-#     lambda x: x.drop('data.5_days_3_hour_forecast', 1).join(
-#         x['data.5_days_3_hour_forecast'].apply(lambda y: Series(merge(y)))
-#     )
-# )
-
-# print('before splitting data_5_days_3_hour_forecast')
-# print(weekly_weather_df)
-
-# Flattens the json array that resides in the specified column and removes it
-# after it is done
-
-# weekly_weather_df = weekly_weather_df['data_5_days_3_hour_forecast'].apply(
-#     Series).merge(weekly_weather_df, left_index=True,
-#                   right_index=True).drop(['data_5_days_3_hour_forecast'],
-#                                          axis=1)
 
 weekly_weather_df = unpack_json_array(weekly_weather_df,
                                       'data_5_days_3_hour_forecast')
@@ -593,9 +576,14 @@ heat = go.Heatmap(
 
 # temp = merged_df_dropped_col.mask(np.tril(np.ones(merged_df_dropped_col.shape)).astype(np.bool))
 
-figure_3 = ff.create_annotated_heatmap(
-    merged_df_dropped_col.corr().values,
-    x=list(merged_df_dropped_col), y=list(merged_df_dropped_col),
-    annotation_text=merged_df_dropped_col.corr().values.round(4))
+# see https://stats.stackexchange.com/questions/101130/correlation-coefficient-for-sets-with-non-linear-correlation
+print(f"pearson correlation \n{merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()['no_of_clients'][:]}")
+print(f"spearman correlation \n{merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr(method='spearman')['no_of_clients'][:]}")
+print(f"kendall correlation \n{merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr(method='kendall')['no_of_clients'][:]}")
 
-figure_3.show()
+# figure_3 = ff.create_annotated_heatmap(
+#     merged_df_dropped_col.corr().values,
+#     x=list(merged_df_dropped_col), y=list(merged_df_dropped_col),
+#     annotation_text=merged_df_dropped_col.corr().values.round(4))
+
+# figure_3.show()

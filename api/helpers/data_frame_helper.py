@@ -1,4 +1,5 @@
 from pandas import DataFrame, Series
+from numpy import int as np_int
 
 
 def filter_json(expression: str, json_data: object):
@@ -182,3 +183,70 @@ def item_in_list(item: str, item_list: list):
         return 1
     else:
         return 0
+
+
+def strip_from_string(
+        string_to_split: str,
+        index: int = 2,
+        strip_character: str = '_'):
+    return strip_character.join(string_to_split.split(strip_character)[:index])
+
+
+def _find_value_near_datetime(
+        data_frame: DataFrame,
+        column_name: str,
+        value_to_find):
+    idx = data_frame[column_name].sub(value_to_find).abs().idxmin()
+    nearest_date = str(
+        data_frame.loc[[idx]]['created_date'].values[0].astype(np_int) // 10**9
+    )
+    if (nearest_date > value_to_find.strftime('%s')):
+        return data_frame.loc[[idx - 1]]
+    else:
+        return data_frame.loc[[idx]]
+
+
+def fill_missing_values_using_forecast(
+        missing_val_data_frame: DataFrame,
+        forecast_data_frame: DataFrame,
+        column_name: str):
+    """
+    Fill missing weather values using saved forecast data
+
+    Arguments:
+        missing_val_data_frame {DataFrame} -- data frame that contains missing
+         weather values
+        forecast_data_frame {DataFrame} -- data frame that contains the
+         weather forecast, this data frame will be used to fill the missing
+         weather values
+        column_name {str} -- column name will be used to match the data frames
+    Returns:
+        {DataFrame} -- data frame that has been filled in using forecast data
+    """
+    for index, row in missing_val_data_frame.iterrows():
+        forecast_row = _find_value_near_datetime(
+            forecast_data_frame, column_name, row['created_date']
+        )
+        matching_col = forecast_row[forecast_row.columns[forecast_row.iloc[(
+            0)] == row['created_date']]]
+        if not matching_col.empty:
+            col_prefix_to_match = strip_from_string(list(matching_col)[0])
+            columns_to_fill = [
+                '_main.temp', '_main.pressure', '_main.humidity',
+                '_main.temp_min', '_main.temp_max', '_wind.speed',
+                '_wind.deg', '_clouds.all', '_weather.main',
+                '_weather.description', '_rain.3h', '_dt'
+            ]
+            for col_postfix in columns_to_fill:
+                if col_postfix == '_dt':
+                    missing_val_data_frame.loc[
+                        index, f'data{col_postfix}'
+                    ] = forecast_row[
+                        f"{col_prefix_to_match}{col_postfix}"
+                    ].values[0].astype(np_int) // 10**9
+                else:
+                    missing_val_data_frame.loc[
+                        index, f'data{col_postfix}'
+                    ] = forecast_row[
+                        f"{col_prefix_to_match}{col_postfix}"].values[0]
+    return missing_val_data_frame
