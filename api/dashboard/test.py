@@ -283,19 +283,32 @@ def fill_missing_values_using_forecast(
         forecast_data_frame: DataFrame,
         column_name: str):
     for index, row in missing_val_data_frame.iterrows():
-        print(
-            f"{row['created_date'].value // 10**9} datetime is {type(row['created_date'])}")
         forecast_row = _find_value_near_datetime(
             forecast_data_frame, column_name, row['created_date']
         )
         matching_col = forecast_row[forecast_row.columns[forecast_row.iloc[(
             0)] == row['created_date']]]
         if not matching_col.empty:
-            print(
-                f"result is {matching_col} \n type is {type(matching_col)} \n column name is {list(matching_col)[0]} \n extracted name is {strip_from_string(list(matching_col)[0])}")
-
-        # TODO: use extracted column to fill in the values of the missing_val_data_frame
-    # pass
+            col_prefix_to_match = strip_from_string(list(matching_col)[0])
+            columns_to_fill = [
+                '_main.temp', '_main.pressure', '_main.humidity',
+                '_main.temp_min', '_main.temp_max', '_wind.speed',
+                '_wind.deg', '_clouds.all', '_weather.main',
+                '_weather.description', '_rain.3h', '_dt'
+            ]
+            for col_postfix in columns_to_fill:
+                if col_postfix == '_dt':
+                    missing_val_data_frame.loc[
+                        index, f'data{col_postfix}'
+                    ] = forecast_row[
+                        f"{col_prefix_to_match}{col_postfix}"
+                    ].values[0].astype(np_int) // 10**9
+                else:
+                    missing_val_data_frame.loc[
+                        index, f'data{col_postfix}'
+                    ] = forecast_row[
+                        f"{col_prefix_to_match}{col_postfix}"].values[0]
+    return missing_val_data_frame
 
 
 TIME_UNIT = '3H'
@@ -375,14 +388,14 @@ weekly_weather_df = unpack_json_array(weekly_weather_df,
 # weekly_weather_df = weekly_weather_df.rename(columns=_rename_column)
 weekly_weather_df.columns = map(_rename_columns, weekly_weather_df.columns)
 # df = weekly_weather_df.iloc[[0]]
-print(list(weekly_weather_df))
+# print(list(weekly_weather_df))
 weekly_weather_forecast_df = flatten_json_data_in_column(
     weekly_weather_df, 'data', 40)
 weekly_weather_forecast_df = unix_to_datetime(weekly_weather_forecast_df)
 # weather_description_labels_df['day_of_week'] = weather_description_labels_df['created_date'].dt.day_name()
 set_option('display.max_rows', None)
 # print(flatest_df.iloc[-1])
-print(weekly_weather_forecast_df.head)
+# print(weekly_weather_forecast_df.head)
 print('----------------- looking for value -----------------')
 print(_find_value_near_datetime(weekly_weather_forecast_df, 'created_date',
                                 dt.strptime(("2019-11-17").split(' ')[0], '%Y-%m-%d')))
@@ -466,27 +479,40 @@ merged_df['data_source'].round(0)
 merged_df['no_of_clients'].round(2)
 del merged_df['id']
 del merged_df['data_rain.1h']
-merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']] = merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']].apply(
-    lambda x: x.astype('category').cat.codes
+# merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']] = merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']].apply(
+#     lambda x: x.astype('category').cat.codes
+# )
+    
+filled_data_frame = fill_missing_values_using_forecast(
+    merged_df[merged_df['data_main.temp'].isnull()],
+    weekly_weather_forecast_df, 'created_date')
+
+merged_df = merged_df.join(
+    filled_data_frame, how='left'
 )
+print(merged_df.info())
+print(filled_data_frame.info())
+print(merged_df.head)
+# print(f"weather main {merged_df['data_weather.main'].unique()}")
 # print(merged_df.head)
 
 # print('dataframe with null values in temperature')
-# print(merged_df[merged_df['data_main.temp'].isnull()])
 
-print(
-    fill_missing_values_using_forecast(
-        merged_df[merged_df['data_main.temp'].isnull()],
-        weekly_weather_forecast_df,
-        'created_date'))
+# print(
+#     fill_missing_values_using_forecast(
+#         merged_df[merged_df['data_main.temp'].isnull()],
+#         weekly_weather_forecast_df,
+#         'created_date'))
 
 # print(merged_df.info())
+# print('after running function fill_missing_values_using_forecast')
+# print(merged_df[merged_df['data_main.temp'].isnull()])
 
 # print(merged_df['day_of_week'].unique())
 # print(merged_df[['created_date', 'no_of_clients', 'data_weather.main', 'data_weather.description', 'day_of_week']].head)
 # for col in ['data_weather.main', 'data_weather.description', 'day_of_week']:
 #     merged_df[[col]] = merged_df[[col]].astype('category')
-# print(f"number of clients {merged_df['no_of_clients'].unique()}")
+# print(f"weather main {merged_df['data_weather.main'].unique()}")
 
 # print(merged_df[''])
 # print(merged_df.head)
