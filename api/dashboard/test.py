@@ -7,6 +7,7 @@ import numpy as np
 import plotly.express as px
 import plotly.figure_factory as ff
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 from dotenv import load_dotenv as _load_dotenv
 from pandas import DataFrame, Series, set_option, to_datetime
 from pandas.io.json import json_normalize
@@ -15,6 +16,10 @@ from peewee import (CharField, DateTimeField, ForeignKeyField, IntegerField,
 from playhouse.mysql_ext import JSONField
 from playhouse.shortcuts import model_to_dict
 
+from scipy import stats
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
+import matplotlib.pyplot as plt
 # from cytoolz.dicttoolz import merge
 
 env_path = '/home/calvin/Projects/afstuderen/project-olympic/.env'
@@ -321,14 +326,19 @@ def fill_missing_values_using_forecast(
                         f"{col_prefix_to_match}{col_postfix}"].values[0]
     return missing_val_data_frame
 
-
+# 30T of 1H voor de beste grafiek
+# 3H voor de voorspelling vanwege de weatherforecast data
 TIME_UNIT = '3H'
 
 data_source_df = DataFrame(
     list(DataSourceData.select().where(
         DataSourceData.data_source_id == 2).dicts()))
 
-start_date = dt.strptime(("2019-11-08").split(' ')[0], '%Y-%m-%d')
+wrongly_reported_data_source_df = DataFrame(
+    list(DataSourceData.select().where(
+        DataSourceData.data_source_id == 1).dicts()))
+
+start_date = dt.strptime(("2019-10-01").split(' ')[0], '%Y-%m-%d')
 
 hourly_weather_query = Weather.select().where(
     Weather.created_date >= start_date,
@@ -354,6 +364,13 @@ data_source_df = data_source_df[(
 data_source_df['created_date'] = data_source_df['created_date'].map(
     lambda x: x.replace(second=0))
 
+wrongly_reported_data_source_df = wrongly_reported_data_source_df[(
+    wrongly_reported_data_source_df['created_date'] >= start_date
+)]
+
+wrongly_reported_data_source_df['created_date'] = wrongly_reported_data_source_df['created_date'].map(
+    lambda x: x.replace(second=0))
+
 weekly_filter = "{\"5_days_3_hour_forecast\": list[].{dt: dt, main: main,"\
     "weather: {main: weather[0].main, description: weather[0].description },"\
     "clouds: clouds, wind: wind, rain: rain}}"
@@ -362,7 +379,6 @@ weekly_weather_df = filter_column_json_data(weekly_weather_df, 'data',
                                             weekly_filter)
 
 weekly_weather_df = flatten_json_data_in_column(weekly_weather_df, 'data')
-
 weekly_weather_df = unpack_json_array(weekly_weather_df,
                                       'data_5_days_3_hour_forecast')
 
@@ -376,12 +392,15 @@ weekly_weather_forecast_df = flatten_json_data_in_column(
     weekly_weather_df, 'data', 40)
 weekly_weather_forecast_df = unix_to_datetime(weekly_weather_forecast_df)
 # weather_description_labels_df['day_of_week'] = weather_description_labels_df['created_date'].dt.day_name()
-set_option('display.max_rows', None)
+
+# set_option('display.max_rows', None)
+
 # print(flatest_df.iloc[-1])
 # print(weekly_weather_forecast_df.head)
-print('----------------- looking for value -----------------')
-print(_find_value_near_datetime(weekly_weather_forecast_df, 'created_date',
-                                dt.strptime(("2019-11-17").split(' ')[0], '%Y-%m-%d')))
+
+# print('----------------- looking for value -----------------')
+# print(_find_value_near_datetime(weekly_weather_forecast_df, 'created_date',
+#                                 dt.strptime(("2019-11-17").split(' ')[0], '%Y-%m-%d')))
 
 hourly_filter = "{dt: dt,  weather: {main: weather[0].main,"\
     "description: weather[0].description}, main: main, wind: wind"\
@@ -396,7 +415,12 @@ hourly_weather_df = filter_column_json_data(hourly_weather_df, 'data',
 hourly_weather_df = flatten_json_data_in_column(hourly_weather_df, 'data')
 # hourly_weater_df["created_date"] = hourly_weater_df["created_date"].round("S")
 hourly_weather_df['created_date'] = hourly_weather_df['created_date'].map(
-    lambda x: x.replace(second=0))
+    lambda x: x.replace(second=0)
+)
+
+wrongly_reported_data_source_df['created_date'] = wrongly_reported_data_source_df['created_date'].map(
+    lambda x: x.replace(second=0)
+)
 # print('after hourly flatten')
 # print(hourly_weater_df.iloc[0])
 # print(hourly_weater_df.loc[[hourly_weater_df['id'] == 5674], ['id', 'created_date', 'data_main.temp']])
@@ -417,7 +441,14 @@ data_source_df['no_of_clients'] = data_source_df['no_of_clients'] - 8
 data_source_df.loc[data_source_df['no_of_clients'] < 0, 'no_of_clients'] = 0
 merged_df = data_source_df.merge(
     hourly_weather_df, on='created_date', how='left')
+print('merged_df before resampling')
+print(merged_df)
+print('empty temperature')
+print(merged_df[merged_df['data_main.temp'].isnull()])
 # print(list(merged_df))
+wrongly_reported_data_source_df['no_of_clients'] = wrongly_reported_data_source_df['no_of_clients'] - 8
+wrongly_reported_data_source_df.loc[wrongly_reported_data_source_df['no_of_clients'] < 0, 'no_of_clients'] = 0
+wrongly_reported_data_source_df.loc[wrongly_reported_data_source_df['no_of_clients'] > 1000, 'no_of_clients'] = 100
 
 # Clean dataframe
 merged_df = drop_columns_with_postfix(merged_df)
@@ -463,23 +494,36 @@ merged_df['no_of_clients'].round(2)
 del merged_df['id']
 del merged_df['data_rain.1h']
 
+print('data_source_df')
+print(data_source_df)
+print('whole dataframe after resampling')
+print(merged_df)
+print('data frame where temp is empty after resampling')
+print(merged_df[merged_df['data_main.temp'].isnull()])
+
+# fill in weather data using known forecast data
 filled_data_frame = fill_missing_values_using_forecast(
     merged_df[merged_df['data_main.temp'].isnull()],
     weekly_weather_forecast_df, 'created_date')
 
 merged_df = merged_df.combine_first(filled_data_frame)
+
 merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']] = merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']].apply(
     lambda x: x.astype('category').cat.codes
 )
 
+print('data frame where temp is empty after filling')
+print(merged_df[merged_df['data_main.temp'].isnull()])
+
 print(merged_df.head)
 
-print(f"weather main {merged_df['data_weather.main'].unique()}")
+# print(f"weather main {merged_df['data_weather.main'].unique()}")
 
-print(merged_df.info())
+# print(merged_df.info())
+# print(merged_df.iloc[0])
+# print(merged_df.iloc[-1])
 
 # print('dataframe with null values in temperature')
-
 # print(
 #     fill_missing_values_using_forecast(
 #         merged_df[merged_df['data_main.temp'].isnull()],
@@ -505,20 +549,54 @@ print(merged_df.info())
 # print(nan_rows)
 
 # figure = go.Figure()
+
+figure = make_subplots(specs=[[{"secondary_y": True}]])
 # figure.add_trace(
-#     go.Bar(x=merged_df['created_date'],
-#            y=merged_df['no_of_clients'],
-#            name="Number of clients"))
+#     go.Bar(
+#         x=merged_df['created_date'],
+#         y=merged_df['data_main.temp'],
+#         name="Temperature in Celcius",
+#         marker_color='Purple',
+#     ),
+#     secondary_y=False,
+# )
+
+figure.add_trace(
+    go.Scatter(
+        x=merged_df['created_date'],
+        y=merged_df['no_of_clients'],
+        name="Number of clients reported by PI",
+    ),
+    secondary_y=True,
+)
 
 # figure.add_trace(
-#     go.Scatter(x=merged_df['created_date'],
-#                y=merged_df['data_main.temp'],
-#                name="Temperature in Celcius"))
+#     go.Scatter(
+#         x=wrongly_reported_data_source_df['created_date'],
+#         y=wrongly_reported_data_source_df['no_of_clients'],
+#         name='Number of clients reported by Unifi Cloud',
+#     ),
+#     secondary_y=True,
+# )
+
+figure.update_yaxes(title_text="Number of clients", secondary_y=True)
+figure.update_yaxes(title_text="Temperature in celcius", secondary_y=False)
+figure.update_layout(showlegend=False)
+
 # figure.show()
+
 merged_df_dropped_col = merged_df
-for item in ['data_source', 'created_date', 'data_main.feels_like', 'random_key']:
+prediction_df = merged_df # create a copy of the merged df for prediction
+prediction_df = prediction_df.reset_index()
+for item in ['data_source', 'created_date', 'data_main.feels_like', 'data_rain.3h_x', 'data_rain.3h_y']:
     try:
         del merged_df_dropped_col[item]
+    except KeyError:
+        print(f"key {item} does not exist.")
+
+for item in ['index', 'data_source', 'data_main.feels_like', 'data_rain.3h_x', 'data_rain.3h_y']:
+    try: 
+        del prediction_df[item]
     except KeyError:
         print(f"key {item} does not exist.")
 
@@ -587,3 +665,78 @@ print(f"kendall correlation \n{merged_df_dropped_col[merged_df_dropped_col.colum
 #     annotation_text=merged_df_dropped_col.corr().values.round(4))
 
 # figure_3.show()
+
+
+# figure_4 = ff.create_annotated_heatmap(
+#     merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[['no_of_clients']][:].values,
+#     x=list(merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[['no_of_clients']][:]),
+#     y=list(merged_df_dropped_col),
+#     annotation_text=merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[['no_of_clients']][:].values.round(4)
+# )
+
+# figure_4.show()
+
+prediction_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']] = prediction_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']].apply(
+    lambda x: x.astype('float')
+)
+
+prediction_df = prediction_df.fillna(-1)
+# print(f'any null? {merged_df_dropped_col.isnull().any()}')
+# print(merged_df_dropped_col[merged_df_dropped_col.isnull().any(axis=1)])
+# print(f'any na? {merged_df_dropped_col.isna().any()}')
+# print(merged_df_dropped_col[merged_df_dropped_col.isna().any(axis=1)])
+# merged_df_dropped_col = merged_df_dropped_col.dropna(thresh=5)
+# print(merged_df_dropped_col.info())
+
+# columns = list(merged_df_dropped_col)
+# del columns[-1]
+
+# X = merged_df_dropped_col[list(merged_df_dropped_col)]
+# y = merged_df_dropped_col['no_of_clients']
+
+print(list(prediction_df))
+print(prediction_df)
+print(prediction_df[prediction_df.columns[16]])
+# missing created date
+train_X = prediction_df.iloc[0:197, range(1, 15)]
+test_X = prediction_df.iloc[197:263, range(1, 15)]
+
+train_y = prediction_df.iloc[0:197, 16]
+test_y = prediction_df.iloc[197:263, 16]
+
+reg = LinearRegression()
+reg.fit(train_X, train_y)
+
+pred_y = reg.predict(test_X)
+
+# The coefficients
+print('Coefficients: \n', reg.coef_)
+# The mean squared error
+print('Mean squared error: %.2f'
+      % mean_squared_error(test_y, pred_y))
+# The coefficient of determination: 1 is perfect prediction
+print('Coefficient of determination: %.2f'
+      % r2_score(test_y, pred_y))
+
+print(f"test x is {test_X}")
+print(f"test y is {test_y}")
+print(f"pred y is {pred_y}")
+
+# plt.scatter(test_X['data_dt'], test_y,  color='black')
+# plt.plot(test_X['data_dt'], pred_y, color='blue', linewidth=3)
+
+# plt.xticks(())
+# plt.yticks(())
+
+# plt.show()
+
+figure.add_trace(
+    go.Scatter(
+        x=test_X['created_date'],
+        y=pred_y,
+        name="predicted clients",
+    ),
+    secondary_y=True,
+)
+
+figure.show()
