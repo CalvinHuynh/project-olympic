@@ -20,6 +20,7 @@ from scipy import stats
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
+from sklearn.svm import SVR
 
 # from cytoolz.dicttoolz import merge
 
@@ -474,12 +475,8 @@ merged_df['no_of_clients'].round(2)
 del merged_df['id']
 del merged_df['data_rain.1h']
 
-print('data_source_df')
-print(data_source_df)
-print('whole dataframe after resampling')
-print(merged_df)
-print('data frame where temp is empty after resampling')
-print(merged_df[merged_df['data_main.temp'].isnull()])
+print(
+    f"{len(merged_df[merged_df['data_main.temp'].isnull()])}/{len(merged_df)} is null")
 
 # fill in weather data using known forecast data
 filled_data_frame = fill_missing_values_using_forecast(
@@ -497,14 +494,11 @@ merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_w
 )
 
 print('data frame where temp is empty after filling')
-print(merged_df[merged_df['data_main.temp'].isnull()])
+print(
+    f"{len(merged_df[merged_df['data_main.temp'].isnull()])}/{len(merged_df)} is null")
 
-print('data frame where client is null or nan is empty after filling')
-print(merged_df[merged_df['no_of_clients'].isnull()])
-print(merged_df[merged_df['no_of_clients'].isna()])
-
-# print('----- checking is_workday and is_weekend -----')
-# print(merged_df)
+# Drop rows when it does not contain any value in column 'no_of_clients'
+merged_df = merged_df.dropna(subset=['no_of_clients'])
 
 figure = make_subplots()
 figure.add_trace(
@@ -549,7 +543,6 @@ figure.update_layout(
     legend=dict(x=0, y=1.1))
 
 # figure.show()
-
 merged_df_dropped_col = merged_df
 prediction_df = merged_df  # create a copy of the merged df for prediction
 # reset index to get created_Date column
@@ -623,12 +616,12 @@ heat = go.Heatmap(
 
 # see https://stats.stackexchange.com/questions/101130/correlation-coefficient-for-sets-with-non-linear-correlation
 # calculate the correlation using all three methods (pearson, spearman and kendall)
-print(
-    f"pearson correlation \n{merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()['no_of_clients'][:]}")
-print(
-    f"spearman correlation \n{merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr(method='spearman')['no_of_clients'][:]}")
-print(
-    f"kendall correlation \n{merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr(method='kendall')['no_of_clients'][:]}")
+# print(
+#     f"pearson correlation \n{merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()['no_of_clients'][:]}")
+# print(
+#     f"spearman correlation \n{merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr(method='spearman')['no_of_clients'][:]}")
+# print(
+#     f"kendall correlation \n{merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr(method='kendall')['no_of_clients'][:]}")
 
 # figure_3 = ff.create_annotated_heatmap(
 #     merged_df_dropped_col.corr().values,
@@ -657,22 +650,16 @@ figure_4.show()
 #     lambda x: x.astype('float')
 # )
 
-# Drop rows when it does not contain any value in column 'no_of_clients'
-# prediction_df = prediction_df.dropna(subset=['no_of_clients'])
-
 # Extra cleaning of data due to regression not accepting the dataframe if it contains NaN values
 # replace NaN values with -1
 prediction_df = prediction_df.fillna(-1)
+
 # print(prediction_df.info())
 
-# split dataset in 80 train and 20 test
-train, test = train_test_split(prediction_df, test_size=0.2)
+# split dataset in 80 train and 20 test, do not shuffle as the date is important
+train, test = train_test_split(prediction_df, test_size=0.25, shuffle=False)
 print(f"training size is {len(train)}")
 print(f"test size is {len(test)}")
-
-# print(list(prediction_df))
-# print(prediction_df)
-# print(prediction_df[prediction_df.columns[16]])
 
 # select range to exclude column created_date
 train_X = train.iloc[:, range(1, 15)]
@@ -686,6 +673,17 @@ reg.fit(train_X, train_y)
 
 pred_y = reg.predict(test_X)
 
+# svr_rbf = SVR(kernel='rbf', C=100, gamma=0.1, epsilon=.1) # Only rbf seems to run
+# svr_lin = SVR(kernel='linear', C=100, gamma='auto')
+# svr_poly = SVR(kernel='poly', C=100, gamma='auto', degree=3, epsilon=.1,
+#                coef0=1)
+# svrs = [svr_rbf, svr_lin, svr_poly]
+# kernel_label = ['RBF', 'Linear', 'Polynomial']
+
+# svr_rbf_pred_y = svr_rbf.fit(train_X, train_y).predict(test_X)
+# svr_lin_pred_y = svr_lin.fit(train_X,  train_y).predict(test_X)
+# svr_poly_pred_y = svr_poly.fit(train_X, train_y).predict(test_X)
+
 # The coefficients
 print('Coefficients: \n', reg.coef_)
 # The mean squared error
@@ -694,18 +692,6 @@ print('Mean squared error: %.2f'
 # The coefficient of determination: 1 is perfect prediction
 print('Coefficient of determination: %.2f'
       % r2_score(test_y, pred_y))
-
-# print(f"test x is {test_X}")
-# print(f"test y is {test_y}")
-# print(f"pred y is {pred_y}")
-
-# plt.scatter(test_X['data_dt'], test_y,  color='black')
-# plt.plot(test_X['data_dt'], pred_y, color='blue', linewidth=3)
-
-# plt.xticks(())
-# plt.yticks(())
-
-# plt.show()
 
 figure_5 = make_subplots()
 figure_5.add_trace(
@@ -723,13 +709,48 @@ figure_5.add_trace(
 
 figure_5.add_trace(
     go.Scatter(
-        x=prediction_df.iloc[197:263, 0],  # select created_date column
+        x=test.iloc[:, 0],  # select created_date column
         y=pred_y,
         name="Predicted number of clients using method: Linear regression",
         marker_color='Red'
     ),
     # secondary_y=True,
 )
+
+# # TODO: Requires preprocessing, otherwise it seems to run endlessly
+# for ix, svr in enumerate(svrs):
+#     figure_5.add_trace(
+#         go.Scatter(
+#             x=test.iloc[:,0],
+#             y= svr.fit(train_X, train_y).predict(test_X),
+#             name=f"Predicted number of clients using method: SVR {kernel_label[ix]}"
+#         )
+#     )
+
+# figure_5.add_trace(
+#     go.Scatter(
+#         x=test.iloc[:, 0],
+#         # y=svr_rbf_pred_y,
+#         y=svr_rbf.fit(train_X, train_y).predict(test_X),
+#         name="Predicted number of clients using method: SVR RBF"
+#     )
+# )
+
+# figure_5.add_trace(
+#     go.Scatter(
+#         x=test.iloc[:, 0],
+#         y=svr_lin_pred_y,
+#         name="Predicted number of clients using method: SVR Lin"
+#     )
+# )
+
+# figure_5.add_trace(
+#     go.Scatter(
+#         x=test.iloc[:, 0],
+#         y=svr_poly_pred_y,
+#         name="Predicted number of clients using method: SVR poly"
+#     )
+# )
 
 figure_5.update_layout(
     showlegend=True,
@@ -738,21 +759,22 @@ figure_5.update_layout(
 
 figure_5.show()
 
-# print(f"pearson correlation \n {prediction_df[prediction_df.columns[:]].corr()[['no_of_clients']][:].values}")
-# print(prediction_df.info())
-# print(list(prediction_df))
+pearson_corr = merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()['no_of_clients'][:].values
+spearman_corr = merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr(method='spearman')['no_of_clients'][:].values
+kendall_corr = merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr(method='kendall')['no_of_clients'][:].values
+corr_2d_array = np.array([pearson_corr, spearman_corr, kendall_corr])
+corr_2d_array = np.swapaxes(corr_2d_array, 0, 1)
+
 del prediction_df['created_date']
 figure_6 = ff.create_annotated_heatmap(
-    prediction_df[prediction_df.columns[:]
-                  ].corr()[['no_of_clients']][:].values,
-    x=list(prediction_df[prediction_df.columns[:]].corr()
-           [['no_of_clients']][:]),
+    corr_2d_array,
+    x=['pearson', 'spearman', 'kendall'],
     y=list(prediction_df),
-    annotation_text=prediction_df[prediction_df.columns[:]].corr()[
-        ['no_of_clients']][:].values.round(4),
+    annotation_text=corr_2d_array.round(4),
 )
 
 figure_6.update_layout(
     title="Correlation with NaN's replaced"
 )
+
 figure_6.show()
