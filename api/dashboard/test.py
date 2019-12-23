@@ -327,6 +327,7 @@ def fill_missing_values_using_forecast(
                         f"{col_prefix_to_match}{col_postfix}"].values[0]
     return missing_val_data_frame
 
+
 # 30T of 1H voor de beste grafiek
 # 3H voor de voorspelling vanwege de weatherforecast data
 TIME_UNIT = '3H'
@@ -418,8 +419,10 @@ print(merged_df)
 print('empty temperature')
 print(merged_df[merged_df['data_main.temp'].isnull()])
 wrongly_reported_data_source_df['no_of_clients'] = wrongly_reported_data_source_df['no_of_clients'] - 8
-wrongly_reported_data_source_df.loc[wrongly_reported_data_source_df['no_of_clients'] < 0, 'no_of_clients'] = 0
-wrongly_reported_data_source_df.loc[wrongly_reported_data_source_df['no_of_clients'] > 1000, 'no_of_clients'] = 100
+wrongly_reported_data_source_df.loc[wrongly_reported_data_source_df['no_of_clients']
+                                    < 0, 'no_of_clients'] = 0
+wrongly_reported_data_source_df.loc[wrongly_reported_data_source_df['no_of_clients']
+                                    > 1000, 'no_of_clients'] = 100
 
 # Clean dataframe
 merged_df = drop_columns_with_postfix(merged_df)
@@ -438,6 +441,10 @@ weather_description_labels_df = weather_description_labels_df.resample(
         'data_weather.description': lambda x: sorted(x.value_counts().keys()[0:3].tolist())
     }).reset_index()
 weather_description_labels_df['day_of_week'] = weather_description_labels_df['created_date'].dt.day_name()
+# weather_description_labels_df['is_workday'] = weather_description_labels_df['day_of_week'].apply(
+#     lambda x: item_in_list(
+#         x, ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'])
+# )
 weather_description_labels_df['is_weekend'] = weather_description_labels_df['day_of_week'].apply(
     lambda x: item_in_list(x, ['Saturday', 'Sunday'])
 )
@@ -451,7 +458,8 @@ weather_description_labels_df['data_weather.main'] = weather_description_labels_
 # Subset of hourly_weather_df for sum of rain
 rain_df = hourly_weather_df[['created_date', 'data_rain.1h']]
 rain_df = rain_df.resample(TIME_UNIT, on='created_date').sum().reset_index()
-rain_df = rain_df.rename({'data_rain.1h': f"data_rain.{TIME_UNIT.lower()}"}, axis=1)
+rain_df = rain_df.rename(
+    {'data_rain.1h': f"data_rain.{TIME_UNIT.lower()}"}, axis=1)
 
 # Calculate the mean of all the values
 merged_df = merged_df.resample(
@@ -480,6 +488,10 @@ filled_data_frame = fill_missing_values_using_forecast(
 
 merged_df = merged_df.combine_first(filled_data_frame)
 
+# merged_df[['is_workday']] = merged_df[['is_workday']].apply(
+#     lambda x: x.astype('category').cat.codes
+# )
+
 merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']] = merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']].apply(
     lambda x: x.astype('category').cat.codes
 )
@@ -491,15 +503,18 @@ print('data frame where client is null or nan is empty after filling')
 print(merged_df[merged_df['no_of_clients'].isnull()])
 print(merged_df[merged_df['no_of_clients'].isna()])
 
+# print('----- checking is_workday and is_weekend -----')
+# print(merged_df)
+
 figure = make_subplots()
 figure.add_trace(
     go.Bar(
         x=merged_df['created_date'],
         y=merged_df['no_of_clients'],
         name="Number of clients reported by PI",
-           marker=go.bar.Marker(
-                       color='rgb(63, 81, 181)'
-            )
+        marker=go.bar.Marker(
+            color='rgb(63, 81, 181)'
+        )
     ),
     # secondary_y=True,
 )
@@ -536,8 +551,9 @@ figure.update_layout(
 # figure.show()
 
 merged_df_dropped_col = merged_df
-prediction_df = merged_df # create a copy of the merged df for prediction
-prediction_df = prediction_df.reset_index() # reset index to get created_Date column
+prediction_df = merged_df  # create a copy of the merged df for prediction
+# reset index to get created_Date column
+prediction_df = prediction_df.reset_index()
 for item in ['data_source', 'created_date', 'data_main.feels_like', 'data_rain.3h_x', 'data_rain.3h_y']:
     try:
         del merged_df_dropped_col[item]
@@ -545,7 +561,7 @@ for item in ['data_source', 'created_date', 'data_main.feels_like', 'data_rain.3
         print(f"key {item} does not exist.")
 
 for item in ['index', 'data_source', 'data_main.feels_like', 'data_rain.3h_x', 'data_rain.3h_y']:
-    try: 
+    try:
         del prediction_df[item]
     except KeyError:
         print(f"key {item} does not exist.")
@@ -607,9 +623,12 @@ heat = go.Heatmap(
 
 # see https://stats.stackexchange.com/questions/101130/correlation-coefficient-for-sets-with-non-linear-correlation
 # calculate the correlation using all three methods (pearson, spearman and kendall)
-print(f"pearson correlation \n{merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()['no_of_clients'][:]}")
-print(f"spearman correlation \n{merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr(method='spearman')['no_of_clients'][:]}")
-print(f"kendall correlation \n{merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr(method='kendall')['no_of_clients'][:]}")
+print(
+    f"pearson correlation \n{merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()['no_of_clients'][:]}")
+print(
+    f"spearman correlation \n{merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr(method='spearman')['no_of_clients'][:]}")
+print(
+    f"kendall correlation \n{merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr(method='kendall')['no_of_clients'][:]}")
 
 # figure_3 = ff.create_annotated_heatmap(
 #     merged_df_dropped_col.corr().values,
@@ -620,10 +639,13 @@ print(f"kendall correlation \n{merged_df_dropped_col[merged_df_dropped_col.colum
 
 # print(merged_df_dropped_col.info())
 figure_4 = ff.create_annotated_heatmap(
-    merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[['no_of_clients']][:].values,
-    x=list(merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[['no_of_clients']][:]),
+    merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[
+        ['no_of_clients']][:].values,
+    x=list(merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[
+           ['no_of_clients']][:]),
     y=list(merged_df_dropped_col),
-    annotation_text=merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[['no_of_clients']][:].values.round(4)
+    annotation_text=merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[
+        ['no_of_clients']][:].values.round(4)
 )
 
 figure_4.update_layout(
@@ -635,8 +657,9 @@ figure_4.show()
 #     lambda x: x.astype('float')
 # )
 
+# Drop rows when it does not contain any value in column 'no_of_clients'
+# prediction_df = prediction_df.dropna(subset=['no_of_clients'])
 
-prediction_df = prediction_df.dropna(subset=['no_of_clients'])
 # Extra cleaning of data due to regression not accepting the dataframe if it contains NaN values
 # replace NaN values with -1
 prediction_df = prediction_df.fillna(-1)
@@ -652,8 +675,8 @@ print(f"test size is {len(test)}")
 # print(prediction_df[prediction_df.columns[16]])
 
 # select range to exclude column created_date
-train_X = train.iloc[:, range(1,15)]
-test_X = test.iloc[:, range(1,15)]
+train_X = train.iloc[:, range(1, 15)]
+test_X = test.iloc[:, range(1, 15)]
 
 train_y = train.iloc[:, 16]
 test_y = test.iloc[:, 16]
@@ -700,7 +723,7 @@ figure_5.add_trace(
 
 figure_5.add_trace(
     go.Scatter(
-        x=prediction_df.iloc[197:263, 0], # select created_date column
+        x=prediction_df.iloc[197:263, 0],  # select created_date column
         y=pred_y,
         name="Predicted number of clients using method: Linear regression",
         marker_color='Red'
@@ -715,15 +738,18 @@ figure_5.update_layout(
 
 figure_5.show()
 
-print(f"pearson correlation \n {prediction_df[prediction_df.columns[:]].corr()[['no_of_clients']][:].values}")
+# print(f"pearson correlation \n {prediction_df[prediction_df.columns[:]].corr()[['no_of_clients']][:].values}")
 # print(prediction_df.info())
 # print(list(prediction_df))
 del prediction_df['created_date']
 figure_6 = ff.create_annotated_heatmap(
-    prediction_df[prediction_df.columns[:]].corr()[['no_of_clients']][:].values,
-    x=list(prediction_df[prediction_df.columns[:]].corr()[['no_of_clients']][:]),
+    prediction_df[prediction_df.columns[:]
+                  ].corr()[['no_of_clients']][:].values,
+    x=list(prediction_df[prediction_df.columns[:]].corr()
+           [['no_of_clients']][:]),
     y=list(prediction_df),
-    annotation_text=prediction_df[prediction_df.columns[:]].corr()[['no_of_clients']][:].values.round(4),
+    annotation_text=prediction_df[prediction_df.columns[:]].corr()[
+        ['no_of_clients']][:].values.round(4),
 )
 
 figure_6.update_layout(
