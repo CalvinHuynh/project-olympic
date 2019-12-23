@@ -2,24 +2,25 @@ import os as _os
 from datetime import datetime as dt
 from enum import Enum
 
-from numpy import int as np_int
+import matplotlib.pyplot as plt
 import numpy as np
 import plotly.express as px
 import plotly.figure_factory as ff
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 from dotenv import load_dotenv as _load_dotenv
+from numpy import int as np_int
 from pandas import DataFrame, Series, set_option, to_datetime
 from pandas.io.json import json_normalize
 from peewee import (CharField, DateTimeField, ForeignKeyField, IntegerField,
                     Model, MySQLDatabase, PrimaryKeyField)
 from playhouse.mysql_ext import JSONField
 from playhouse.shortcuts import model_to_dict
-
+from plotly.subplots import make_subplots
 from scipy import stats
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
-import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+
 # from cytoolz.dicttoolz import merge
 
 env_path = '/home/calvin/Projects/afstuderen/project-olympic/.env'
@@ -234,9 +235,9 @@ def item_in_list(item: str, item_list: list):
         {int} -- returns an 1 if item is in list, else 0.
     """
     if item in item_list:
-        return 1
+        return True
     else:
-        return 0
+        return False
 
 
 def unix_to_datetime(
@@ -382,38 +383,21 @@ weekly_weather_df = flatten_json_data_in_column(weekly_weather_df, 'data')
 weekly_weather_df = unpack_json_array(weekly_weather_df,
                                       'data_5_days_3_hour_forecast')
 
-# print('after splitting data_5_days_3_hour_forecast')
-# print(weekly_weather_df)
-# weekly_weather_df = weekly_weather_df.rename(columns=_rename_column)
 weekly_weather_df.columns = map(_rename_columns, weekly_weather_df.columns)
-# df = weekly_weather_df.iloc[[0]]
-# print(list(weekly_weather_df))
 weekly_weather_forecast_df = flatten_json_data_in_column(
     weekly_weather_df, 'data', 40)
 weekly_weather_forecast_df = unix_to_datetime(weekly_weather_forecast_df)
-# weather_description_labels_df['day_of_week'] = weather_description_labels_df['created_date'].dt.day_name()
 
 # set_option('display.max_rows', None)
-
-# print(flatest_df.iloc[-1])
-# print(weekly_weather_forecast_df.head)
-
-# print('----------------- looking for value -----------------')
-# print(_find_value_near_datetime(weekly_weather_forecast_df, 'created_date',
-#                                 dt.strptime(("2019-11-17").split(' ')[0], '%Y-%m-%d')))
 
 hourly_filter = "{dt: dt,  weather: {main: weather[0].main,"\
     "description: weather[0].description}, main: main, wind: wind"\
     ", rain: rain, clouds: clouds}"
 
-# print('before hourly filter')
-# print(hourly_weater_df.iloc[0])
 hourly_weather_df = filter_column_json_data(hourly_weather_df, 'data',
                                             hourly_filter)
-# print('after hourly filter')
-# print(hourly_weater_df.iloc[0])
+
 hourly_weather_df = flatten_json_data_in_column(hourly_weather_df, 'data')
-# hourly_weater_df["created_date"] = hourly_weater_df["created_date"].round("S")
 hourly_weather_df['created_date'] = hourly_weather_df['created_date'].map(
     lambda x: x.replace(second=0)
 )
@@ -421,20 +405,8 @@ hourly_weather_df['created_date'] = hourly_weather_df['created_date'].map(
 wrongly_reported_data_source_df['created_date'] = wrongly_reported_data_source_df['created_date'].map(
     lambda x: x.replace(second=0)
 )
-# print('after hourly flatten')
-# print(hourly_weater_df.iloc[0])
-# print(hourly_weater_df.loc[[hourly_weater_df['id'] == 5674], ['id', 'created_date', 'data_main.temp']])
-# print('------------------ print where id is 5674')
-# print(hourly_weather_df.query("id == 5674")[
-#       ['id', 'created_date', 'data_main.temp']])
-# print(hourly_weather_df.head)
 # Remove data_rain column as it does not contain any data
 del hourly_weather_df['data_rain']
-# print(hourly_weather_df['data_rain.S'].unique())
-# print(f"wind gust is {hourly_weather_df['data_wind.gust'].unique()}")
-# print(f"wind degree is {hourly_weather_df['data_wind.deg'].unique()}")
-# print(hourly_weather_df['data_weather.main'].unique())
-# print(hourly_weather_df.isna().any())
 
 # Subtract the 8 devices/clients that are always connected
 data_source_df['no_of_clients'] = data_source_df['no_of_clients'] - 8
@@ -445,7 +417,6 @@ print('merged_df before resampling')
 print(merged_df)
 print('empty temperature')
 print(merged_df[merged_df['data_main.temp'].isnull()])
-# print(list(merged_df))
 wrongly_reported_data_source_df['no_of_clients'] = wrongly_reported_data_source_df['no_of_clients'] - 8
 wrongly_reported_data_source_df.loc[wrongly_reported_data_source_df['no_of_clients'] < 0, 'no_of_clients'] = 0
 wrongly_reported_data_source_df.loc[wrongly_reported_data_source_df['no_of_clients'] > 1000, 'no_of_clients'] = 100
@@ -480,7 +451,7 @@ weather_description_labels_df['data_weather.main'] = weather_description_labels_
 # Subset of hourly_weather_df for sum of rain
 rain_df = hourly_weather_df[['created_date', 'data_rain.1h']]
 rain_df = rain_df.resample(TIME_UNIT, on='created_date').sum().reset_index()
-rain_df = rain_df.rename({'data_rain.1h': 'data_rain.3h'}, axis=1)
+rain_df = rain_df.rename({'data_rain.1h': f"data_rain.{TIME_UNIT.lower()}"}, axis=1)
 
 # Calculate the mean of all the values
 merged_df = merged_df.resample(
@@ -491,6 +462,7 @@ merged_df = merged_df.merge(
     rain_df, on='created_date', how='left')
 merged_df['data_source'].round(0)
 merged_df['no_of_clients'].round(2)
+# Drop columns
 del merged_df['id']
 del merged_df['data_rain.1h']
 
@@ -515,59 +487,34 @@ merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_w
 print('data frame where temp is empty after filling')
 print(merged_df[merged_df['data_main.temp'].isnull()])
 
-print(merged_df.head)
+print('data frame where client is null or nan is empty after filling')
+print(merged_df[merged_df['no_of_clients'].isnull()])
+print(merged_df[merged_df['no_of_clients'].isna()])
 
-# print(f"weather main {merged_df['data_weather.main'].unique()}")
-
-# print(merged_df.info())
-# print(merged_df.iloc[0])
-# print(merged_df.iloc[-1])
-
-# print('dataframe with null values in temperature')
-# print(
-#     fill_missing_values_using_forecast(
-#         merged_df[merged_df['data_main.temp'].isnull()],
-#         weekly_weather_forecast_df,
-#         'created_date'))
-
-# print(merged_df.info())
-# print('after running function fill_missing_values_using_forecast')
-# print(merged_df[merged_df['data_main.temp'].isnull()])
-
-# print(merged_df['day_of_week'].unique())
-# print(merged_df[['created_date', 'no_of_clients', 'data_weather.main', 'data_weather.description', 'day_of_week']].head)
-# for col in ['data_weather.main', 'data_weather.description', 'day_of_week']:
-#     merged_df[[col]] = merged_df[[col]].astype('category')
-# print(f"weather main {merged_df['data_weather.main'].unique()}")
-
-# print(merged_df[''])
-# print(merged_df.head)
-# print(f"type of created_date is {merged_df['data_dt'].dtypes}")
-# print(f"columns after resampling are: {list(merged_df)}")
-# nan_rows = merged_df[merged_df['data_main.temp'].notnull()]
-# print('--------------------')
-# print(nan_rows)
-
-# figure = go.Figure()
-
-figure = make_subplots(specs=[[{"secondary_y": True}]])
-# figure.add_trace(
-#     go.Bar(
-#         x=merged_df['created_date'],
-#         y=merged_df['data_main.temp'],
-#         name="Temperature in Celcius",
-#         marker_color='Purple',
-#     ),
-#     secondary_y=False,
-# )
+figure = make_subplots()
+figure.add_trace(
+    go.Bar(
+        x=merged_df['created_date'],
+        y=merged_df['no_of_clients'],
+        name="Number of clients reported by PI",
+           marker=go.bar.Marker(
+                       color='rgb(63, 81, 181)'
+            )
+    ),
+    # secondary_y=True,
+)
 
 figure.add_trace(
     go.Scatter(
         x=merged_df['created_date'],
-        y=merged_df['no_of_clients'],
-        name="Number of clients reported by PI",
+        y=merged_df['data_main.temp'],
+        name="Temperature in Celcius",
+        # marker_color='Purple',
+        # marker=go.bar.Marker(
+        #                color='rgb(63, 81, 181)'
+        #     )
     ),
-    secondary_y=True,
+    # secondary_y=False,
 )
 
 # figure.add_trace(
@@ -579,15 +526,18 @@ figure.add_trace(
 #     secondary_y=True,
 # )
 
-figure.update_yaxes(title_text="Number of clients", secondary_y=True)
-figure.update_yaxes(title_text="Temperature in celcius", secondary_y=False)
-figure.update_layout(showlegend=False)
+# figure.update_yaxes(title_text="Number of clients", secondary_y=True)
+# figure.update_yaxes(title_text="Temperature in celcius", secondary_y=False)
+figure.update_layout(
+    showlegend=True,
+    legend_orientation="h",
+    legend=dict(x=0, y=1.1))
 
 # figure.show()
 
 merged_df_dropped_col = merged_df
 prediction_df = merged_df # create a copy of the merged df for prediction
-prediction_df = prediction_df.reset_index()
+prediction_df = prediction_df.reset_index() # reset index to get created_Date column
 for item in ['data_source', 'created_date', 'data_main.feels_like', 'data_rain.3h_x', 'data_rain.3h_y']:
     try:
         del merged_df_dropped_col[item]
@@ -621,6 +571,7 @@ for item in ['index', 'data_source', 'data_main.feels_like', 'data_rain.3h_x', '
 # )
 
 hovertext = merged_df_dropped_col.corr().round(4)
+# Unable to show value of the correlation in the cell using Heatmap function
 heat = go.Heatmap(
     z=merged_df_dropped_col.corr(),
     x=list(merged_df_dropped_col),
@@ -655,6 +606,7 @@ heat = go.Heatmap(
 # temp = merged_df_dropped_col.mask(np.tril(np.ones(merged_df_dropped_col.shape)).astype(np.bool))
 
 # see https://stats.stackexchange.com/questions/101130/correlation-coefficient-for-sets-with-non-linear-correlation
+# calculate the correlation using all three methods (pearson, spearman and kendall)
 print(f"pearson correlation \n{merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()['no_of_clients'][:]}")
 print(f"spearman correlation \n{merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr(method='spearman')['no_of_clients'][:]}")
 print(f"kendall correlation \n{merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr(method='kendall')['no_of_clients'][:]}")
@@ -666,43 +618,45 @@ print(f"kendall correlation \n{merged_df_dropped_col[merged_df_dropped_col.colum
 
 # figure_3.show()
 
-
-# figure_4 = ff.create_annotated_heatmap(
-#     merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[['no_of_clients']][:].values,
-#     x=list(merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[['no_of_clients']][:]),
-#     y=list(merged_df_dropped_col),
-#     annotation_text=merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[['no_of_clients']][:].values.round(4)
-# )
-
-# figure_4.show()
-
-prediction_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']] = prediction_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']].apply(
-    lambda x: x.astype('float')
+# print(merged_df_dropped_col.info())
+figure_4 = ff.create_annotated_heatmap(
+    merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[['no_of_clients']][:].values,
+    x=list(merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[['no_of_clients']][:]),
+    y=list(merged_df_dropped_col),
+    annotation_text=merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[['no_of_clients']][:].values.round(4)
 )
 
+figure_4.update_layout(
+    title="Correlation with NaN's"
+)
+figure_4.show()
+
+# prediction_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']] = prediction_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']].apply(
+#     lambda x: x.astype('float')
+# )
+
+
+prediction_df = prediction_df.dropna(subset=['no_of_clients'])
+# Extra cleaning of data due to regression not accepting the dataframe if it contains NaN values
+# replace NaN values with -1
 prediction_df = prediction_df.fillna(-1)
-# print(f'any null? {merged_df_dropped_col.isnull().any()}')
-# print(merged_df_dropped_col[merged_df_dropped_col.isnull().any(axis=1)])
-# print(f'any na? {merged_df_dropped_col.isna().any()}')
-# print(merged_df_dropped_col[merged_df_dropped_col.isna().any(axis=1)])
-# merged_df_dropped_col = merged_df_dropped_col.dropna(thresh=5)
-# print(merged_df_dropped_col.info())
+# print(prediction_df.info())
 
-# columns = list(merged_df_dropped_col)
-# del columns[-1]
+# split dataset in 80 train and 20 test
+train, test = train_test_split(prediction_df, test_size=0.2)
+print(f"training size is {len(train)}")
+print(f"test size is {len(test)}")
 
-# X = merged_df_dropped_col[list(merged_df_dropped_col)]
-# y = merged_df_dropped_col['no_of_clients']
+# print(list(prediction_df))
+# print(prediction_df)
+# print(prediction_df[prediction_df.columns[16]])
 
-print(list(prediction_df))
-print(prediction_df)
-print(prediction_df[prediction_df.columns[16]])
-# missing created date
-train_X = prediction_df.iloc[0:197, range(1, 15)]
-test_X = prediction_df.iloc[197:263, range(1, 15)]
+# select range to exclude column created_date
+train_X = train.iloc[:, range(1,15)]
+test_X = test.iloc[:, range(1,15)]
 
-train_y = prediction_df.iloc[0:197, 16]
-test_y = prediction_df.iloc[197:263, 16]
+train_y = train.iloc[:, 16]
+test_y = test.iloc[:, 16]
 
 reg = LinearRegression()
 reg.fit(train_X, train_y)
@@ -718,9 +672,9 @@ print('Mean squared error: %.2f'
 print('Coefficient of determination: %.2f'
       % r2_score(test_y, pred_y))
 
-print(f"test x is {test_X}")
-print(f"test y is {test_y}")
-print(f"pred y is {pred_y}")
+# print(f"test x is {test_X}")
+# print(f"test y is {test_y}")
+# print(f"pred y is {pred_y}")
 
 # plt.scatter(test_X['data_dt'], test_y,  color='black')
 # plt.plot(test_X['data_dt'], pred_y, color='blue', linewidth=3)
@@ -730,13 +684,49 @@ print(f"pred y is {pred_y}")
 
 # plt.show()
 
-figure.add_trace(
+figure_5 = make_subplots()
+figure_5.add_trace(
     go.Scatter(
-        x=test_X['created_date'],
-        y=pred_y,
-        name="predicted clients",
+        x=prediction_df['created_date'],
+        y=prediction_df['no_of_clients'],
+        name="Number of clients reported by PI",
+        marker_color='rgb(63, 81, 181)'
+        #    marker=go.bar.Marker(
+        #                color='rgb(63, 81, 181)'
+        #     )
     ),
-    secondary_y=True,
+    # secondary_y=True,
 )
 
-figure.show()
+figure_5.add_trace(
+    go.Scatter(
+        x=prediction_df.iloc[197:263, 0], # select created_date column
+        y=pred_y,
+        name="Predicted number of clients using method: Linear regression",
+        marker_color='Red'
+    ),
+    # secondary_y=True,
+)
+
+figure_5.update_layout(
+    showlegend=True,
+    legend_orientation="h",
+    legend=dict(x=0, y=1.1))
+
+figure_5.show()
+
+print(f"pearson correlation \n {prediction_df[prediction_df.columns[:]].corr()[['no_of_clients']][:].values}")
+# print(prediction_df.info())
+# print(list(prediction_df))
+del prediction_df['created_date']
+figure_6 = ff.create_annotated_heatmap(
+    prediction_df[prediction_df.columns[:]].corr()[['no_of_clients']][:].values,
+    x=list(prediction_df[prediction_df.columns[:]].corr()[['no_of_clients']][:]),
+    y=list(prediction_df),
+    annotation_text=prediction_df[prediction_df.columns[:]].corr()[['no_of_clients']][:].values.round(4),
+)
+
+figure_6.update_layout(
+    title="Correlation with NaN's replaced"
+)
+figure_6.show()
