@@ -18,10 +18,10 @@ from playhouse.shortcuts import model_to_dict
 from plotly.subplots import make_subplots
 from scipy import stats
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error, r2_score
-from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error, r2_score, confusion_matrix
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.svm import SVR
-
+from sklearn.preprocessing import RobustScaler, scale, StandardScaler, LabelEncoder
 # from cytoolz.dicttoolz import merge
 
 env_path = '/home/calvin/Projects/afstuderen/project-olympic/.env'
@@ -415,10 +415,17 @@ data_source_df['no_of_clients'] = data_source_df['no_of_clients'] - 8
 data_source_df.loc[data_source_df['no_of_clients'] < 0, 'no_of_clients'] = 0
 merged_df = data_source_df.merge(
     hourly_weather_df, on='created_date', how='left')
-print('merged_df before resampling')
-print(merged_df)
-print('empty temperature')
-print(merged_df[merged_df['data_main.temp'].isnull()])
+
+# histo_figure = make_subplots()
+# histo_figure.add_trace(
+#     go.Histogram(
+#         x=merged_df['created_date'],    
+#         y=merged_df['no_of_clients'],
+#         # xbins=dict(start=min(x), size=0.25, end=max(x)
+#     )
+# )
+# histo_figure.show()
+
 wrongly_reported_data_source_df['no_of_clients'] = wrongly_reported_data_source_df['no_of_clients'] - 8
 wrongly_reported_data_source_df.loc[wrongly_reported_data_source_df['no_of_clients']
                                     < 0, 'no_of_clients'] = 0
@@ -489,9 +496,20 @@ merged_df = merged_df.combine_first(filled_data_frame)
 #     lambda x: x.astype('category').cat.codes
 # )
 
-merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']] = merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']].apply(
-    lambda x: x.astype('category').cat.codes
-)
+# print(f"number of rows before dropping saturday {merged_df.shape}")
+# merged_df = merged_df[merged_df['day_of_week'] != 'Saturday']
+# print(f"number of rows after dropping saturday {merged_df.shape}")
+
+# print(f"number of rows before dropping sunday {merged_df.shape}")
+# merged_df = merged_df[merged_df['day_of_week'] != 'Sunday']
+# print(f"number of rows after dropping sunday {merged_df.shape}")
+
+# merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']] = merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']].apply(
+#     lambda x: x.astype('category').cat.codes
+# )
+label_encoder = LabelEncoder()
+for item in ['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']:
+    merged_df[item] = label_encoder.fit_transform(merged_df[item])
 
 print('data frame where temp is empty after filling')
 print(
@@ -630,21 +648,20 @@ heat = go.Heatmap(
 
 # figure_3.show()
 
-# print(merged_df_dropped_col.info())
-figure_4 = ff.create_annotated_heatmap(
-    merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[
-        ['no_of_clients']][:].values,
-    x=list(merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[
-           ['no_of_clients']][:]),
-    y=list(merged_df_dropped_col),
-    annotation_text=merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[
-        ['no_of_clients']][:].values.round(4)
-)
+# figure_4 = ff.create_annotated_heatmap(xxxxx
+#     merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[
+#         ['no_of_clients']][:].values,
+#     x=list(merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[
+#            ['no_of_clients']][:]),
+#     y=list(merged_df_dropped_col),
+#     annotation_text=merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[
+#         ['no_of_clients']][:].values.round(4)
+# )
 
-figure_4.update_layout(
-    title="Correlation with NaN's"
-)
-figure_4.show()
+# figure_4.update_layout(
+#     title="Correlation with NaN's"
+# )
+# figure_4.show()
 
 # prediction_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']] = prediction_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']].apply(
 #     lambda x: x.astype('float')
@@ -673,12 +690,32 @@ reg.fit(train_X, train_y)
 
 pred_y = reg.predict(test_X)
 
-# svr_rbf = SVR(kernel='rbf', C=100, gamma=0.1, epsilon=.1) # Only rbf seems to run
+scaler = StandardScaler() # using scaler improves the svr modeling
+train_X = scaler.fit_transform(train_X)
+# svr_rbf = SVR(kernel='rbf', C=100, gamma=0.1, epsilon=.1)
+svr_rbf = SVR(C=1000.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=1.0,
+    kernel='rbf', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
 # svr_lin = SVR(kernel='linear', C=100, gamma='auto')
+svr_lin = SVR(C=1.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=0.01,
+    kernel='linear', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
 # svr_poly = SVR(kernel='poly', C=100, gamma='auto', degree=3, epsilon=.1,
 #                coef0=1)
-# svrs = [svr_rbf, svr_lin, svr_poly]
-# kernel_label = ['RBF', 'Linear', 'Polynomial']
+svr_poly = SVR(C=1000.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=0.01,
+    kernel='poly', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
+svrs = [svr_rbf, svr_lin, svr_poly]
+kernel_label = ['RBF', 'Linear', 'Polynomial']
+
+# #############################################################################
+# Fit regression model
+
+# for kernel in ['rbf', 'linear', 'poly']:
+#     svr = GridSearchCV(SVR(kernel=kernel, gamma=0.1),
+#                    param_grid={"C": [1e0, 1e1, 1e2, 1e3],
+#                                "gamma": np.logspace(-2, 2, 5)})
+#     svr = svr.fit(train_X, train_y)
+#     print(f"Best estimator found by grid search for kernel {kernel} is:")
+#     print(svr.best_estimator_)
+# ############################################################################
 
 # svr_rbf_pred_y = svr_rbf.fit(train_X, train_y).predict(test_X)
 # svr_lin_pred_y = svr_lin.fit(train_X,  train_y).predict(test_X)
@@ -692,6 +729,9 @@ print('Mean squared error: %.2f'
 # The coefficient of determination: 1 is perfect prediction
 print('Coefficient of determination: %.2f'
       % r2_score(test_y, pred_y))
+print(f"mean of no_of_clients {np.mean(merged_df['no_of_clients'])}")
+print(f"standard deviation of no_of_clients is {np.std(merged_df['no_of_clients'])}")
+# print(f"confusion matrix \n {confusion_matrix(test_y, pred_y)}")
 
 figure_5 = make_subplots()
 figure_5.add_trace(
@@ -717,15 +757,16 @@ figure_5.add_trace(
     # secondary_y=True,
 )
 
-# # TODO: Requires preprocessing, otherwise it seems to run endlessly
-# for ix, svr in enumerate(svrs):
-#     figure_5.add_trace(
-#         go.Scatter(
-#             x=test.iloc[:,0],
-#             y= svr.fit(train_X, train_y).predict(test_X),
-#             name=f"Predicted number of clients using method: SVR {kernel_label[ix]}"
-#         )
-#     )
+# TODO: Requires preprocessing, otherwise it seems to run endlessly
+for ix, svr in enumerate(svrs):
+    test_data = scaler.fit_transform(test_X)
+    figure_5.add_trace(
+        go.Scatter(
+            x=test.iloc[:,0],
+            y= svr.fit(train_X, train_y).predict(test_data),
+            name=f"Predicted number of clients using method: SVR {kernel_label[ix]}"
+        )
+    )
 
 # figure_5.add_trace(
 #     go.Scatter(
@@ -778,3 +819,46 @@ figure_6.update_layout(
 )
 
 figure_6.show()
+
+# plt.hist(merged_df['no_of_clients'])
+# plt.show()
+
+histo_figure = make_subplots()
+histo_figure.add_trace(
+    go.Histogram(
+        x=merged_df['no_of_clients'],    
+        # y=merged_df['no_of_clients'],
+        xbins=dict(start=min(merged_df['no_of_clients']), size=1, end=max(merged_df['no_of_clients']))
+    )
+)
+
+histo_figure.update_xaxes(title_text='Number of clients')
+histo_figure.update_yaxes(title_text='Occurrence')
+histo_figure.show()
+
+qq = stats.probplot(merged_df['no_of_clients'], dist='norm')
+# qq = stats.probplot(merged_df['no_of_clients'], dist='lognorm', sparams=(1))
+x = np.array([qq[0][0][0], qq[0][0][-1]])
+
+qq_figure = make_subplots()
+qq_figure.add_trace(
+    go.Scatter(
+        x=qq[0][0],
+        y=qq[0][1],
+        mode = 'markers',
+        showlegend=False
+    )
+)
+
+qq_figure.add_trace(
+    go.Line(
+        x=x,
+        y=qq[1][1] + qq[1][0]*x,
+        showlegend=False
+    )
+)
+
+qq_figure.update_layout(
+    title='QQ normalized'
+)
+qq_figure.show()
