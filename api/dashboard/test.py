@@ -836,7 +836,7 @@ histo_figure.update_xaxes(title_text='Number of clients')
 histo_figure.update_yaxes(title_text='Occurrence')
 histo_figure.show()
 
-qq = stats.probplot(merged_df['no_of_clients'], dist='norm')
+qq = stats.probplot(merged_df['no_of_clients'])
 # qq = stats.probplot(merged_df['no_of_clients'], dist='lognorm', sparams=(1))
 x = np.array([qq[0][0][0], qq[0][0][-1]])
 
@@ -859,6 +859,8 @@ qq_figure.add_trace(
 )
 
 qq_figure.update_layout(
-    title='QQ normalized'
+    title='QQ plot'
 )
+qq_figure.update_xaxes(title_text='Quantiles')
+qq_figure.update_yaxes(title_text='Number of clients')
 qq_figure.show()
