@@ -565,13 +565,13 @@ merged_df_dropped_col = merged_df
 prediction_df = merged_df  # create a copy of the merged df for prediction
 # reset index to get created_Date column
 prediction_df = prediction_df.reset_index()
-for item in ['data_source', 'created_date', 'data_main.feels_like', 'data_rain.3h_x', 'data_rain.3h_y']:
+for item in ['data_source', 'created_date', 'data_main.feels_like', 'data_rain.3h_x', 'data_rain.3h_y', 'data_dt']:
     try:
         del merged_df_dropped_col[item]
     except KeyError:
         print(f"key {item} does not exist.")
 
-for item in ['index', 'data_source', 'data_main.feels_like', 'data_rain.3h_x', 'data_rain.3h_y']:
+for item in ['index', 'data_source', 'data_main.feels_like', 'data_rain.3h_x', 'data_rain.3h_y', 'data_dt']:
     try:
         del prediction_df[item]
     except KeyError:
@@ -596,7 +596,8 @@ for item in ['index', 'data_source', 'data_main.feels_like', 'data_rain.3h_x', '
 #     hovertext=hovertext,
 #     hoverinfo='text',
 # )
-
+summary = merged_df_dropped_col.describe()
+print(f"The summary is \n {summary.transpose()}")
 hovertext = merged_df_dropped_col.corr().round(4)
 # Unable to show value of the correlation in the cell using Heatmap function
 heat = go.Heatmap(
@@ -677,13 +678,12 @@ prediction_df = prediction_df.fillna(-1)
 train, test = train_test_split(prediction_df, test_size=0.25, shuffle=False)
 print(f"training size is {len(train)}")
 print(f"test size is {len(test)}")
-
 # select range to exclude column created_date
-train_X = train.iloc[:, range(1, 15)]
-test_X = test.iloc[:, range(1, 15)]
+train_X = train.iloc[:, range(1, 14)]
+test_X = test.iloc[:, range(1, 14)]
 
-train_y = train.iloc[:, 16]
-test_y = test.iloc[:, 16]
+train_y = train.iloc[:, 15]
+test_y = test.iloc[:, 15]
 
 reg = LinearRegression()
 reg.fit(train_X, train_y)
@@ -727,7 +727,7 @@ print('Coefficients: \n', reg.coef_)
 print('Mean squared error: %.2f'
       % mean_squared_error(test_y, pred_y))
 # The coefficient of determination: 1 is perfect prediction
-print('Coefficient of determination: %.2f'
+print('Coefficient of determination (R^2): %.2f'
       % r2_score(test_y, pred_y))
 print(f"mean of no_of_clients {np.mean(merged_df['no_of_clients'])}")
 print(f"standard deviation of no_of_clients is {np.std(merged_df['no_of_clients'])}")
@@ -799,7 +799,8 @@ figure_5.update_layout(
     legend=dict(x=0, y=1.1))
 
 figure_5.show()
-
+print('dataframe info is:')
+print(merged_df_dropped_col.info())
 pearson_corr = merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()['no_of_clients'][:].values
 spearman_corr = merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr(method='spearman')['no_of_clients'][:].values
 kendall_corr = merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr(method='kendall')['no_of_clients'][:].values
@@ -807,18 +808,18 @@ corr_2d_array = np.array([pearson_corr, spearman_corr, kendall_corr])
 corr_2d_array = np.swapaxes(corr_2d_array, 0, 1)
 
 del prediction_df['created_date']
-figure_6 = ff.create_annotated_heatmap(
+correlation_figure = ff.create_annotated_heatmap(
     corr_2d_array,
     x=['pearson', 'spearman', 'kendall'],
     y=list(prediction_df),
     annotation_text=corr_2d_array.round(4),
 )
 
-figure_6.update_layout(
+correlation_figure.update_layout(
     title="Correlation with NaN's replaced"
 )
 
-figure_6.show()
+correlation_figure.show()
 
 # plt.hist(merged_df['no_of_clients'])
 # plt.show()
@@ -864,3 +865,30 @@ qq_figure.update_layout(
 qq_figure.update_xaxes(title_text='Quantiles')
 qq_figure.update_yaxes(title_text='Number of clients')
 qq_figure.show()
+
+# Normality test
+stat, p = stats.shapiro(merged_df['no_of_clients'])
+print(f"Shapiro-wilk test \n W={stat}, p-value={p}")
+alpha = 0.05
+if p > alpha:
+	print('Sample looks Gaussian (fail to reject H0)')
+else:
+	print('Sample does not look Gaussian (reject H0)')
+
+# pair_plot_figure = make_subplots()
+# pair_plot_figure.add_trace(
+#     px.scatter_matrix(merged_df_dropped_col)
+# )
+
+pair_plot_figure = px.scatter_matrix(merged_df_dropped_col)
+pair_plot_figure.update_layout(
+    height=1200,
+    # autosize=True,
+)
+# pair_plot_figure.update_yaxes(tickangle=-45) # only changes the upper left corner labels
+# pair_plot_figure.add_annotation(textangle=-90) # does not seem to change the y axis title
+# pair_plot_figure.update_traces(showlowerhalf=False)
+pair_plot_figure.show()
+
+# relation_figure = px.scatter_matrix(merged_df_dropped_col[merged_df_dropped_col.columns[:]]['no_of_clients'])
+# relation_figure.show()
