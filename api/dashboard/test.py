@@ -334,7 +334,7 @@ def get_metrics(y_true, y_pred, round_result=False, round_to_decimals=2):
      using scikit-learn's regression metrics.
     
     Arguments:
-        y_true -- True values
+        y_true -- Truth values
         y_pred -- Predicted values
     
     Keyword Arguments:
@@ -344,6 +344,7 @@ def get_metrics(y_true, y_pred, round_result=False, round_to_decimals=2):
     Returns:
         {dict} -- A dictionary of regression metrics
     """
+    # https://scikit-learn.org/stable/modules/classes.html#regression-metrics
     from sklearn.metrics import (
         explained_variance_score,
         max_error,
@@ -473,16 +474,6 @@ data_source_df.loc[data_source_df['no_of_clients'] < 0, 'no_of_clients'] = 0
 merged_df = data_source_df.merge(
     hourly_weather_df, on='created_date', how='left')
 
-# histo_figure = make_subplots()
-# histo_figure.add_trace(
-#     go.Histogram(
-#         x=merged_df['created_date'],
-#         y=merged_df['no_of_clients'],
-#         # xbins=dict(start=min(x), size=0.25, end=max(x)
-#     )
-# )
-# histo_figure.show()
-
 wrongly_reported_data_source_df['no_of_clients'] = wrongly_reported_data_source_df['no_of_clients'] - 8
 wrongly_reported_data_source_df.loc[wrongly_reported_data_source_df['no_of_clients']
                                     < 0, 'no_of_clients'] = 0
@@ -548,22 +539,6 @@ filled_data_frame = fill_missing_values_using_forecast(
     weekly_weather_forecast_df, 'created_date')
 
 merged_df = merged_df.combine_first(filled_data_frame)
-
-# merged_df[['is_workday']] = merged_df[['is_workday']].apply(
-#     lambda x: x.astype('category').cat.codes
-# )
-
-# print(f"number of rows before dropping saturday {merged_df.shape}")
-# merged_df = merged_df[merged_df['day_of_week'] != 'Saturday']
-# print(f"number of rows after dropping saturday {merged_df.shape}")
-
-# print(f"number of rows before dropping sunday {merged_df.shape}")
-# merged_df = merged_df[merged_df['day_of_week'] != 'Sunday']
-# print(f"number of rows after dropping sunday {merged_df.shape}")
-
-# merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']] = merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']].apply(
-#     lambda x: x.astype('category').cat.codes
-# )
 
 # Label encoder used to transform the different categories to a numeric representation
 label_encoder = LabelEncoder()
@@ -692,15 +667,6 @@ heat = go.Heatmap(
 
 # temp = merged_df_dropped_col.mask(np.tril(np.ones(merged_df_dropped_col.shape)).astype(np.bool))
 
-# see https://stats.stackexchange.com/questions/101130/correlation-coefficient-for-sets-with-non-linear-correlation
-# calculate the correlation using all three methods (pearson, spearman and kendall)
-# print(
-#     f"pearson correlation \n{merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()['no_of_clients'][:]}")
-# print(
-#     f"spearman correlation \n{merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr(method='spearman')['no_of_clients'][:]}")
-# print(
-#     f"kendall correlation \n{merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr(method='kendall')['no_of_clients'][:]}")
-
 # figure_3 = ff.create_annotated_heatmap(
 #     merged_df_dropped_col.corr().values,
 #     x=list(merged_df_dropped_col), y=list(merged_df_dropped_col),
@@ -708,7 +674,7 @@ heat = go.Heatmap(
 
 # figure_3.show()
 
-# figure_4 = ff.create_annotated_heatmap(xxxxx
+# figure_4 = ff.create_annotated_heatmap(
 #     merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[
 #         ['no_of_clients']][:].values,
 #     x=list(merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[
@@ -751,18 +717,6 @@ pred_y = reg.predict(test_X)
 
 scaler = StandardScaler()  # using scaler improves the svr modeling
 train_X = scaler.fit_transform(train_X)
-# svr_rbf = SVR(kernel='rbf', C=100, gamma=0.1, epsilon=.1)
-svr_rbf = SVR(C=1000.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=1.0,
-              kernel='rbf', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
-# svr_lin = SVR(kernel='linear', C=100, gamma='auto')
-svr_lin = SVR(C=1.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=0.01,
-              kernel='linear', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
-# svr_poly = SVR(kernel='poly', C=100, gamma='auto', degree=3, epsilon=.1,
-#                coef0=1)
-svr_poly = SVR(C=1000.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=0.01,
-               kernel='poly', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
-svrs = [svr_rbf, svr_lin, svr_poly]
-kernel_label = ['Radial basis function (RBF)', 'Linear', 'Polynomial']
 
 # #############################################################################
 # Fit regression model
@@ -776,9 +730,18 @@ kernel_label = ['Radial basis function (RBF)', 'Linear', 'Polynomial']
 #     print(svr.best_estimator_)
 # ############################################################################
 
-# svr_rbf_pred_y = svr_rbf.fit(train_X, train_y).predict(test_X)
-# svr_lin_pred_y = svr_lin.fit(train_X,  train_y).predict(test_X)
-# svr_poly_pred_y = svr_poly.fit(train_X, train_y).predict(test_X)
+# svr_rbf = SVR(kernel='rbf', C=100, gamma=0.1, epsilon=.1)
+svr_rbf = SVR(C=1000.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=1.0,
+              kernel='rbf', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
+# svr_lin = SVR(kernel='linear', C=100, gamma='auto')
+svr_lin = SVR(C=1.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=0.01,
+              kernel='linear', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
+# svr_poly = SVR(kernel='poly', C=100, gamma='auto', degree=3, epsilon=.1,
+#                coef0=1)
+svr_poly = SVR(C=1000.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=0.01,
+               kernel='poly', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
+svrs = [svr_rbf, svr_lin, svr_poly]
+kernel_label = ['Radial basis function (RBF)', 'Linear', 'Polynomial']
 
 # The coefficients
 print('Coefficients: \n', reg.coef_)
@@ -791,10 +754,19 @@ print('Coefficient of determination (R^2): %.2f'
 print(f"mean of no_of_clients {np.mean(merged_df['no_of_clients'])}")
 print(
     f"standard deviation of no_of_clients is {np.std(merged_df['no_of_clients'])}")
-result_dict = get_metrics(test_y, pred_y, round_result=True)
+
 print("---------- Regression metrics ----------")
-for k, v in result_dict.items():
+print('---------- LinearRegression() ----------')
+for k, v in get_metrics(test_y, pred_y, round_result=True).items():
     print(f"{k}: {v}")
+
+for ix, svr in enumerate(svrs):
+    test_data = scaler.fit_transform(test_X)    
+    pred_y_svr = svr.fit(train_X, train_y).predict(test_data)
+    print(f"---------- SVR {kernel_label[ix]} ----------")
+    for k, v in get_metrics(test_y, pred_y_svr, round_result=True).items():
+        print(f"{k}: {v}")
+
 # print(f"confusion matrix \n {confusion_matrix(test_y, pred_y)}")
 
 figure_5 = make_subplots()
@@ -832,41 +804,16 @@ for ix, svr in enumerate(svrs):
         )
     )
 
-# figure_5.add_trace(
-#     go.Scatter(
-#         x=test.iloc[:, 0],
-#         # y=svr_rbf_pred_y,
-#         y=svr_rbf.fit(train_X, train_y).predict(test_X),
-#         name="Predicted number of clients using method: SVR RBF"
-#     )
-# )
-
-# figure_5.add_trace(
-#     go.Scatter(
-#         x=test.iloc[:, 0],
-#         y=svr_lin_pred_y,
-#         name="Predicted number of clients using method: SVR Lin"
-#     )
-# )
-
-# figure_5.add_trace(
-#     go.Scatter(
-#         x=test.iloc[:, 0],
-#         y=svr_poly_pred_y,
-#         name="Predicted number of clients using method: SVR poly"
-#     )
-# )
-
 figure_5.update_layout(
     showlegend=True,
     legend_orientation="h",
     legend=dict(x=0, y=1.1))
 
 figure_5.show()
-print('dataframe info is:')
-print(merged_df_dropped_col.info())
+# print('dataframe info is:')
+# print(merged_df_dropped_col.info())
 
-
+# see https://stats.stackexchange.com/questions/101130/correlation-coefficient-for-sets-with-non-linear-correlation
 pearson_corr = merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[
     'no_of_clients'][:].values
 spearman_corr = merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr(
@@ -889,9 +836,6 @@ correlation_figure.update_layout(
 )
 
 correlation_figure.show()
-
-# plt.hist(merged_df['no_of_clients'])
-# plt.show()
 
 histo_figure = make_subplots()
 histo_figure.add_trace(
@@ -945,10 +889,6 @@ if p > alpha:
 else:
 	print('Sample does not look Gaussian (reject H0)')
 
-# pair_plot_figure = make_subplots()
-# pair_plot_figure.add_trace(
-#     px.scatter_matrix(merged_df_dropped_col)
-# )
 
 pair_plot_figure = px.scatter_matrix(merged_df_dropped_col)
 pair_plot_figure.update_layout(
@@ -960,8 +900,6 @@ pair_plot_figure.update_layout(
 # pair_plot_figure.update_traces(showlowerhalf=False)
 pair_plot_figure.show()
 
-# relation_figure = px.scatter_matrix(merged_df_dropped_col[merged_df_dropped_col.columns[:]]['no_of_clients'])
-# relation_figure.show()
 coeff_plot = make_subplots()
 coeff_plot.add_trace(
     go.Bar(
