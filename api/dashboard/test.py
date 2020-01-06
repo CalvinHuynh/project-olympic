@@ -329,6 +329,63 @@ def fill_missing_values_using_forecast(
     return missing_val_data_frame
 
 
+def get_metrics(y_true, y_pred, round_result=False, round_to_decimals=2):
+    """Calculates the performance of a regression method
+     using scikit-learn's regression metrics.
+    
+    Arguments:
+        y_true -- True values
+        y_pred -- Predicted values
+    
+    Keyword Arguments:
+        round_result {bool} -- [description] (default: {False})
+        round_to_decimals {int} -- [description] (default: {4})
+    
+    Returns:
+        {dict} -- A dictionary of regression metrics
+    """
+    from sklearn.metrics import (
+        explained_variance_score,
+        max_error,
+        mean_absolute_error,
+        mean_squared_error,
+        r2_score
+    )
+    highest_value = max(y_true)
+    allowed_margin = highest_value * 0.05
+    is_in_range = 0
+    y_true_list = y_true.tolist()
+    for index, value in enumerate(y_pred):
+        true_val = y_true_list[index]
+        if (true_val - allowed_margin <= value and value <= true_val + allowed_margin):
+            is_in_range += 1
+
+    variance_score = explained_variance_score(y_true, y_pred)
+    max_residual_error = max_error(y_true, y_pred)
+    mae = mean_absolute_error(y_true, y_pred)
+    # returns RMSE value if squared boolean is False
+    rmse = mean_squared_error(y_true, y_pred, squared=False)
+    r2_val = r2_score(y_true, y_pred)
+    accuracy = is_in_range / len(y_true)
+
+    if round_result:
+        variance_score = variance_score.round(round_to_decimals)
+        max_residual_error = max_residual_error.round(round_to_decimals)
+        mae = mae.round(round_to_decimals)
+        rmse = rmse.round(round_to_decimals)
+        r2_val = r2_val.round(round_to_decimals)
+        accuracy = accuracy.__round__(round_to_decimals)
+
+    return {
+        'explained variance': variance_score,
+        'max residual error': max_residual_error,
+        'mean absolute error': mae,
+        'root mean squared error': rmse,
+        'r^2 score': r2_val,
+        'accuracy': f"{accuracy * 100}%"
+    }
+
+
 # 30T of 1H voor de beste grafiek
 # 3H voor de voorspelling vanwege de weatherforecast data
 TIME_UNIT = '3H'
@@ -419,7 +476,7 @@ merged_df = data_source_df.merge(
 # histo_figure = make_subplots()
 # histo_figure.add_trace(
 #     go.Histogram(
-#         x=merged_df['created_date'],    
+#         x=merged_df['created_date'],
 #         y=merged_df['no_of_clients'],
 #         # xbins=dict(start=min(x), size=0.25, end=max(x)
 #     )
@@ -507,6 +564,8 @@ merged_df = merged_df.combine_first(filled_data_frame)
 # merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']] = merged_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']].apply(
 #     lambda x: x.astype('category').cat.codes
 # )
+
+# Label encoder used to transform the different categories to a numeric representation
 label_encoder = LabelEncoder()
 for item in ['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']:
     merged_df[item] = label_encoder.fit_transform(merged_df[item])
@@ -690,20 +749,20 @@ reg.fit(train_X, train_y)
 
 pred_y = reg.predict(test_X)
 
-scaler = StandardScaler() # using scaler improves the svr modeling
+scaler = StandardScaler()  # using scaler improves the svr modeling
 train_X = scaler.fit_transform(train_X)
 # svr_rbf = SVR(kernel='rbf', C=100, gamma=0.1, epsilon=.1)
 svr_rbf = SVR(C=1000.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=1.0,
-    kernel='rbf', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
+              kernel='rbf', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
 # svr_lin = SVR(kernel='linear', C=100, gamma='auto')
 svr_lin = SVR(C=1.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=0.01,
-    kernel='linear', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
+              kernel='linear', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
 # svr_poly = SVR(kernel='poly', C=100, gamma='auto', degree=3, epsilon=.1,
 #                coef0=1)
 svr_poly = SVR(C=1000.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=0.01,
-    kernel='poly', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
+               kernel='poly', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
 svrs = [svr_rbf, svr_lin, svr_poly]
-kernel_label = ['RBF', 'Linear', 'Polynomial']
+kernel_label = ['Radial basis function (RBF)', 'Linear', 'Polynomial']
 
 # #############################################################################
 # Fit regression model
@@ -730,7 +789,12 @@ print('Mean squared error: %.2f'
 print('Coefficient of determination (R^2): %.2f'
       % r2_score(test_y, pred_y))
 print(f"mean of no_of_clients {np.mean(merged_df['no_of_clients'])}")
-print(f"standard deviation of no_of_clients is {np.std(merged_df['no_of_clients'])}")
+print(
+    f"standard deviation of no_of_clients is {np.std(merged_df['no_of_clients'])}")
+result_dict = get_metrics(test_y, pred_y, round_result=True)
+print("---------- Regression metrics ----------")
+for k, v in result_dict.items():
+    print(f"{k}: {v}")
 # print(f"confusion matrix \n {confusion_matrix(test_y, pred_y)}")
 
 figure_5 = make_subplots()
@@ -762,8 +826,8 @@ for ix, svr in enumerate(svrs):
     test_data = scaler.fit_transform(test_X)
     figure_5.add_trace(
         go.Scatter(
-            x=test.iloc[:,0],
-            y= svr.fit(train_X, train_y).predict(test_data),
+            x=test.iloc[:, 0],
+            y=svr.fit(train_X, train_y).predict(test_data),
             name=f"Predicted number of clients using method: SVR {kernel_label[ix]}"
         )
     )
@@ -801,9 +865,14 @@ figure_5.update_layout(
 figure_5.show()
 print('dataframe info is:')
 print(merged_df_dropped_col.info())
-pearson_corr = merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()['no_of_clients'][:].values
-spearman_corr = merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr(method='spearman')['no_of_clients'][:].values
-kendall_corr = merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr(method='kendall')['no_of_clients'][:].values
+
+
+pearson_corr = merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[
+    'no_of_clients'][:].values
+spearman_corr = merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr(
+    method='spearman')['no_of_clients'][:].values
+kendall_corr = merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr(
+    method='kendall')['no_of_clients'][:].values
 corr_2d_array = np.array([pearson_corr, spearman_corr, kendall_corr])
 corr_2d_array = np.swapaxes(corr_2d_array, 0, 1)
 
@@ -827,9 +896,10 @@ correlation_figure.show()
 histo_figure = make_subplots()
 histo_figure.add_trace(
     go.Histogram(
-        x=merged_df['no_of_clients'],    
+        x=merged_df['no_of_clients'],
         # y=merged_df['no_of_clients'],
-        xbins=dict(start=min(merged_df['no_of_clients']), size=1, end=max(merged_df['no_of_clients']))
+        xbins=dict(start=min(merged_df['no_of_clients']), size=1, end=max(
+            merged_df['no_of_clients']))
     )
 )
 
@@ -846,7 +916,7 @@ qq_figure.add_trace(
     go.Scatter(
         x=qq[0][0],
         y=qq[0][1],
-        mode = 'markers',
+        mode='markers',
         showlegend=False
     )
 )
@@ -854,7 +924,7 @@ qq_figure.add_trace(
 qq_figure.add_trace(
     go.Line(
         x=x,
-        y=qq[1][1] + qq[1][0]*x,
+        y=qq[1][1] + qq[1][0] * x,
         showlegend=False
     )
 )
@@ -892,3 +962,12 @@ pair_plot_figure.show()
 
 # relation_figure = px.scatter_matrix(merged_df_dropped_col[merged_df_dropped_col.columns[:]]['no_of_clients'])
 # relation_figure.show()
+coeff_plot = make_subplots()
+coeff_plot.add_trace(
+    go.Bar(
+        y=Series(reg.coef_, train.iloc[:, range(1, 14)].columns).sort_values(),
+        x=train.iloc[:, range(1, 14)].columns
+    )
+)
+
+coeff_plot.show()
