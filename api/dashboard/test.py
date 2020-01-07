@@ -17,7 +17,7 @@ from playhouse.mysql_ext import JSONField
 from playhouse.shortcuts import model_to_dict
 from plotly.subplots import make_subplots
 from scipy import stats
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, Lasso, LassoCV, Ridge, RidgeCV, ElasticNet, ElasticNetCV
 from sklearn.metrics import mean_squared_error, r2_score, confusion_matrix
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.svm import SVR
@@ -378,12 +378,14 @@ def get_metrics(y_true, y_pred, round_result=False, round_to_decimals=2):
         accuracy = accuracy.__round__(round_to_decimals)
 
     return {
-        'explained variance': variance_score,
+        'explained variance regression score, closer to 1.0 is better': variance_score,
+        # largest absolute difference between predicted and truth value
         'max residual error': max_residual_error,
-        'mean absolute error': mae,
+        'mean absolute error': mae,  # average difference
+        # average difference root squared, detects outliers
         'root mean squared error': rmse,
-        'r^2 score': r2_val,
-        'accuracy': f"{accuracy * 100}%"
+        # 'r^2 score': r2_val,
+        'accuracy': f"{accuracy * 100}%"  # custom accuracy matrix
     }
 
 
@@ -717,8 +719,9 @@ prediction_df = prediction_df.fillna(0)
 summary = prediction_df.describe()
 print(f"The summary is \n {summary.transpose()}")
 
-stringified_list = ", ".join(list(summary))
-print(stringified_list.replace("_", "\_"))
+# # Used for printing underscores in LaTeX
+# stringified_list = ", ".join(list(summary))
+# print(stringified_list.replace("_", "\_"))
 
 # split dataset in 80 train and 20 test, do not shuffle as the date is important
 train, test = train_test_split(prediction_df, test_size=0.25, shuffle=False)
@@ -740,8 +743,9 @@ scaler = StandardScaler()  # using scaler improves the svr modeling
 train_X = scaler.fit_transform(train_X)
 
 # #############################################################################
-# # Fit regression model
+# Fit regression model
 
+# # SVR parameters from https://scikit-learn.org/stable/auto_examples/plot_kernel_ridge_regression.html
 # for kernel in ['rbf', 'linear', 'poly']:
 #     svr = GridSearchCV(SVR(kernel=kernel, gamma=0.1),
 #                        param_grid={"C": [1e0, 1e1, 1e2, 1e3],
@@ -749,7 +753,31 @@ train_X = scaler.fit_transform(train_X)
 #     svr = svr.fit(train_X, train_y)
 #     print(f"Best estimator found by grid search for kernel {kernel} is:")
 #     print(svr.best_estimator_)
-# ############################################################################
+
+# parameters from https://scikit-learn.org/stable/auto_examples/exercises/plot_cv_diabetes.html
+alphas = np.logspace(-4, -0.5, 30)
+tuned_parameters = [{'alpha': alphas}]
+n_folds = 5
+
+lasso = GridSearchCV(Lasso(selection='random', tol=1, max_iter=1000),
+                     tuned_parameters, cv=n_folds, refit=False)
+
+lasso = lasso.fit(train_X, train_y)
+print("Best estimator found by grid search for Lasso is:")
+print(f"best index is {lasso.best_index_}, parameters are {lasso.best_params_} and score is {lasso.best_score_}")
+
+
+# lasso_cv = LassoCV(tol=1, max_iter=1000, cv=n_folds)
+# print(f"best alpha using lasso cv is {lasso_cv.alphas}")
+# ridge_reg = Ridge()
+
+ridge = GridSearchCV(Ridge(alpha=alphas), tuned_parameters, cv=n_folds)
+ridge = ridge.fit(train_X, train_y)
+print("Best estimator found by grid search for Ridge is:")
+print(f"best index is {ridge.best_index_}, parameters are {ridge.best_params_} and score is {ridge.best_score_}")
+
+exit(0)
+# #############################################################################
 
 # svr_rbf = SVR(kernel='rbf', C=100, gamma=0.1, epsilon=.1)
 svr_rbf = SVR(C=100.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=1.0,
