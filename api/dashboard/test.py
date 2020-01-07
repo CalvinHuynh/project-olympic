@@ -387,6 +387,15 @@ def get_metrics(y_true, y_pred, round_result=False, round_to_decimals=2):
     }
 
 
+def clean_dataframe(data_frame: DataFrame):
+    # Floor seconds
+    data_frame['created_date'] = data_frame['created_date'].map(
+        lambda x: x.replace(second=0))
+    # Count the number of clients that are connected when the office is not open, then substract the amount to create
+    # a sparser distribution.
+    pass
+
+
 # 30T of 1H voor de beste grafiek
 # 3H voor de voorspelling vanwege de weatherforecast data
 TIME_UNIT = '3H'
@@ -468,7 +477,8 @@ wrongly_reported_data_source_df['created_date'] = wrongly_reported_data_source_d
 # Remove data_rain column as it does not contain any data
 del hourly_weather_df['data_rain']
 
-# Subtract the 8 devices/clients that are always connected
+# Subtract the 8 devices/clients that are always connected, it needs to be a variable instead of a static constant.
+# Since the number of always connected clients may vary (for example since december there are only 7 always connected clients)
 data_source_df['no_of_clients'] = data_source_df['no_of_clients'] - 8
 data_source_df.loc[data_source_df['no_of_clients'] < 0, 'no_of_clients'] = 0
 merged_df = data_source_df.merge(
@@ -493,6 +503,7 @@ weather_description_labels_df = hourly_weather_df[[
 
 weather_description_labels_df = weather_description_labels_df.resample(
     TIME_UNIT, on='created_date').agg({
+        # sort the list to get the top 3 most occurrence
         'data_weather.main': lambda x: sorted(x.value_counts().keys()[0:3].tolist()),
         'data_weather.description': lambda x: sorted(x.value_counts().keys()[0:3].tolist())
     }).reset_index()
@@ -545,6 +556,7 @@ label_encoder = LabelEncoder()
 for item in ['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']:
     merged_df[item] = label_encoder.fit_transform(merged_df[item])
 
+# print(f"merged_df after using label_encoder: \n {merged_df.info()}")
 print('data frame where temp is empty after filling')
 print(
     f"{len(merged_df[merged_df['data_main.temp'].isnull()])}/{len(merged_df)} is null")
@@ -630,9 +642,13 @@ for item in ['index', 'data_source', 'data_main.feels_like', 'data_rain.3h_x', '
 #     hovertext=hovertext,
 #     hoverinfo='text',
 # )
-summary = merged_df_dropped_col.describe()
-print(f"The summary is \n {summary.transpose()}")
+
+# summary = merged_df_dropped_col.describe()
+# print(f"The summary is \n {summary.transpose()}")
+# print(f"Dataframe information: \n {merged_df_dropped_col.info()}")
 hovertext = merged_df_dropped_col.corr().round(4)
+# print(f"column headers are \n{list(summary)}")
+
 # Unable to show value of the correlation in the cell using Heatmap function
 heat = go.Heatmap(
     z=merged_df_dropped_col.corr(),
@@ -695,21 +711,26 @@ heat = go.Heatmap(
 
 # Extra cleaning of data due to regression not accepting the dataframe if it contains NaN values
 # replace NaN values with -1
-prediction_df = prediction_df.fillna(-1)
+prediction_df = prediction_df.fillna(0)
 
 # print(prediction_df.info())
+summary = prediction_df.describe()
+print(f"The summary is \n {summary.transpose()}")
+
+stringified_list = ", ".join(list(summary))
+print(stringified_list.replace("_", "\_"))
 
 # split dataset in 80 train and 20 test, do not shuffle as the date is important
 train, test = train_test_split(prediction_df, test_size=0.25, shuffle=False)
 print(f"training size is {len(train)}")
 print(f"test size is {len(test)}")
 # select range to exclude column created_date
-train_X = train.iloc[:, range(1, 14)]
-test_X = test.iloc[:, range(1, 14)]
+train_X = train.iloc[:, range(1, 15)]
+test_X = test.iloc[:, range(1, 15)]
 
+# the number of clients that are being predicted
 train_y = train.iloc[:, 15]
 test_y = test.iloc[:, 15]
-
 reg = LinearRegression()
 reg.fit(train_X, train_y)
 
@@ -719,26 +740,26 @@ scaler = StandardScaler()  # using scaler improves the svr modeling
 train_X = scaler.fit_transform(train_X)
 
 # #############################################################################
-# Fit regression model
+# # Fit regression model
 
 # for kernel in ['rbf', 'linear', 'poly']:
 #     svr = GridSearchCV(SVR(kernel=kernel, gamma=0.1),
-#                    param_grid={"C": [1e0, 1e1, 1e2, 1e3],
-#                                "gamma": np.logspace(-2, 2, 5)})
+#                        param_grid={"C": [1e0, 1e1, 1e2, 1e3],
+#                                    "gamma": np.logspace(-2, 2, 5)})
 #     svr = svr.fit(train_X, train_y)
 #     print(f"Best estimator found by grid search for kernel {kernel} is:")
 #     print(svr.best_estimator_)
 # ############################################################################
 
 # svr_rbf = SVR(kernel='rbf', C=100, gamma=0.1, epsilon=.1)
-svr_rbf = SVR(C=1000.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=1.0,
+svr_rbf = SVR(C=100.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=1.0,
               kernel='rbf', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
 # svr_lin = SVR(kernel='linear', C=100, gamma='auto')
-svr_lin = SVR(C=1.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=0.01,
+svr_lin = SVR(C=100.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=0.01,
               kernel='linear', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
 # svr_poly = SVR(kernel='poly', C=100, gamma='auto', degree=3, epsilon=.1,
 #                coef0=1)
-svr_poly = SVR(C=1000.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=0.01,
+svr_poly = SVR(C=1.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=0.1,
                kernel='poly', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
 svrs = [svr_rbf, svr_lin, svr_poly]
 kernel_label = ['Radial basis function (RBF)', 'Linear', 'Polynomial']
@@ -761,7 +782,7 @@ for k, v in get_metrics(test_y, pred_y, round_result=True).items():
     print(f"{k}: {v}")
 
 for ix, svr in enumerate(svrs):
-    test_data = scaler.fit_transform(test_X)    
+    test_data = scaler.fit_transform(test_X)
     pred_y_svr = svr.fit(train_X, train_y).predict(test_data)
     print(f"---------- SVR {kernel_label[ix]} ----------")
     for k, v in get_metrics(test_y, pred_y_svr, round_result=True).items():
@@ -899,13 +920,20 @@ pair_plot_figure.update_layout(
 # pair_plot_figure.add_annotation(textangle=-90) # does not seem to change the y axis title
 # pair_plot_figure.update_traces(showlowerhalf=False)
 pair_plot_figure.show()
+# range_of_coef_sorted = Series(train.iloc[:, range(1, 15)].columns).sort_values()
 
 coeff_plot = make_subplots()
 coeff_plot.add_trace(
     go.Bar(
-        y=Series(reg.coef_, train.iloc[:, range(1, 14)].columns).sort_values(),
-        x=train.iloc[:, range(1, 14)].columns
+        y=Series(reg.coef_, train.iloc[:, range(1, 15)].columns).sort_values(),
+        x=train.iloc[:, range(1, 15)].columns,
+        text=Series(reg.coef_, train.iloc[:, range(
+            1, 15)].columns).sort_values().round(2),
+        textposition='auto'
     )
 )
 
+coeff_plot.update_layout(
+    title="Coefficient Estimate"
+)
 coeff_plot.show()
