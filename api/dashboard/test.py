@@ -329,7 +329,14 @@ def fill_missing_values_using_forecast(
     return missing_val_data_frame
 
 
-def get_metrics(y_true, y_pred, round_result=False, round_to_decimals=2):
+def get_metrics(
+    y_true,
+    y_pred,
+    allowed_margin_of_error: float = 0.05,
+    penalize_negative_numbers: bool = False,
+    round_result: bool = False,
+    round_to_decimals: int = 2
+):
     """Calculates the performance of a regression method
      using scikit-learn's regression metrics.
     
@@ -338,8 +345,12 @@ def get_metrics(y_true, y_pred, round_result=False, round_to_decimals=2):
         y_pred -- Predicted values
     
     Keyword Arguments:
-        round_result {bool} -- [description] (default: {False})
-        round_to_decimals {int} -- [description] (default: {4})
+        allowed_margin_of_error {float} -- percentage allowed margin of error. If the predicted value is within the
+        given margin of error, it will count as correct. (default: {0.05})
+        penalize_negative_numbers {bool} -- if True, negative numbers won't be counted
+        towards the accuracy score.
+        round_result {bool} -- if True, numbers will get rounded (default: {False})
+        round_to_decimals {int} -- rounds numbers to given decimals (default: {4})
     
     Returns:
         {dict} -- A dictionary of regression metrics
@@ -353,13 +364,21 @@ def get_metrics(y_true, y_pred, round_result=False, round_to_decimals=2):
         r2_score
     )
     highest_value = max(y_true)
-    allowed_margin = highest_value * 0.05
+    # print(f"highest val is {highest_value}")
+    allowed_margin = (highest_value * 0.05)
     is_in_range = 0
     y_true_list = y_true.tolist()
     for index, value in enumerate(y_pred):
         true_val = y_true_list[index]
+        # print(f"true val is {true_val} and predicted val is {value}")
         if (true_val - allowed_margin <= value and value <= true_val + allowed_margin):
-            is_in_range += 1
+            if penalize_negative_numbers:
+                # print(f"{value} is bigger than 0?")
+                if value > 0:
+                    # print(f"{value > 0}")
+                    is_in_range += 1
+            else:
+                is_in_range += 1
 
     variance_score = explained_variance_score(y_true, y_pred)
     max_residual_error = max_error(y_true, y_pred)
@@ -370,14 +389,16 @@ def get_metrics(y_true, y_pred, round_result=False, round_to_decimals=2):
     accuracy = is_in_range / len(y_true)
 
     if round_result:
+        allowed_margin = round(allowed_margin, round_to_decimals)
         variance_score = variance_score.round(round_to_decimals)
         max_residual_error = max_residual_error.round(round_to_decimals)
         mae = mae.round(round_to_decimals)
         rmse = rmse.round(round_to_decimals)
         r2_val = r2_val.round(round_to_decimals)
-        accuracy = accuracy.__round__(round_to_decimals)
+        accuracy = round((accuracy * 100), round_to_decimals)
 
     return {
+        'allowed margin is': allowed_margin,
         'explained variance regression score, closer to 1.0 is better': variance_score,
         # largest absolute difference between predicted and truth value
         'max residual error': max_residual_error,
@@ -385,7 +406,7 @@ def get_metrics(y_true, y_pred, round_result=False, round_to_decimals=2):
         # average difference root squared, detects outliers
         'root mean squared error': rmse,
         # 'r^2 score': r2_val,
-        'accuracy': f"{accuracy * 100}%"  # custom accuracy matrix
+        'accuracy': f"{accuracy}%"  # custom accuracy matrix
     }
 
 
@@ -524,6 +545,8 @@ weather_description_labels_df['data_weather.description'] = weather_description_
 weather_description_labels_df['data_weather.main'] = weather_description_labels_df['data_weather.main'].apply(
     lambda x: convert_list_to_string(x))
 
+weather_description_labels_df['date_hour'] = weather_description_labels_df['created_date'].dt.hour
+
 # Subset of hourly_weather_df for sum of rain
 rain_df = hourly_weather_df[['created_date', 'data_rain.1h']]
 rain_df = rain_df.resample(TIME_UNIT, on='created_date').sum().reset_index()
@@ -553,415 +576,465 @@ filled_data_frame = fill_missing_values_using_forecast(
 
 merged_df = merged_df.combine_first(filled_data_frame)
 
-# Label encoder used to transform the different categories to a numeric representation
-label_encoder = LabelEncoder()
-for item in ['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']:
-    merged_df[item] = label_encoder.fit_transform(merged_df[item])
+def iteration_1(input_dataframe):
+    # Label encoder used to transform the different categories to a numeric representation
+    label_encoder = LabelEncoder()
+    for item in ['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']:
+        input_dataframe[item] = label_encoder.fit_transform(input_dataframe[item])
 
-# print(f"merged_df after using label_encoder: \n {merged_df.info()}")
-print('data frame where temp is empty after filling')
-print(
-    f"{len(merged_df[merged_df['data_main.temp'].isnull()])}/{len(merged_df)} is null")
+    # print(f"input_dataframe after using label_encoder: \n {input_dataframe.info()}")
+    print('data frame where temp is empty after filling')
+    print(
+        f"{len(input_dataframe[input_dataframe['data_main.temp'].isnull()])}/{len(input_dataframe)} is null")
 
-# Drop rows when it does not contain any value in column 'no_of_clients'
-merged_df = merged_df.dropna(subset=['no_of_clients'])
+    # Drop rows when it does not contain any value in column 'no_of_clients'
+    input_dataframe = input_dataframe.dropna(subset=['no_of_clients'])
 
-figure = make_subplots()
-figure.add_trace(
-    go.Bar(
-        x=merged_df['created_date'],
-        y=merged_df['no_of_clients'],
-        name="Number of clients reported by PI",
-        marker=go.bar.Marker(
-            color='rgb(63, 81, 181)'
-        )
-    ),
-    # secondary_y=True,
-)
+    figure = make_subplots()
+    figure.add_trace(
+        go.Bar(
+            x=input_dataframe['created_date'],
+            y=input_dataframe['no_of_clients'],
+            name="Number of clients reported by PI",
+            marker=go.bar.Marker(
+                color='rgb(63, 81, 181)'
+            )
+        ),
+        # secondary_y=True,
+    )
 
-figure.add_trace(
-    go.Scatter(
-        x=merged_df['created_date'],
-        y=merged_df['data_main.temp'],
-        name="Temperature in Celcius",
-        # marker_color='Purple',
-        # marker=go.bar.Marker(
-        #                color='rgb(63, 81, 181)'
-        #     )
-    ),
-    # secondary_y=False,
-)
+    figure.add_trace(
+        go.Scatter(
+            x=input_dataframe['created_date'],
+            y=input_dataframe['data_main.temp'],
+            name="Temperature in Celcius",
+            # marker_color='Purple',
+            # marker=go.bar.Marker(
+            #                color='rgb(63, 81, 181)'
+            #     )
+        ),
+        # secondary_y=False,
+    )
 
-# figure.add_trace(
-#     go.Scatter(
-#         x=wrongly_reported_data_source_df['created_date'],
-#         y=wrongly_reported_data_source_df['no_of_clients'],
-#         name='Number of clients reported by Unifi Cloud',
-#     ),
-#     secondary_y=True,
-# )
+    # figure.add_trace(
+    #     go.Scatter(
+    #         x=wrongly_reported_data_source_df['created_date'],
+    #         y=wrongly_reported_data_source_df['no_of_clients'],
+    #         name='Number of clients reported by Unifi Cloud',
+    #     ),
+    #     secondary_y=True,
+    # )
 
-# figure.update_yaxes(title_text="Number of clients", secondary_y=True)
-# figure.update_yaxes(title_text="Temperature in celcius", secondary_y=False)
-figure.update_layout(
-    showlegend=True,
-    legend_orientation="h",
-    legend=dict(x=0, y=1.1))
+    # figure.update_yaxes(title_text="Number of clients", secondary_y=True)
+    # figure.update_yaxes(title_text="Temperature in celcius", secondary_y=False)
+    figure.update_layout(
+        showlegend=True,
+        legend_orientation="h",
+        legend=dict(x=0, y=1.1))
 
-# figure.show()
-merged_df_dropped_col = merged_df
-prediction_df = merged_df  # create a copy of the merged df for prediction
-# reset index to get created_Date column
-prediction_df = prediction_df.reset_index()
-for item in ['data_source', 'created_date', 'data_main.feels_like', 'data_rain.3h_x', 'data_rain.3h_y', 'data_dt']:
-    try:
-        del merged_df_dropped_col[item]
-    except KeyError:
-        print(f"key {item} does not exist.")
+    # figure.show()
+    merged_df_dropped_col = input_dataframe
+    prediction_df = input_dataframe  # create a copy of the merged df for prediction
+    # reset index to get created_Date column
+    prediction_df = prediction_df.reset_index()
+    for item in ['data_source', 'created_date', 'data_main.feels_like', 'data_rain.3h_x', 'data_rain.3h_y', 'data_dt']:
+        try:
+            del merged_df_dropped_col[item]
+        except KeyError:
+            print(f"key {item} does not exist.")
 
-for item in ['index', 'data_source', 'data_main.feels_like', 'data_rain.3h_x', 'data_rain.3h_y', 'data_dt']:
-    try:
-        del prediction_df[item]
-    except KeyError:
-        print(f"key {item} does not exist.")
+    for item in ['index', 'data_source', 'data_main.feels_like', 'data_rain.3h_x', 'data_rain.3h_y', 'data_dt']:
+        try:
+            del prediction_df[item]
+        except KeyError:
+            print(f"key {item} does not exist.")
 
-# print(merged_df_dropped_col.corr())
+    # print(merged_df_dropped_col.corr())
 
-# merged_df_dropped_col['empty_col'] = ""
+    # merged_df_dropped_col['empty_col'] = ""
 
-# print(merged_df.corr())
-# print(merged_df.info())
-# hovertext = merged_df.corr().round(4)
-# heat = go.Heatmap(
-#     z=merged_df.corr(),
-#     x=list(merged_df),
-#     y=list(merged_df),
-#     xgap=1, ygap=1,
-#     # colorscale=px.colors.sequential.Plotly3,
-#     colorbar_thickness=20,
-#     colorbar_ticklen=3,
-#     text=merged_df.corr().values,
-#     hovertext=hovertext,
-#     hoverinfo='text',
-# )
+    # print(input_dataframe.corr())
+    # print(input_dataframe.info())
+    # hovertext = input_dataframe.corr().round(4)
+    # heat = go.Heatmap(
+    #     z=input_dataframe.corr(),
+    #     x=list(input_dataframe),
+    #     y=list(input_dataframe),
+    #     xgap=1, ygap=1,
+    #     # colorscale=px.colors.sequential.Plotly3,
+    #     colorbar_thickness=20,
+    #     colorbar_ticklen=3,
+    #     text=input_dataframe.corr().values,
+    #     hovertext=hovertext,
+    #     hoverinfo='text',
+    # )
 
-# summary = merged_df_dropped_col.describe()
-# print(f"The summary is \n {summary.transpose()}")
-# print(f"Dataframe information: \n {merged_df_dropped_col.info()}")
-hovertext = merged_df_dropped_col.corr().round(4)
-# print(f"column headers are \n{list(summary)}")
+    # summary = merged_df_dropped_col.describe()
+    # print(f"The summary is \n {summary.transpose()}")
+    # print(f"Dataframe information: \n {merged_df_dropped_col.info()}")
+    hovertext = merged_df_dropped_col.corr().round(4)
+    # print(f"column headers are \n{list(summary)}")
 
-# Unable to show value of the correlation in the cell using Heatmap function
-heat = go.Heatmap(
-    z=merged_df_dropped_col.corr(),
-    x=list(merged_df_dropped_col),
-    y=list(merged_df_dropped_col),
-    xgap=1, ygap=1,
-    # colorscale=px.colors.sequential.Plotly3,
-    colorbar_thickness=20,
-    colorbar_ticklen=3,
-    text=merged_df_dropped_col.corr().values,
-    hovertext=hovertext,
-    hoverinfo='text',
-)
+    # Unable to show value of the correlation in the cell using Heatmap function
+    heat = go.Heatmap(
+        z=merged_df_dropped_col.corr(),
+        x=list(merged_df_dropped_col),
+        y=list(merged_df_dropped_col),
+        xgap=1, ygap=1,
+        # colorscale=px.colors.sequential.Plotly3,
+        colorbar_thickness=20,
+        colorbar_ticklen=3,
+        text=merged_df_dropped_col.corr().values,
+        hovertext=hovertext,
+        hoverinfo='text',
+    )
 
-# test_df = merged_df.groupby(merged_df['created_date'].map(lambda t: t.hour))
-# test_df = merged_df.groupby(merged_df['created_date'].to_period('S'))
-# print(test_df)
+    # test_df = input_dataframe.groupby(input_dataframe['created_date'].map(lambda t: t.hour))
+    # test_df = input_dataframe.groupby(input_dataframe['created_date'].to_period('S'))
+    # print(test_df)
 
-# layout = go.Layout(
-#     xaxis_showgrid=False,
-#     yaxis_showgrid=False)
-# #     yaxis_autorange='reversed')
-# figure_2 = go.Figure(data=[heat], layout=layout)
-# figure_2.show()
+    # layout = go.Layout(
+    #     xaxis_showgrid=False,
+    #     yaxis_showgrid=False)
+    # #     yaxis_autorange='reversed')
+    # figure_2 = go.Figure(data=[heat], layout=layout)
+    # figure_2.show()
 
-# print(merged_df[['no_of_clients', 'day_of_week']].corr())
-# print(merged_df.corr())
+    # print(input_dataframe[['no_of_clients', 'day_of_week']].corr())
+    # print(input_dataframe.corr())
 
-# corr = merged_df.corr()
-# corr.style.background_gradient(cmap='coolwarm').set_precision(2)
-# corr.show()
+    # corr = input_dataframe.corr()
+    # corr.style.background_gradient(cmap='coolwarm').set_precision(2)
+    # corr.show()
 
-# temp = merged_df_dropped_col.mask(np.tril(np.ones(merged_df_dropped_col.shape)).astype(np.bool))
+    # temp = merged_df_dropped_col.mask(np.tril(np.ones(merged_df_dropped_col.shape)).astype(np.bool))
 
-# figure_3 = ff.create_annotated_heatmap(
-#     merged_df_dropped_col.corr().values,
-#     x=list(merged_df_dropped_col), y=list(merged_df_dropped_col),
-#     annotation_text=merged_df_dropped_col.corr().values.round(4))
+    # figure_3 = ff.create_annotated_heatmap(
+    #     merged_df_dropped_col.corr().values,
+    #     x=list(merged_df_dropped_col), y=list(merged_df_dropped_col),
+    #     annotation_text=merged_df_dropped_col.corr().values.round(4))
 
-# figure_3.show()
+    # figure_3.show()
 
-# figure_4 = ff.create_annotated_heatmap(
-#     merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[
-#         ['no_of_clients']][:].values,
-#     x=list(merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[
-#            ['no_of_clients']][:]),
-#     y=list(merged_df_dropped_col),
-#     annotation_text=merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[
-#         ['no_of_clients']][:].values.round(4)
-# )
+    # figure_4 = ff.create_annotated_heatmap(
+    #     merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[
+    #         ['no_of_clients']][:].values,
+    #     x=list(merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[
+    #            ['no_of_clients']][:]),
+    #     y=list(merged_df_dropped_col),
+    #     annotation_text=merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[
+    #         ['no_of_clients']][:].values.round(4)
+    # )
 
-# figure_4.update_layout(
-#     title="Correlation with NaN's"
-# )
-# figure_4.show()
+    # figure_4.update_layout(
+    #     title="Correlation with NaN's"
+    # )
+    # figure_4.show()
 
-# prediction_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']] = prediction_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']].apply(
-#     lambda x: x.astype('float')
-# )
+    # prediction_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']] = prediction_df[['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']].apply(
+    #     lambda x: x.astype('float')
+    # )
 
-# Extra cleaning of data due to regression not accepting the dataframe if it contains NaN values
-# replace NaN values with -1
-prediction_df = prediction_df.fillna(0)
+    # Extra cleaning of data due to regression not accepting the dataframe if it contains NaN values
+    # replace NaN values with -1
+    prediction_df = prediction_df.fillna(0)
 
-# print(prediction_df.info())
-summary = prediction_df.describe()
-print(f"The summary is \n {summary.transpose()}")
+    # print(prediction_df.info())
+    summary = prediction_df.describe()
+    print(f"The summary is \n {summary.transpose()}")
 
-# # Used for printing underscores in LaTeX
-# stringified_list = ", ".join(list(summary))
-# print(stringified_list.replace("_", "\_"))
+    # Used for printing underscores in LaTeX
+    stringified_list = ", ".join(list(summary))
+    print(f"Length of columns are {len(list(summary))}")
+    print(stringified_list.replace("_", "\_"))
 
-# split dataset in 80 train and 20 test, do not shuffle as the date is important
-train, test = train_test_split(prediction_df, test_size=0.25, shuffle=False)
-print(f"training size is {len(train)}")
-print(f"test size is {len(test)}")
-# select range to exclude column created_date
-train_X = train.iloc[:, range(1, 15)]
-test_X = test.iloc[:, range(1, 15)]
+    # split dataset in 80 train and 20 test, do not shuffle as the date is important
+    train, test = train_test_split(prediction_df, test_size=0.25, shuffle=False)
+    print(f"training size is {len(train)}")
+    print(f"test size is {len(test)}")
+    # select range to exclude column created_date
+    train_X = train.iloc[:, range(1, 16)]
+    test_X = test.iloc[:, range(1, 16)]
 
-# the number of clients that are being predicted
-train_y = train.iloc[:, 15]
-test_y = test.iloc[:, 15]
-reg = LinearRegression()
-reg.fit(train_X, train_y)
+    # the number of clients that are being predicted
+    train_y = train.iloc[:, 16]
+    test_y = test.iloc[:, 16]
+    reg = LinearRegression()
+    reg.fit(train_X, train_y)
 
-pred_y = reg.predict(test_X)
+    pred_y = reg.predict(test_X)
 
-scaler = StandardScaler()  # using scaler improves the svr modeling
-train_X = scaler.fit_transform(train_X)
+    scaler = StandardScaler()  # using scaler improves the svr modeling
+    train_X_scaled = scaler.fit_transform(train_X)
 
-# #############################################################################
-# Fit regression model
+    # #############################################################################
+    # Fit regression model
 
-# # SVR parameters from https://scikit-learn.org/stable/auto_examples/plot_kernel_ridge_regression.html
-# for kernel in ['rbf', 'linear', 'poly']:
-#     svr = GridSearchCV(SVR(kernel=kernel, gamma=0.1),
-#                        param_grid={"C": [1e0, 1e1, 1e2, 1e3],
-#                                    "gamma": np.logspace(-2, 2, 5)})
-#     svr = svr.fit(train_X, train_y)
-#     print(f"Best estimator found by grid search for kernel {kernel} is:")
-#     print(svr.best_estimator_)
+    # # SVR parameters from https://scikit-learn.org/stable/auto_examples/plot_kernel_ridge_regression.html
+    # for kernel in ['rbf', 'linear', 'poly']:
+    #     svr = GridSearchCV(SVR(kernel=kernel, gamma=0.1),
+    #                        param_grid={"C": [1e0, 1e1, 1e2, 1e3],
+    #                                    "gamma": np.logspace(-2, 2, 5)})
+    #     svr = svr.fit(train_X_scaled, train_y)
+    #     print(f"Best estimator found by grid search for kernel {kernel} is:")
+    #     print(svr.best_estimator_)
 
-# parameters from https://scikit-learn.org/stable/auto_examples/exercises/plot_cv_diabetes.html
-alphas = np.logspace(-4, -0.5, 30)
-tuned_parameters = [{'alpha': alphas}]
-n_folds = 5
+    # parameters from https://scikit-learn.org/stable/auto_examples/exercises/plot_cv_diabetes.html
+    # alphas = np.logspace(-4, -0.5, 30)
+    # tuned_parameters = [{'alpha': alphas}]
 
-lasso = GridSearchCV(Lasso(selection='random', tol=1, max_iter=1000),
-                     tuned_parameters, cv=n_folds, refit=False)
+    # parameters = { 'alpha': [1e-15, 1e-10, 1e-8, 1e-4, 1e-3, 1e-2, 1, 5, 10, 20]}
+    # n_folds = 5
 
-lasso = lasso.fit(train_X, train_y)
-print("Best estimator found by grid search for Lasso is:")
-print(f"best index is {lasso.best_index_}, parameters are {lasso.best_params_} and score is {lasso.best_score_}")
+    # lasso = GridSearchCV(Lasso(selection='random', tol=1, max_iter=1000),
+    #                      parameters, cv=n_folds, refit=False)
+
+    # lasso = lasso.fit(train_X, train_y)
+    # print("Best estimator found by grid search for Lasso is:")
+    # print(
+    #     f"best index is {lasso.best_index_}, parameters are {lasso.best_params_} and score is {lasso.best_score_}")
 
 
-# lasso_cv = LassoCV(tol=1, max_iter=1000, cv=n_folds)
-# print(f"best alpha using lasso cv is {lasso_cv.alphas}")
-# ridge_reg = Ridge()
+    # lasso_cv = LassoCV(tol=1, max_iter=1000, cv=n_folds)
+    # print(f"best alpha using lasso cv is {lasso_cv.alphas}")
+    # ridge_reg = Ridge()
 
-ridge = GridSearchCV(Ridge(alpha=alphas), tuned_parameters, cv=n_folds)
-ridge = ridge.fit(train_X, train_y)
-print("Best estimator found by grid search for Ridge is:")
-print(f"best index is {ridge.best_index_}, parameters are {ridge.best_params_} and score is {ridge.best_score_}")
+    # ridge = GridSearchCV(Ridge(), parameters, cv=n_folds)
+    # ridge = ridge.fit(train_X, train_y)
+    # print("Best estimator found by grid search for Ridge is:")
+    # print(
+    #     f"best index is {ridge.best_index_}, parameters are {ridge.best_params_} and score is {ridge.best_score_}")
 
-exit(0)
-# #############################################################################
+    # elastic = GridSearchCV(ElasticNet(tol=1, max_iter=1000), parameters, cv=n_folds)
+    # elastic = elastic.fit(train_X, train_y)
+    # print("Best estimator found by grid search for ElasticNet is:")
+    # print(
+    #     f"best index is {elastic.best_index_}, parameters are {elastic.best_params_} and score is {ridge.best_score_}")
 
-# svr_rbf = SVR(kernel='rbf', C=100, gamma=0.1, epsilon=.1)
-svr_rbf = SVR(C=100.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=1.0,
-              kernel='rbf', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
-# svr_lin = SVR(kernel='linear', C=100, gamma='auto')
-svr_lin = SVR(C=100.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=0.01,
-              kernel='linear', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
-# svr_poly = SVR(kernel='poly', C=100, gamma='auto', degree=3, epsilon=.1,
-#                coef0=1)
-svr_poly = SVR(C=1.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=0.1,
-               kernel='poly', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
-svrs = [svr_rbf, svr_lin, svr_poly]
-kernel_label = ['Radial basis function (RBF)', 'Linear', 'Polynomial']
+    # exit(0)
+    # #############################################################################
 
-# The coefficients
-print('Coefficients: \n', reg.coef_)
-# The mean squared error
-print('Mean squared error: %.2f'
-      % mean_squared_error(test_y, pred_y))
-# The coefficient of determination: 1 is perfect prediction
-print('Coefficient of determination (R^2): %.2f'
-      % r2_score(test_y, pred_y))
-print(f"mean of no_of_clients {np.mean(merged_df['no_of_clients'])}")
-print(
-    f"standard deviation of no_of_clients is {np.std(merged_df['no_of_clients'])}")
+    # some explanation of the alpha factor of ridge and lasso (and elastic)
+    # https://www.analyticsvidhya.com/blog/2016/01/complete-tutorial-ridge-lasso-regression-python/#four
+    # svr_rbf = SVR(kernel='rbf', C=100, gamma=0.1, epsilon=.1)
+    svr_rbf = SVR(C=100.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=1.0,
+                kernel='rbf', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
+    # svr_lin = SVR(kernel='linear', C=100, gamma='auto')
+    svr_lin = SVR(C=100.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=0.01,
+                kernel='linear', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
+    # svr_poly = SVR(kernel='poly', C=100, gamma='auto', degree=3, epsilon=.1,
+    #                coef0=1)
+    svr_poly = SVR(C=1.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=0.1,
+                kernel='poly', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
+    # svrs = [svr_rbf, svr_lin, svr_poly]
+    svrs = [svr_rbf, svr_lin]
+    kernel_label = ['Radial basis function (RBF)', 'Linear', 'Polynomial']
 
-print("---------- Regression metrics ----------")
-print('---------- LinearRegression() ----------')
-for k, v in get_metrics(test_y, pred_y, round_result=True).items():
-    print(f"{k}: {v}")
+    lasso = Lasso(0.01, tol=1)
+    ridge = Ridge(5)
+    elastic = ElasticNet(0.01, tol=1)
 
-for ix, svr in enumerate(svrs):
-    test_data = scaler.fit_transform(test_X)
-    pred_y_svr = svr.fit(train_X, train_y).predict(test_data)
-    print(f"---------- SVR {kernel_label[ix]} ----------")
-    for k, v in get_metrics(test_y, pred_y_svr, round_result=True).items():
+    other_methods = [lasso, ridge, elastic]
+    other_label = ['Lasso', 'Ridge Regression', 'ElasticNet']
+
+    # # The coefficients
+    # print('Coefficients: \n', reg.coef_)
+    # # The mean squared error
+    # print('Mean squared error: %.2f'
+    #       % mean_squared_error(test_y, pred_y))
+    # # The coefficient of determination: 1 is perfect prediction
+    # print('Coefficient of determination (R^2): %.2f'
+    #       % r2_score(test_y, pred_y))
+    # print(f"mean of no_of_clients {np.mean(input_dataframe['no_of_clients'])}")
+    # print(
+    #     f"standard deviation of no_of_clients is {np.std(input_dataframe['no_of_clients'])}")
+
+    print("---------- Regression metrics ----------")
+    print('---------- LinearRegression() ----------')
+    for k, v in get_metrics(test_y, pred_y, penalize_negative_numbers=True, round_result=True).items():
         print(f"{k}: {v}")
 
-# print(f"confusion matrix \n {confusion_matrix(test_y, pred_y)}")
+    test_X_scaled = scaler.fit_transform(test_X)
 
-figure_5 = make_subplots()
-figure_5.add_trace(
-    go.Scatter(
-        x=prediction_df['created_date'],
-        y=prediction_df['no_of_clients'],
-        name="Number of clients reported by PI",
-        marker_color='rgb(63, 81, 181)'
-        #    marker=go.bar.Marker(
-        #                color='rgb(63, 81, 181)'
-        #     )
-    ),
-    # secondary_y=True,
-)
+    for ix, svr in enumerate(svrs):
+        # train_y_scaled = scaler.fit_transform(train_y)
+        # test_y_scaled = scaler.fit_transform(test_y)
+        pred_y_svr = svr.fit(train_X_scaled, train_y).predict(test_X_scaled)
+        print(f"---------- SVR {kernel_label[ix]} ----------")
+        for k, v in get_metrics(test_y, pred_y_svr, penalize_negative_numbers=True, round_result=True).items():
+            print(f"{k}: {v}")
 
-figure_5.add_trace(
-    go.Scatter(
-        x=test.iloc[:, 0],  # select created_date column
-        y=pred_y,
-        name="Predicted number of clients using method: Linear regression",
-        marker_color='Red'
-    ),
-    # secondary_y=True,
-)
+    for ix, mthd in enumerate(other_methods):
+        pred_y_mthd = mthd.fit(train_X, train_y).predict(test_X)
+        print(f"---------- Method {other_label[ix]} ----------")
+        for k, v in get_metrics(test_y, pred_y_svr, penalize_negative_numbers=True, round_result=True).items():
+            print(f"{k}: {v}")
+    # exit(0)
+    # print(f"confusion matrix \n {confusion_matrix(test_y, pred_y)}")
 
-# TODO: Requires preprocessing, otherwise it seems to run endlessly
-for ix, svr in enumerate(svrs):
-    test_data = scaler.fit_transform(test_X)
+    figure_5 = make_subplots()
     figure_5.add_trace(
         go.Scatter(
-            x=test.iloc[:, 0],
-            y=svr.fit(train_X, train_y).predict(test_data),
-            name=f"Predicted number of clients using method: SVR {kernel_label[ix]}"
+            x=prediction_df['created_date'],
+            y=prediction_df['no_of_clients'],
+            name="Number of clients reported by PI",
+            marker_color='rgb(63, 81, 181)'
+            #    marker=go.bar.Marker(
+            #                color='rgb(63, 81, 181)'
+            #     )
+        ),
+        # secondary_y=True,
+    )
+
+    figure_5.add_trace(
+        go.Scatter(
+            x=test.iloc[:, 0],  # select created_date column
+            y=pred_y,
+            name="Linear regression (OLS)",
+            marker_color='Red'
+        ),
+        # secondary_y=True,
+    )
+
+    for ix, svr in enumerate(svrs):
+        figure_5.add_trace(
+            go.Scatter(
+                x=test.iloc[:, 0],
+                y=svr.fit(train_X_scaled, train_y).predict(test_X_scaled),
+                name=f"SVR {kernel_label[ix]}"
+            )
+        )
+
+    for ix, mthd in enumerate(other_methods):
+        figure_5.add_trace(
+            go.Scatter(
+                x=test.iloc[:, 0],
+                y=mthd.predict(test_X),
+                name=f"{other_label[ix]}"
+            )
+        )
+
+
+    # figure_5.add_trace(
+    #     go.Scatter(
+    #         x=prediction_df['created_date'],
+    #         y=prediction_df['data_main.temp'],
+    #         name="Temperature in Celcius",
+    #     ),
+    #     # secondary_y=True,
+    # )
+
+    figure_5.update_layout(
+        showlegend=True,
+        legend_orientation="h",
+        legend=dict(x=0, y=1.1))
+
+    figure_5.show()
+    # print('dataframe info is:')
+    # print(merged_df_dropped_col.info())
+
+    # see https://stats.stackexchange.com/questions/101130/correlation-coefficient-for-sets-with-non-linear-correlation
+    pearson_corr = merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[
+        'no_of_clients'][:].values
+    spearman_corr = merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr(
+        method='spearman')['no_of_clients'][:].values
+    kendall_corr = merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr(
+        method='kendall')['no_of_clients'][:].values
+    corr_2d_array = np.array([pearson_corr, spearman_corr, kendall_corr])
+    corr_2d_array = np.swapaxes(corr_2d_array, 0, 1)
+
+    del prediction_df['created_date']
+    correlation_figure = ff.create_annotated_heatmap(
+        corr_2d_array,
+        x=['pearson', 'spearman', 'kendall'],
+        y=list(prediction_df),
+        annotation_text=corr_2d_array.round(4),
+    )
+
+    correlation_figure.update_layout(
+        title="Correlation with NaN's replaced"
+    )
+
+    correlation_figure.show()
+
+    histo_figure = make_subplots()
+    histo_figure.add_trace(
+        go.Histogram(
+            x=input_dataframe['no_of_clients'],
+            # y=input_dataframe['no_of_clients'],
+            xbins=dict(start=min(input_dataframe['no_of_clients']), size=1, end=max(
+                input_dataframe['no_of_clients']))
         )
     )
 
-figure_5.update_layout(
-    showlegend=True,
-    legend_orientation="h",
-    legend=dict(x=0, y=1.1))
+    histo_figure.update_xaxes(title_text='Number of clients')
+    histo_figure.update_yaxes(title_text='Occurrence')
+    histo_figure.show()
 
-figure_5.show()
-# print('dataframe info is:')
-# print(merged_df_dropped_col.info())
+    qq = stats.probplot(input_dataframe['no_of_clients'])
+    # qq = stats.probplot(input_dataframe['no_of_clients'], dist='lognorm', sparams=(1))
+    x = np.array([qq[0][0][0], qq[0][0][-1]])
 
-# see https://stats.stackexchange.com/questions/101130/correlation-coefficient-for-sets-with-non-linear-correlation
-pearson_corr = merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr()[
-    'no_of_clients'][:].values
-spearman_corr = merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr(
-    method='spearman')['no_of_clients'][:].values
-kendall_corr = merged_df_dropped_col[merged_df_dropped_col.columns[:]].corr(
-    method='kendall')['no_of_clients'][:].values
-corr_2d_array = np.array([pearson_corr, spearman_corr, kendall_corr])
-corr_2d_array = np.swapaxes(corr_2d_array, 0, 1)
-
-del prediction_df['created_date']
-correlation_figure = ff.create_annotated_heatmap(
-    corr_2d_array,
-    x=['pearson', 'spearman', 'kendall'],
-    y=list(prediction_df),
-    annotation_text=corr_2d_array.round(4),
-)
-
-correlation_figure.update_layout(
-    title="Correlation with NaN's replaced"
-)
-
-correlation_figure.show()
-
-histo_figure = make_subplots()
-histo_figure.add_trace(
-    go.Histogram(
-        x=merged_df['no_of_clients'],
-        # y=merged_df['no_of_clients'],
-        xbins=dict(start=min(merged_df['no_of_clients']), size=1, end=max(
-            merged_df['no_of_clients']))
+    qq_figure = make_subplots()
+    qq_figure.add_trace(
+        go.Scatter(
+            x=qq[0][0],
+            y=qq[0][1],
+            mode='markers',
+            showlegend=False
+        )
     )
-)
 
-histo_figure.update_xaxes(title_text='Number of clients')
-histo_figure.update_yaxes(title_text='Occurrence')
-histo_figure.show()
-
-qq = stats.probplot(merged_df['no_of_clients'])
-# qq = stats.probplot(merged_df['no_of_clients'], dist='lognorm', sparams=(1))
-x = np.array([qq[0][0][0], qq[0][0][-1]])
-
-qq_figure = make_subplots()
-qq_figure.add_trace(
-    go.Scatter(
-        x=qq[0][0],
-        y=qq[0][1],
-        mode='markers',
-        showlegend=False
+    qq_figure.add_trace(
+        go.Line(
+            x=x,
+            y=qq[1][1] + qq[1][0] * x,
+            showlegend=False
+        )
     )
-)
 
-qq_figure.add_trace(
-    go.Line(
-        x=x,
-        y=qq[1][1] + qq[1][0] * x,
-        showlegend=False
+    qq_figure.update_layout(
+        title='QQ plot'
     )
-)
+    qq_figure.update_xaxes(title_text='Quantiles')
+    qq_figure.update_yaxes(title_text='Number of clients')
+    qq_figure.show()
 
-qq_figure.update_layout(
-    title='QQ plot'
-)
-qq_figure.update_xaxes(title_text='Quantiles')
-qq_figure.update_yaxes(title_text='Number of clients')
-qq_figure.show()
-
-# Normality test
-stat, p = stats.shapiro(merged_df['no_of_clients'])
-print(f"Shapiro-wilk test \n W={stat}, p-value={p}")
-alpha = 0.05
-if p > alpha:
-	print('Sample looks Gaussian (fail to reject H0)')
-else:
-	print('Sample does not look Gaussian (reject H0)')
+    # Normality test
+    stat, p = stats.shapiro(input_dataframe['no_of_clients'])
+    print(f"Shapiro-wilk test \n W={stat}, p-value={p}")
+    alpha = 0.05
+    if p > alpha:
+        print('Sample looks Gaussian (fail to reject H0)')
+    else:
+        print('Sample does not look Gaussian (reject H0)')
 
 
-pair_plot_figure = px.scatter_matrix(merged_df_dropped_col)
-pair_plot_figure.update_layout(
-    height=1200,
-    # autosize=True,
-)
-# pair_plot_figure.update_yaxes(tickangle=-45) # only changes the upper left corner labels
-# pair_plot_figure.add_annotation(textangle=-90) # does not seem to change the y axis title
-# pair_plot_figure.update_traces(showlowerhalf=False)
-pair_plot_figure.show()
-# range_of_coef_sorted = Series(train.iloc[:, range(1, 15)].columns).sort_values()
-
-coeff_plot = make_subplots()
-coeff_plot.add_trace(
-    go.Bar(
-        y=Series(reg.coef_, train.iloc[:, range(1, 15)].columns).sort_values(),
-        x=train.iloc[:, range(1, 15)].columns,
-        text=Series(reg.coef_, train.iloc[:, range(
-            1, 15)].columns).sort_values().round(2),
-        textposition='auto'
+    pair_plot_figure = px.scatter_matrix(merged_df_dropped_col)
+    pair_plot_figure.update_layout(
+        height=1200,
+        # autosize=True,
     )
-)
+    # pair_plot_figure.update_yaxes(tickangle=-45) # only changes the upper left corner labels
+    # pair_plot_figure.add_annotation(textangle=-90) # does not seem to change the y axis title
+    # pair_plot_figure.update_traces(showlowerhalf=False)
+    pair_plot_figure.show()
+    # range_of_coef_sorted = Series(train.iloc[:, range(1, 15)].columns).sort_values()
 
-coeff_plot.update_layout(
-    title="Coefficient Estimate"
-)
-coeff_plot.show()
+    coeff_plot = make_subplots()
+    coeff_plot.add_trace(
+        go.Bar(
+            y=Series(reg.coef_, train.iloc[:, range(1, 16)].columns).sort_values(),
+            x=train.iloc[:, range(1, 16)].columns,
+            text=Series(reg.coef_, train.iloc[:, range(
+                1, 16)].columns).sort_values().round(2),
+            textposition='auto'
+        )
+    )
+
+    coeff_plot.update_layout(
+        title="Coefficient Estimate"
+    )
+    coeff_plot.show()
+
+iteration_1(merged_df)
