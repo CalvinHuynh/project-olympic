@@ -405,7 +405,7 @@ def get_metrics(
         'mean absolute error': mae,  # average difference
         # average difference root squared, detects outliers
         'root mean squared error': rmse,
-        # 'r^2 score': r2_val,
+        'r^2 score': r2_val,
         'accuracy': f"{accuracy}%"  # custom accuracy matrix
     }
 
@@ -419,11 +419,33 @@ def clean_dataframe(data_frame: DataFrame):
     pass
 
 
-def get_future_timestamps(): # testing
-    from datetime import datetime as dt
-    today = dt.date().today()
-    monday = today + dt.timedelta( (0-today.weekday()) % 7 )
-    return monday
+def get_future_timestamps(day_of_week: int = 0, timestamp: int = 3600, number_of_timestamps: int = 168):
+    """Calculates the future timestamps from a given day of the week.
+    
+    Keyword Arguments:
+        day_of_week {int} -- calculate next day of the week 
+        (0-6, where 0 is monday and 6 is sunday)  (default: {0})
+        timestamp {int} -- timestamp (default: {3600})
+        number_of_timestamps {int} -- how many timestamps to calculate 
+        (default is 1 week worth of timestamps) (default: {168})
+    
+    Returns:
+        [list] -- Returns a list of timestamps
+    """
+    import datetime as dt
+    future_timestamps = []
+    today = dt.date.today()
+    next_day_of_week = today + dt.timedelta(
+        (day_of_week - today.weekday()) % 7)
+    timestamp_next_day_of_week = int((next_day_of_week - dt.date(1970, 1, 1)).total_seconds())
+
+    accumulative_timestamp = 0
+    for index in range(number_of_timestamps):
+      future_timestamps.append(timestamp_next_day_of_week + accumulative_timestamp)
+      # print(dt.datetime.utcfromtimestamp(timestamp_next_day_of_week + accumulative_timestamp)) # converts timestamp to utc datetime
+      accumulative_timestamp += timestamp
+    return future_timestamps
+
 
 # 30T of 1H voor de beste grafiek
 # 3H voor de voorspelling vanwege de weatherforecast data
@@ -572,22 +594,20 @@ merged_df['no_of_clients'].round(2)
 del merged_df['id']
 del merged_df['data_rain.1h']
 
-print(
-    f"{len(merged_df[merged_df['data_main.temp'].isnull()])}/{len(merged_df)} is null")
-
 # fill in weather data using known forecast data
 filled_data_frame = fill_missing_values_using_forecast(
     merged_df[merged_df['data_main.temp'].isnull()],
     weekly_weather_forecast_df, 'created_date')
 
 merged_df = merged_df.combine_first(filled_data_frame)
+label_encoder = LabelEncoder()
 
 def iteration_1(input_dataframe):
     # Label encoder used to transform the different categories to a numeric representation
-    label_encoder = LabelEncoder()
     for item in ['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']:
-        input_dataframe[item] = label_encoder.fit_transform(input_dataframe[item])
-
+        input_dataframe[item] = label_encoder.fit_transform(
+            input_dataframe[item])
+    print(f"{len(merged_df[merged_df['data_main.temp'].isnull()])}/{len(merged_df)} is null")
     # print(f"input_dataframe after using label_encoder: \n {input_dataframe.info()}")
     print('data frame where temp is empty after filling')
     print(
@@ -677,6 +697,7 @@ def iteration_1(input_dataframe):
 
     # summary = merged_df_dropped_col.describe()
     # print(f"The summary is \n {summary.transpose()}")
+
     # print(f"Dataframe information: \n {merged_df_dropped_col.info()}")
     hovertext = merged_df_dropped_col.corr().round(4)
     # print(f"column headers are \n{list(summary)}")
@@ -755,7 +776,8 @@ def iteration_1(input_dataframe):
     print(stringified_list.replace("_", "\_"))
 
     # split dataset in 80 train and 20 test, do not shuffle as the date is important
-    train, test = train_test_split(prediction_df, test_size=0.25, shuffle=False)
+    train, test = train_test_split(
+        prediction_df, test_size=0.25, shuffle=False)
     print(f"training size is {len(train)}")
     print(f"test size is {len(test)}")
     # select range to exclude column created_date
@@ -800,7 +822,6 @@ def iteration_1(input_dataframe):
     # print(
     #     f"best index is {lasso.best_index_}, parameters are {lasso.best_params_} and score is {lasso.best_score_}")
 
-
     # lasso_cv = LassoCV(tol=1, max_iter=1000, cv=n_folds)
     # print(f"best alpha using lasso cv is {lasso_cv.alphas}")
     # ridge_reg = Ridge()
@@ -824,14 +845,14 @@ def iteration_1(input_dataframe):
     # https://www.analyticsvidhya.com/blog/2016/01/complete-tutorial-ridge-lasso-regression-python/#four
     # svr_rbf = SVR(kernel='rbf', C=100, gamma=0.1, epsilon=.1)
     svr_rbf = SVR(C=100.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=1.0,
-                kernel='rbf', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
+                  kernel='rbf', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
     # svr_lin = SVR(kernel='linear', C=100, gamma='auto')
     svr_lin = SVR(C=100.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=0.01,
-                kernel='linear', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
+                  kernel='linear', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
     # svr_poly = SVR(kernel='poly', C=100, gamma='auto', degree=3, epsilon=.1,
     #                coef0=1)
     svr_poly = SVR(C=1.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=0.1,
-                kernel='poly', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
+                   kernel='poly', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
     # svrs = [svr_rbf, svr_lin, svr_poly]
     svrs = [svr_rbf, svr_lin]
     kernel_label = ['Radial basis function (RBF)', 'Linear', 'Polynomial']
@@ -915,11 +936,10 @@ def iteration_1(input_dataframe):
         figure_5.add_trace(
             go.Scatter(
                 x=test.iloc[:, 0],
-                y=mthd.predict(test_X),
+                y=mthd.fit(train_X, train_y).predict(test_X),
                 name=f"{other_label[ix]}"
             )
         )
-
 
     # figure_5.add_trace(
     #     go.Scatter(
@@ -1015,7 +1035,6 @@ def iteration_1(input_dataframe):
     else:
         print('Sample does not look Gaussian (reject H0)')
 
-
     pair_plot_figure = px.scatter_matrix(merged_df_dropped_col)
     pair_plot_figure.update_layout(
         height=1200,
@@ -1026,11 +1045,12 @@ def iteration_1(input_dataframe):
     # pair_plot_figure.update_traces(showlowerhalf=False)
     pair_plot_figure.show()
     # range_of_coef_sorted = Series(train.iloc[:, range(1, 15)].columns).sort_values()
-
+    
     coeff_plot = make_subplots()
     coeff_plot.add_trace(
         go.Bar(
-            y=Series(reg.coef_, train.iloc[:, range(1, 16)].columns).sort_values(),
+            y=Series(reg.coef_, train.iloc[:, range(
+                1, 16)].columns).sort_values(),
             x=train.iloc[:, range(1, 16)].columns,
             text=Series(reg.coef_, train.iloc[:, range(
                 1, 16)].columns).sort_values().round(2),
@@ -1043,4 +1063,272 @@ def iteration_1(input_dataframe):
     )
     coeff_plot.show()
 
+    coeff_plot_2 = make_subplots()
+    coeff_plot_2.add_trace(
+        go.Bar(
+            y=Series(svr_lin.coef_.ravel(), train.iloc[:, range(
+                1, 16)].columns).sort_values(),
+            x=train.iloc[:, range(1, 16)].columns,
+            text=Series(svr_lin.coef_.ravel(), train.iloc[:, range(
+                1, 16)].columns).sort_values().round(2),
+            textposition='auto'
+        )
+    )
+
+    coeff_plot_2.update_layout(
+        title="Coefficient Estimate (SVR Linear)"
+    )
+    coeff_plot_2.show()
+
+# iteration_1(merged_df)
+
+def iteration_2(data_frame, time_unit):
+    # Calculate the mean of all the values
+    data_frame = data_frame.resample(
+        time_unit, on='created_date').mean().reset_index()
+    data_frame['day_of_week'] = data_frame['created_date'].dt.day_name()
+    data_frame['date_hour'] = data_frame['created_date'].dt.hour
+    data_frame['data_source'].round(0)
+    data_frame['no_of_clients'].round(2)
+    data_frame['is_weekend'] = data_frame['day_of_week'].apply(
+        lambda x: item_in_list(x, ['Saturday', 'Sunday'])
+    )
+    del data_frame['id']
+    del data_frame['data_source']
+
+    for item in ['day_of_week', 'is_weekend']:
+        data_frame[item] = label_encoder.fit_transform(data_frame[item])
+
+    data_frame = data_frame.fillna(0)
+
+    summary = data_frame.describe()
+    print(f"The summary is \n {summary.transpose()}")
+
+    # Used for printing underscores in LaTeX
+    stringified_list = ", ".join(list(summary))
+    print(f"Length of columns are {len(list(summary))}")
+    print(stringified_list.replace("_", "\_"))
+
+    # split dataset in 80 train and 20 test, do not shuffle as the date is important
+    train, test = train_test_split(
+        data_frame, test_size=0.25, shuffle=False)
+    # select range to exclude column created_date
+    train_X = train.iloc[:, range(2, 5)]
+    test_X = test.iloc[:, range(2, 5)]
+
+    # the number of clients that are being predicted
+    train_y = train.iloc[:, 1]
+    test_y = test.iloc[:, 1]
+
+    # linear regression (OLS)
+    reg = LinearRegression()
+    reg.fit(train_X, train_y)
+
+    pred_y = reg.predict(test_X)
+
+    scaler = StandardScaler()  # using scaler improves the svr modeling
+    train_X_scaled = scaler.fit_transform(train_X)
+
+    # #############################################################################
+    # # Fit regression model
+
+    # # SVR parameters from https://scikit-learn.org/stable/auto_examples/plot_kernel_ridge_regression.html
+    # for kernel in ['rbf', 'linear']:
+    #     svr = GridSearchCV(SVR(kernel=kernel, gamma=0.1),
+    #                        param_grid={"C": [1e0, 1e1, 1e2, 1e3],
+    #                                    "gamma": np.logspace(-2, 2, 5)})
+    #     svr = svr.fit(train_X_scaled, train_y)
+    #     print(f"Best estimator found by grid search for kernel {kernel} is:")
+    #     print(svr.best_estimator_)
+
+    # # parameters from https://scikit-learn.org/stable/auto_examples/exercises/plot_cv_diabetes.html
+    # alphas = np.logspace(-4, -0.5, 30)
+    # tuned_parameters = [{'alpha': alphas}]
+
+    # parameters = { 'alpha': [1e-15, 1e-10, 1e-8, 1e-4, 1e-3, 1e-2, 1, 5, 10, 20]}
+    # n_folds = 5
+
+    # lasso = GridSearchCV(Lasso(selection='random', tol=1, max_iter=1000),
+    #                      parameters, cv=n_folds, refit=False)
+
+    # lasso = lasso.fit(train_X, train_y)
+    # print("Best estimator found by grid search for Lasso is:")
+    # print(
+    #     f"best index is {lasso.best_index_}, parameters are {lasso.best_params_} and score is {lasso.best_score_}")
+
+    # lasso_cv = LassoCV(tol=1, max_iter=1000, cv=n_folds)
+    # print(f"best alpha using lasso cv is {lasso_cv.alphas}")
+    # ridge_reg = Ridge()
+
+    # ridge = GridSearchCV(Ridge(), parameters, cv=n_folds)
+    # ridge = ridge.fit(train_X, train_y)
+    # print("Best estimator found by grid search for Ridge is:")
+    # print(
+    #     f"best index is {ridge.best_index_}, parameters are {ridge.best_params_} and score is {ridge.best_score_}")
+
+    # elastic = GridSearchCV(ElasticNet(tol=1, max_iter=1000), parameters, cv=n_folds)
+    # elastic = elastic.fit(train_X, train_y)
+    # print("Best estimator found by grid search for ElasticNet is:")
+    # print(
+    #     f"best index is {elastic.best_index_}, parameters are {elastic.best_params_} and score is {ridge.best_score_}")
+
+    # exit(0)
+    # #############################################################################
+
+    svr_rbf = SVR(C=100.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=1.0,
+        kernel='rbf', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
+    
+    svr_lin = SVR(C=1000.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=0.01,
+        kernel='linear', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
+    
+    svrs = [svr_rbf, svr_lin]
+    kernel_label = ['Radial basis function (RBF)', 'Linear', 'Polynomial']
+
+    lasso = Lasso(1e-10, tol=1)
+    ridge = Ridge(5)
+    elastic = ElasticNet(0.01, tol=1)
+
+    other_methods = [lasso, ridge, elastic]
+    other_label = ['Lasso', 'Ridge Regression', 'ElasticNet']
+
+    print("---------- Regression metrics ----------")
+    print('---------- LinearRegression() ----------')
+    for k, v in get_metrics(test_y, pred_y, penalize_negative_numbers=True, round_result=True).items():
+        print(f"{k}: {v}")
+
+    test_X_scaled = scaler.fit_transform(test_X)
+
+    for ix, svr in enumerate(svrs):
+        # train_y_scaled = scaler.fit_transform(train_y)
+        # test_y_scaled = scaler.fit_transform(test_y)
+        pred_y_svr = svr.fit(train_X_scaled, train_y).predict(test_X_scaled)
+        print(f"---------- SVR {kernel_label[ix]} ----------")
+        for k, v in get_metrics(test_y, pred_y_svr, penalize_negative_numbers=True, round_result=True).items():
+            print(f"{k}: {v}")
+
+    for ix, mthd in enumerate(other_methods):
+        pred_y_mthd = mthd.fit(train_X, train_y).predict(test_X)
+        print(f"---------- Method {other_label[ix]} ----------")
+        for k, v in get_metrics(test_y, pred_y_svr, penalize_negative_numbers=True, round_result=True).items():
+            print(f"{k}: {v}")
+
+    figure_5 = make_subplots()
+    figure_5.add_trace(
+        go.Scatter(
+            x=data_frame['created_date'],
+            y=data_frame['no_of_clients'],
+            name="Number of clients reported by PI",
+            marker_color='rgb(63, 81, 181)'
+            #    marker=go.bar.Marker(
+            #                color='rgb(63, 81, 181)'
+            #     )
+        ),
+        # secondary_y=True,
+    )
+
+    figure_5.add_trace(
+        go.Scatter(
+            x=test.iloc[:, 0],  # select created_date column
+            y=pred_y,
+            name="Linear regression (OLS)",
+            marker_color='Red'
+        ),
+        # secondary_y=True,
+    )
+
+    for ix, svr in enumerate(svrs):
+        figure_5.add_trace(
+            go.Scatter(
+                x=test.iloc[:, 0],
+                y=svr.fit(train_X_scaled, train_y).predict(test_X_scaled),
+                name=f"SVR {kernel_label[ix]}"
+            )
+        )
+
+    for ix, mthd in enumerate(other_methods):
+        figure_5.add_trace(
+            go.Scatter(
+                x=test.iloc[:, 0],
+                y=mthd.fit(train_X, train_y).predict(test_X),
+                name=f"{other_label[ix]}"
+            )
+        )
+
+    # figure_5.add_trace(
+    #     go.Scatter(
+    #         x=prediction_df['created_date'],
+    #         y=prediction_df['data_main.temp'],
+    #         name="Temperature in Celcius",
+    #     ),
+    #     # secondary_y=True,
+    # )
+
+    figure_5.update_layout(
+        showlegend=True,
+        legend_orientation="h",
+        legend=dict(x=0, y=1.1))
+
+    figure_5.show()
+
+    pearson_corr = data_frame[data_frame.columns[:]].corr()[
+        'no_of_clients'][:].values
+    spearman_corr = data_frame[data_frame.columns[:]].corr(
+        method='spearman')['no_of_clients'][:].values
+    kendall_corr = data_frame[data_frame.columns[:]].corr(
+        method='kendall')['no_of_clients'][:].values
+    corr_2d_array = np.array([pearson_corr, spearman_corr, kendall_corr])
+    corr_2d_array = np.swapaxes(corr_2d_array, 0, 1)
+
+    print(corr_2d_array)
+
+    del data_frame['created_date']
+    correlation_figure = ff.create_annotated_heatmap(
+        corr_2d_array,
+        x=['pearson', 'spearman', 'kendall'],
+        y=list(data_frame),
+        annotation_text=corr_2d_array.round(4),
+    )
+
+    correlation_figure.update_layout(
+        title="Correlation with NaN's replaced"
+    )
+
+    correlation_figure.show()
+
+    coeff_plot = make_subplots()
+    coeff_plot.add_trace(
+        go.Bar(
+            y=Series(reg.coef_, train.iloc[:, range(
+                2, 5)].columns).sort_values(),
+            x=train.iloc[:, range(2, 5)].columns,
+            text=Series(reg.coef_, train.iloc[:, range(
+                2, 5)].columns).sort_values().round(2),
+            textposition='auto'
+        )
+    )
+
+    coeff_plot.update_layout(
+        title="Coefficient Estimate"
+    )
+    coeff_plot.show()
+
+    coeff_plot_2 = make_subplots()
+    coeff_plot_2.add_trace(
+        go.Bar(
+            y=Series(svr_lin.coef_.ravel(), train.iloc[:, range(
+                2, 5)].columns).sort_values(),
+            x=train.iloc[:, range(2, 5)].columns,
+            text=Series(svr_lin.coef_.ravel(), train.iloc[:, range(
+                2, 5)].columns).sort_values().round(2),
+            textposition='auto'
+        )
+    )
+
+    coeff_plot_2.update_layout(
+        title="Coefficient Estimate (SVR RBF)"
+    )
+    coeff_plot_2.show()
+    pass
+
 iteration_1(merged_df)
+iteration_2(data_source_df, '1H')
