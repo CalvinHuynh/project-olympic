@@ -419,6 +419,12 @@ def clean_dataframe(data_frame: DataFrame):
     pass
 
 
+def get_future_timestamps(): # testing
+    from datetime import datetime as dt
+    today = dt.date().today()
+    monday = today + dt.timedelta( (0-today.weekday()) % 7 )
+    return monday
+
 # 30T of 1H voor de beste grafiek
 # 3H voor de voorspelling vanwege de weatherforecast data
 TIME_UNIT = '3H'
