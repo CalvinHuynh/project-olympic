@@ -796,10 +796,11 @@ def iteration_1(input_dataframe):
     train_X_scaled = scaler.fit_transform(train_X)
 
     # #############################################################################
-    # Fit regression model
+    # # Fit regression model
 
-    # # SVR parameters from https://scikit-learn.org/stable/auto_examples/plot_kernel_ridge_regression.html
+    # SVR parameters from https://scikit-learn.org/stable/auto_examples/plot_kernel_ridge_regression.html
     # for kernel in ['rbf', 'linear', 'poly']:
+    # for kernel in ['rbf', 'linear']:
     #     svr = GridSearchCV(SVR(kernel=kernel, gamma=0.1),
     #                        param_grid={"C": [1e0, 1e1, 1e2, 1e3],
     #                                    "gamma": np.logspace(-2, 2, 5)})
@@ -807,23 +808,22 @@ def iteration_1(input_dataframe):
     #     print(f"Best estimator found by grid search for kernel {kernel} is:")
     #     print(svr.best_estimator_)
 
-    # parameters from https://scikit-learn.org/stable/auto_examples/exercises/plot_cv_diabetes.html
+    # # parameters from https://scikit-learn.org/stable/auto_examples/exercises/plot_cv_diabetes.html
     # alphas = np.logspace(-4, -0.5, 30)
     # tuned_parameters = [{'alpha': alphas}]
 
     # parameters = { 'alpha': [1e-15, 1e-10, 1e-8, 1e-4, 1e-3, 1e-2, 1, 5, 10, 20]}
     # n_folds = 5
-
+    # print('running gridsearch for lasso, ridge and elastic')
     # lasso = GridSearchCV(Lasso(selection='random', tol=1, max_iter=1000),
     #                      parameters, cv=n_folds, refit=False)
 
     # lasso = lasso.fit(train_X, train_y)
-    # print("Best estimator found by grid search for Lasso is:")
     # print(
     #     f"best index is {lasso.best_index_}, parameters are {lasso.best_params_} and score is {lasso.best_score_}")
 
-    # lasso_cv = LassoCV(tol=1, max_iter=1000, cv=n_folds)
-    # print(f"best alpha using lasso cv is {lasso_cv.alphas}")
+    # # lasso_cv = LassoCV(tol=1, max_iter=1000, cv=n_folds)
+    # # print(f"best alpha using lasso cv is {lasso_cv.alphas}")
     # ridge_reg = Ridge()
 
     # ridge = GridSearchCV(Ridge(), parameters, cv=n_folds)
@@ -844,7 +844,7 @@ def iteration_1(input_dataframe):
     # some explanation of the alpha factor of ridge and lasso (and elastic)
     # https://www.analyticsvidhya.com/blog/2016/01/complete-tutorial-ridge-lasso-regression-python/#four
     # svr_rbf = SVR(kernel='rbf', C=100, gamma=0.1, epsilon=.1)
-    svr_rbf = SVR(C=100.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=1.0,
+    svr_rbf = SVR(C=1000.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=1.0,
                   kernel='rbf', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
     # svr_lin = SVR(kernel='linear', C=100, gamma='auto')
     svr_lin = SVR(C=100.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=0.01,
@@ -857,7 +857,7 @@ def iteration_1(input_dataframe):
     svrs = [svr_rbf, svr_lin]
     kernel_label = ['Radial basis function (RBF)', 'Linear', 'Polynomial']
 
-    lasso = Lasso(0.01, tol=1)
+    lasso = Lasso(0.0001, tol=1)
     ridge = Ridge(5)
     elastic = ElasticNet(0.01, tol=1)
 
@@ -894,7 +894,7 @@ def iteration_1(input_dataframe):
     for ix, mthd in enumerate(other_methods):
         pred_y_mthd = mthd.fit(train_X, train_y).predict(test_X)
         print(f"---------- Method {other_label[ix]} ----------")
-        for k, v in get_metrics(test_y, pred_y_svr, penalize_negative_numbers=True, round_result=True).items():
+        for k, v in get_metrics(test_y, pred_y_mthd, penalize_negative_numbers=True, round_result=True).items():
             print(f"{k}: {v}")
     # exit(0)
     # print(f"confusion matrix \n {confusion_matrix(test_y, pred_y)}")
@@ -1088,7 +1088,7 @@ def iteration_2(data_frame, time_unit):
         time_unit, on='created_date').mean().reset_index()
     data_frame['day_of_week'] = data_frame['created_date'].dt.day_name()
     data_frame['date_hour'] = data_frame['created_date'].dt.hour
-    data_frame['data_source'].round(0)
+    # data_frame['data_source'].round(0)
     data_frame['no_of_clients'].round(2)
     data_frame['is_weekend'] = data_frame['day_of_week'].apply(
         lambda x: item_in_list(x, ['Saturday', 'Sunday'])
@@ -1157,7 +1157,7 @@ def iteration_2(data_frame, time_unit):
     #     f"best index is {lasso.best_index_}, parameters are {lasso.best_params_} and score is {lasso.best_score_}")
 
     # lasso_cv = LassoCV(tol=1, max_iter=1000, cv=n_folds)
-    # print(f"best alpha using lasso cv is {lasso_cv.alphas}")
+    # # print(f"best alpha using lasso cv is {lasso_cv.alphas}")
     # ridge_reg = Ridge()
 
     # ridge = GridSearchCV(Ridge(), parameters, cv=n_folds)
@@ -1184,8 +1184,8 @@ def iteration_2(data_frame, time_unit):
     svrs = [svr_rbf, svr_lin]
     kernel_label = ['Radial basis function (RBF)', 'Linear', 'Polynomial']
 
-    lasso = Lasso(1e-10, tol=1)
-    ridge = Ridge(5)
+    lasso = Lasso(0.01, tol=1)
+    ridge = Ridge(20)
     elastic = ElasticNet(0.01, tol=1)
 
     other_methods = [lasso, ridge, elastic]
@@ -1209,7 +1209,7 @@ def iteration_2(data_frame, time_unit):
     for ix, mthd in enumerate(other_methods):
         pred_y_mthd = mthd.fit(train_X, train_y).predict(test_X)
         print(f"---------- Method {other_label[ix]} ----------")
-        for k, v in get_metrics(test_y, pred_y_svr, penalize_negative_numbers=True, round_result=True).items():
+        for k, v in get_metrics(test_y, pred_y_mthd, penalize_negative_numbers=True, round_result=True).items():
             print(f"{k}: {v}")
 
     figure_5 = make_subplots()
@@ -1331,4 +1331,4 @@ def iteration_2(data_frame, time_unit):
     pass
 
 iteration_1(merged_df)
-iteration_2(data_source_df, '1H')
+# iteration_2(data_source_df, '1H')
