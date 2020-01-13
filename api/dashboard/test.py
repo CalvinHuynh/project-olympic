@@ -374,9 +374,11 @@ def get_metrics(
         if (true_val - allowed_margin <= value and value <= true_val + allowed_margin):
             if penalize_negative_numbers:
                 # print(f"{value} is bigger than 0?")
-                if value > 0:
+                if true_val == 0:
                     # print(f"{value > 0}")
-                    is_in_range += 1
+                    is_in_range += 0.1
+                else:
+                    is_in_range +=1
             else:
                 is_in_range += 1
 
@@ -447,22 +449,40 @@ def get_future_timestamps(day_of_week: int = 0, timestamp: int = 3600, number_of
     return future_timestamps
 
 
+def get_last_month():
+    import datetime as dt
+    prev_month_end = datetime.date.today().replace(day=1) - datetime.timedelta(days=1)
+    prev_month_start = prev_month_end.replace(day=1)
+    return {
+        'month_start': prev_month_start,
+        'month_end': prev_month_end
+    }
+
+
+def get_last_four_weeks():
+    pass
+
+
 # 30T of 1H voor de beste grafiek
 # 3H voor de voorspelling vanwege de weatherforecast data
 TIME_UNIT = '3H'
 
+start_date = dt.strptime(("2019-10-01").split(' ')[0], '%Y-%m-%d')
+end_date_1 = dt.strptime(("2019-12-10").split(' ')[0], '%Y-%m-%d')
+
 data_source_df = DataFrame(
     list(DataSourceData.select().where(
+        DataSourceData.created_date >= start_date,
+        DataSourceData.created_date <= end_date_1,
         DataSourceData.data_source_id == 2).dicts()))
 
 wrongly_reported_data_source_df = DataFrame(
     list(DataSourceData.select().where(
         DataSourceData.data_source_id == 1).dicts()))
 
-start_date = dt.strptime(("2019-10-01").split(' ')[0], '%Y-%m-%d')
-
 hourly_weather_query = Weather.select().where(
     Weather.created_date >= start_date,
+    Weather.created_date <= end_date_1,
     Weather.weather_forecast_type == Forecast.HOURLY)
 
 hourly_weather_array = []
@@ -878,7 +898,7 @@ def iteration_1(input_dataframe):
 
     print("---------- Regression metrics ----------")
     print('---------- LinearRegression() ----------')
-    for k, v in get_metrics(test_y, pred_y, penalize_negative_numbers=True, round_result=True).items():
+    for k, v in get_metrics(test_y, pred_y, round_result=True).items():
         print(f"{k}: {v}")
 
     test_X_scaled = scaler.fit_transform(test_X)
@@ -888,13 +908,13 @@ def iteration_1(input_dataframe):
         # test_y_scaled = scaler.fit_transform(test_y)
         pred_y_svr = svr.fit(train_X_scaled, train_y).predict(test_X_scaled)
         print(f"---------- SVR {kernel_label[ix]} ----------")
-        for k, v in get_metrics(test_y, pred_y_svr, penalize_negative_numbers=True, round_result=True).items():
+        for k, v in get_metrics(test_y, pred_y_svr, round_result=True).items():
             print(f"{k}: {v}")
 
     for ix, mthd in enumerate(other_methods):
         pred_y_mthd = mthd.fit(train_X, train_y).predict(test_X)
         print(f"---------- Method {other_label[ix]} ----------")
-        for k, v in get_metrics(test_y, pred_y_mthd, penalize_negative_numbers=True, round_result=True).items():
+        for k, v in get_metrics(test_y, pred_y_mthd, round_result=True).items():
             print(f"{k}: {v}")
     # exit(0)
     # print(f"confusion matrix \n {confusion_matrix(test_y, pred_y)}")
@@ -1083,6 +1103,7 @@ def iteration_1(input_dataframe):
 # iteration_1(merged_df)
 
 def iteration_2(data_frame, time_unit):
+    print(f"Dataframe using resampled data per {time_unit}")
     # Calculate the mean of all the values
     data_frame = data_frame.resample(
         time_unit, on='created_date').mean().reset_index()
@@ -1193,7 +1214,7 @@ def iteration_2(data_frame, time_unit):
 
     print("---------- Regression metrics ----------")
     print('---------- LinearRegression() ----------')
-    for k, v in get_metrics(test_y, pred_y, penalize_negative_numbers=True, round_result=True).items():
+    for k, v in get_metrics(test_y, pred_y, round_result=True).items():
         print(f"{k}: {v}")
 
     test_X_scaled = scaler.fit_transform(test_X)
@@ -1203,13 +1224,13 @@ def iteration_2(data_frame, time_unit):
         # test_y_scaled = scaler.fit_transform(test_y)
         pred_y_svr = svr.fit(train_X_scaled, train_y).predict(test_X_scaled)
         print(f"---------- SVR {kernel_label[ix]} ----------")
-        for k, v in get_metrics(test_y, pred_y_svr, penalize_negative_numbers=True, round_result=True).items():
+        for k, v in get_metrics(test_y, pred_y_svr, round_result=True).items():
             print(f"{k}: {v}")
 
     for ix, mthd in enumerate(other_methods):
         pred_y_mthd = mthd.fit(train_X, train_y).predict(test_X)
         print(f"---------- Method {other_label[ix]} ----------")
-        for k, v in get_metrics(test_y, pred_y_mthd, penalize_negative_numbers=True, round_result=True).items():
+        for k, v in get_metrics(test_y, pred_y_mthd, round_result=True).items():
             print(f"{k}: {v}")
 
     figure_5 = make_subplots()
@@ -1330,5 +1351,5 @@ def iteration_2(data_frame, time_unit):
     coeff_plot_2.show()
     pass
 
-iteration_1(merged_df)
-# iteration_2(data_source_df, '1H')
+# iteration_1(merged_df)
+iteration_2(data_source_df, '1H')
