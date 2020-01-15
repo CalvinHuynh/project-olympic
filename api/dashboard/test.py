@@ -75,6 +75,13 @@ class Weather(Base):
     weather_forecast_type = CharField()
 
 
+class CrowdForecast(Base):
+    id = PrimaryKeyField(),
+    created_date = DateTimeField()
+    prediction_for_date_range = CharField(max_length=50),
+    prediction_data = JSONField()
+
+
 class Forecast(Enum):
     """
     The 2 types of forecasts that are currently available for the free tier
@@ -378,7 +385,7 @@ def get_metrics(
                     # print(f"{value > 0}")
                     is_in_range += 0.1
                 else:
-                    is_in_range +=1
+                    is_in_range += 1
             else:
                 is_in_range += 1
 
@@ -439,11 +446,13 @@ def get_future_timestamps(day_of_week: int = 0, timestamp: int = 3600, number_of
     today = dt.date.today()
     next_day_of_week = today + dt.timedelta(
         (day_of_week - today.weekday()) % 7)
-    timestamp_next_day_of_week = int((next_day_of_week - dt.date(1970, 1, 1)).total_seconds())
+    timestamp_next_day_of_week = int(
+        (next_day_of_week - dt.date(1970, 1, 1)).total_seconds())
 
     accumulative_timestamp = 0
     for index in range(number_of_timestamps):
-      future_timestamps.append(timestamp_next_day_of_week + accumulative_timestamp)
+      future_timestamps.append(
+          timestamp_next_day_of_week + accumulative_timestamp)
       # print(dt.datetime.utcfromtimestamp(timestamp_next_day_of_week + accumulative_timestamp)) # converts timestamp to utc datetime
       accumulative_timestamp += timestamp
     return future_timestamps
@@ -451,7 +460,7 @@ def get_future_timestamps(day_of_week: int = 0, timestamp: int = 3600, number_of
 
 def get_last_month():
     import datetime as dt
-    prev_month_end = datetime.date.today().replace(day=1) - datetime.timedelta(days=1)
+    prev_month_end = dt.date.today().replace(day=1) - dt.timedelta(days=1)
     prev_month_start = prev_month_end.replace(day=1)
     return {
         'month_start': prev_month_start,
@@ -459,8 +468,15 @@ def get_last_month():
     }
 
 
-def get_last_four_weeks():
-    pass
+def get_past_weeks(number_of_weeks: int = 3):
+    import datetime as dt
+    start_week = dt.date.today() - dt.timedelta(days=dt.date.today().weekday(),
+                                                weeks=number_of_weeks)
+    end_week = dt.date.today() - dt.timedelta(days=dt.date.today().weekday())
+    return {
+        'start_week': start_week,
+        'emd_week': end_week
+    }
 
 
 # 30T of 1H voor de beste grafiek
@@ -468,12 +484,12 @@ def get_last_four_weeks():
 TIME_UNIT = '3H'
 
 start_date = dt.strptime(("2019-10-01").split(' ')[0], '%Y-%m-%d')
-end_date_1 = dt.strptime(("2019-12-10").split(' ')[0], '%Y-%m-%d')
+# end_date_1 = dt.strptime(("2019-12-10").split(' ')[0], '%Y-%m-%d')
 
 data_source_df = DataFrame(
     list(DataSourceData.select().where(
         DataSourceData.created_date >= start_date,
-        DataSourceData.created_date <= end_date_1,
+        # DataSourceData.created_date <= end_date_1,
         DataSourceData.data_source_id == 2).dicts()))
 
 wrongly_reported_data_source_df = DataFrame(
@@ -482,7 +498,7 @@ wrongly_reported_data_source_df = DataFrame(
 
 hourly_weather_query = Weather.select().where(
     Weather.created_date >= start_date,
-    Weather.created_date <= end_date_1,
+    # Weather.created_date <= end_date_1,/
     Weather.weather_forecast_type == Forecast.HOURLY)
 
 hourly_weather_array = []
@@ -622,12 +638,14 @@ filled_data_frame = fill_missing_values_using_forecast(
 merged_df = merged_df.combine_first(filled_data_frame)
 label_encoder = LabelEncoder()
 
+
 def iteration_1(input_dataframe):
     # Label encoder used to transform the different categories to a numeric representation
     for item in ['data_weather.main', 'data_weather.description', 'day_of_week', 'is_weekend']:
         input_dataframe[item] = label_encoder.fit_transform(
             input_dataframe[item])
-    print(f"{len(merged_df[merged_df['data_main.temp'].isnull()])}/{len(merged_df)} is null")
+    print(
+        f"{len(merged_df[merged_df['data_main.temp'].isnull()])}/{len(merged_df)} is null")
     # print(f"input_dataframe after using label_encoder: \n {input_dataframe.info()}")
     print('data frame where temp is empty after filling')
     print(
@@ -1065,7 +1083,7 @@ def iteration_1(input_dataframe):
     # pair_plot_figure.update_traces(showlowerhalf=False)
     pair_plot_figure.show()
     # range_of_coef_sorted = Series(train.iloc[:, range(1, 15)].columns).sort_values()
-    
+
     coeff_plot = make_subplots()
     coeff_plot.add_trace(
         go.Bar(
@@ -1102,6 +1120,7 @@ def iteration_1(input_dataframe):
 
 # iteration_1(merged_df)
 
+
 def iteration_2(data_frame, time_unit):
     print(f"Dataframe using resampled data per {time_unit}")
     # Calculate the mean of all the values
@@ -1116,9 +1135,22 @@ def iteration_2(data_frame, time_unit):
     )
     del data_frame['id']
     del data_frame['data_source']
+    print(data_frame)
+    next_week_dataframe = DataFrame({'created_date': get_future_timestamps()})
+    next_week_dataframe['created_date'] = to_datetime(
+        next_week_dataframe['created_date'], unit='s')
+    next_week_dataframe['day_of_week'] = next_week_dataframe['created_date'].dt.day_name()
+    next_week_dataframe['date_hour'] = next_week_dataframe['created_date'].dt.hour
+    next_week_dataframe['is_weekend'] = next_week_dataframe['day_of_week'].apply(
+        lambda x: item_in_list(x, ['Saturday', 'Sunday'])
+    )
 
     for item in ['day_of_week', 'is_weekend']:
         data_frame[item] = label_encoder.fit_transform(data_frame[item])
+
+    for item in ['day_of_week', 'is_weekend']:
+        next_week_dataframe[item] = label_encoder.fit_transform(
+            next_week_dataframe[item])
 
     data_frame = data_frame.fillna(0)
 
@@ -1136,6 +1168,7 @@ def iteration_2(data_frame, time_unit):
     # select range to exclude column created_date
     train_X = train.iloc[:, range(2, 5)]
     test_X = test.iloc[:, range(2, 5)]
+    future_X = next_week_dataframe.iloc[:, range(1, 4)]
 
     # the number of clients that are being predicted
     train_y = train.iloc[:, 1]
@@ -1197,11 +1230,11 @@ def iteration_2(data_frame, time_unit):
     # #############################################################################
 
     svr_rbf = SVR(C=100.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=1.0,
-        kernel='rbf', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
-    
+                  kernel='rbf', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
+
     svr_lin = SVR(C=1000.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma=0.01,
-        kernel='linear', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
-    
+                  kernel='linear', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
+
     svrs = [svr_rbf, svr_lin]
     kernel_label = ['Radial basis function (RBF)', 'Linear', 'Polynomial']
 
@@ -1212,23 +1245,34 @@ def iteration_2(data_frame, time_unit):
     other_methods = [lasso, ridge, elastic]
     other_label = ['Lasso', 'Ridge Regression', 'ElasticNet']
 
+    test_X_scaled = scaler.fit_transform(test_X)
+    future_X_scaled = scaler.fit_transform(future_X)
+
+    result = svr_rbf.fit(train_X_scaled, train_y).predict(future_X_scaled)
+    # print(len(result))
+    # print(len(next_week_dataframe['created_date']))
+    next_week_dataframe['predicted_no_of_clients'] = result
+    print(next_week_dataframe[['created_date', 'predicted_no_of_clients']])
+    print(f"date range is \n{next_week_dataframe['created_date'].iloc[0]} - {next_week_dataframe['created_date'].iloc[-1]}")
+    exit(0)
+
     print("---------- Regression metrics ----------")
     print('---------- LinearRegression() ----------')
-    for k, v in get_metrics(test_y, pred_y, round_result=True).items():
-        print(f"{k}: {v}")
-
-    test_X_scaled = scaler.fit_transform(test_X)
+    # for k, v in get_metrics(test_y, pred_y, round_result=True).items():
+    #     print(f"{k}: {v}")
 
     for ix, svr in enumerate(svrs):
         # train_y_scaled = scaler.fit_transform(train_y)
         # test_y_scaled = scaler.fit_transform(test_y)
         pred_y_svr = svr.fit(train_X_scaled, train_y).predict(test_X_scaled)
+        # pred_y_svr = svr.fit(train_X_scaled, train_y).predict(future_X_scaled)
         print(f"---------- SVR {kernel_label[ix]} ----------")
         for k, v in get_metrics(test_y, pred_y_svr, round_result=True).items():
             print(f"{k}: {v}")
 
     for ix, mthd in enumerate(other_methods):
         pred_y_mthd = mthd.fit(train_X, train_y).predict(test_X)
+        # pred_y_mthd = mthd.fit(train_X, train_y).predict(future_X)
         print(f"---------- Method {other_label[ix]} ----------")
         for k, v in get_metrics(test_y, pred_y_mthd, round_result=True).items():
             print(f"{k}: {v}")
@@ -1250,6 +1294,7 @@ def iteration_2(data_frame, time_unit):
     figure_5.add_trace(
         go.Scatter(
             x=test.iloc[:, 0],  # select created_date column
+            # x=next_week_dataframe.iloc[:, 0]
             y=pred_y,
             name="Linear regression (OLS)",
             marker_color='Red'
@@ -1260,8 +1305,9 @@ def iteration_2(data_frame, time_unit):
     for ix, svr in enumerate(svrs):
         figure_5.add_trace(
             go.Scatter(
-                x=test.iloc[:, 0],
-                y=svr.fit(train_X_scaled, train_y).predict(test_X_scaled),
+                # x=test.iloc[:, 0],
+                x=next_week_dataframe.iloc[:, 0],
+                y=svr.fit(train_X_scaled, train_y).predict(future_X_scaled),
                 name=f"SVR {kernel_label[ix]}"
             )
         )
@@ -1269,8 +1315,9 @@ def iteration_2(data_frame, time_unit):
     for ix, mthd in enumerate(other_methods):
         figure_5.add_trace(
             go.Scatter(
-                x=test.iloc[:, 0],
-                y=mthd.fit(train_X, train_y).predict(test_X),
+                # x=test.iloc[:, 0],
+                x=next_week_dataframe.iloc[:, 0],
+                y=mthd.fit(train_X, train_y).predict(future_X),
                 name=f"{other_label[ix]}"
             )
         )
@@ -1300,7 +1347,7 @@ def iteration_2(data_frame, time_unit):
     corr_2d_array = np.array([pearson_corr, spearman_corr, kendall_corr])
     corr_2d_array = np.swapaxes(corr_2d_array, 0, 1)
 
-    print(corr_2d_array)
+    # print(corr_2d_array)
 
     del data_frame['created_date']
     correlation_figure = ff.create_annotated_heatmap(
@@ -1350,6 +1397,7 @@ def iteration_2(data_frame, time_unit):
     )
     coeff_plot_2.show()
     pass
+
 
 # iteration_1(merged_df)
 iteration_2(data_source_df, '1H')

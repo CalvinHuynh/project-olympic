@@ -250,3 +250,72 @@ def fill_missing_values_using_forecast(
                     ] = forecast_row[
                         f"{col_prefix_to_match}{col_postfix}"].values[0]
     return missing_val_data_frame
+
+
+def get_future_timestamps(
+        day_of_week: int = 0,
+        timestamp: int = 3600,
+        number_of_timestamps: int = 168):
+    """Calculates the future timestamps from a given day of the week.
+
+    Keyword Arguments:
+        day_of_week {int} -- calculate next day of the week
+        (0-6, where 0 is monday and 6 is sunday)  (default: {0})
+        timestamp {int} -- timestamp (default: {3600})
+        number_of_timestamps {int} -- how many timestamps to calculate
+        (default is 1 week worth of timestamps) (default: {168})
+
+    Returns:
+        [list] -- Returns a list containing one week worth of timestamps
+    """
+    import datetime as dt
+    future_timestamps = []
+    today = dt.date.today()
+    next_day_of_week = today + dt.timedelta(
+        (day_of_week - today.weekday()) % 7)
+    timestamp_next_day_of_week = int(
+        (next_day_of_week - dt.date(1970, 1, 1)).total_seconds())
+
+    accumulative_timestamp = 0
+    for index in range(number_of_timestamps):
+        future_timestamps.append(
+            timestamp_next_day_of_week + accumulative_timestamp)
+        accumulative_timestamp += timestamp
+    return future_timestamps
+
+
+def get_last_month():
+    """Retrieves the last month
+
+    Returns:
+        dict -- Returns a dictionary containing the start date and end date of
+        the previous month.
+    """
+    import datetime as dt
+    prev_month_end = dt.date.today().replace(day=1) - dt.timedelta(days=1)
+    prev_month_start = prev_month_end.replace(day=1)
+    return {
+        'month_start': prev_month_start,
+        'month_end': prev_month_end
+    }
+
+
+def get_past_weeks(number_of_weeks: int = 3):
+    """Retrieves the past weeks
+
+    Keyword Arguments:
+        number_of_weeks {int} -- number of weeks to substract from the current
+        week (default: {3})
+
+    Returns:
+        dict -- Returns a dictionary containing the start week and end week of
+        the past.
+    """
+    import datetime as dt
+    start_week = dt.date.today() - dt.timedelta(days=dt.date.today().weekday(),
+                                                weeks=number_of_weeks)
+    end_week = dt.date.today() - dt.timedelta(days=dt.date.today().weekday())
+    return {
+        'start_week': start_week,
+        'end_week': end_week
+    }
