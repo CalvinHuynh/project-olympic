@@ -9,6 +9,7 @@ from api.routes.user import api as user_api
 from api.routes.index import api as index_api
 # data generated from the data source
 from api.routes.data_source_data import api as data_source_data_api
+from api.routes.forecast import api as forecast_api
 from api.settings import (FLASK_API_VERSION, SWAGGER_DOC_ENDPOINT, GET_PATH,
                           FLASK_APP_NAME)
 
@@ -45,6 +46,7 @@ api.add_namespace(user_api)
 api.add_namespace(login_api)
 api.add_namespace(data_source_data_api)
 # api.add_namespace(assets_api)
+api.add_namespace(forecast_api)
 
 SUPPORTED_OAUTH_PROVIDERS = [Google, GitHub]
 

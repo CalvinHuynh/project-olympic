@@ -84,7 +84,7 @@ class DataSourceDataService():
 
     def get_all_data_from_data_source(self, data_source_id: int, limit: int,
                                       start_date: str, end_date: str,
-                                      sort: str):
+                                      sort: str = 'desc'):
         """Retrieves all data from a specific data source
 
         Arguments:

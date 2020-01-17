@@ -300,22 +300,29 @@ def get_last_month():
     }
 
 
-def get_past_weeks(number_of_weeks: int = 3):
+def get_past_weeks(
+        number_of_weeks: int = 3,
+        use_start_of_the_week: bool = True):
     """Retrieves the past weeks
 
     Keyword Arguments:
         number_of_weeks {int} -- number of weeks to substract from the current
         week (default: {3})
+        use_start_of_the_week {bool} -- return weeks that starts on monday
+        (default: {True})
 
     Returns:
         dict -- Returns a dictionary containing the start week and end week of
         the past.
     """
     import datetime as dt
-    start_week = dt.date.today() - dt.timedelta(days=dt.date.today().weekday(),
-                                                weeks=number_of_weeks)
-    end_week = dt.date.today() - dt.timedelta(days=dt.date.today().weekday())
-    return {
-        'start_week': start_week,
-        'end_week': end_week
-    }
+    if use_start_of_the_week:
+        start_week = dt.date.today() - dt.timedelta(
+            days=dt.date.today().weekday(), weeks=number_of_weeks)
+        end_week = dt.date.today() - dt.timedelta(
+            days=dt.date.today().weekday())
+    else:
+        start_week = dt.date.today() - dt.timedelta(weeks=number_of_weeks)
+        end_week = dt.date.today()
+
+    return start_week, end_week

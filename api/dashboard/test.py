@@ -473,10 +473,7 @@ def get_past_weeks(number_of_weeks: int = 3):
     start_week = dt.date.today() - dt.timedelta(days=dt.date.today().weekday(),
                                                 weeks=number_of_weeks)
     end_week = dt.date.today() - dt.timedelta(days=dt.date.today().weekday())
-    return {
-        'start_week': start_week,
-        'emd_week': end_week
-    }
+    return start_week, end_week
 
 
 # 30T of 1H voor de beste grafiek
@@ -1124,6 +1121,9 @@ def iteration_1(input_dataframe):
 def iteration_2(data_frame, time_unit):
     print(f"Dataframe using resampled data per {time_unit}")
     # Calculate the mean of all the values
+    print(f"length of input dataframe is: {len(data_frame)}")
+    start, end = get_past_weeks()
+    print(f"{start}-{end}")
     data_frame = data_frame.resample(
         time_unit, on='created_date').mean().reset_index()
     data_frame['day_of_week'] = data_frame['created_date'].dt.day_name()

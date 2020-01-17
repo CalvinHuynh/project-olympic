@@ -69,7 +69,6 @@ class DataSourceTokenService():
         if user is not None and isinstance(
                 user, User) and data_source is not None and isinstance(
                     data_source, DataSource):
-            created_date = to_utc_datetime()
             last_activity_date = None
             # Set validity of token to 1 year
             expiry_date = to_utc_datetime(
@@ -79,7 +78,7 @@ class DataSourceTokenService():
                 result = model_to_dict(DataSourceToken.create(
                     user=user,
                     data_source=data_source,
-                    created_date=created_date,
+                    created_date=to_utc_datetime(),
                     last_activity_date=last_activity_date,
                     expiry_date=expiry_date,
                     no_of_usage=no_of_usage,
