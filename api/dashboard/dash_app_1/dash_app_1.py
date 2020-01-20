@@ -1,5 +1,6 @@
 from datetime import datetime as dt
 
+import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objects as go
@@ -148,7 +149,7 @@ alternative_layout = html.Div([
         html.Label('Checkboxes'),
         html.Button('Refresh data', id='refresh-data-button',
                     type='button', className='button'),
-    ], style={'columnCount': 2}), # it needs to be automatically change to 1 when viewing on mobile
+    ], style={'columnCount': 2}),  # it needs to be automatically change to 1 when viewing on mobile
     html.Div([
         dcc.Graph(id='occupancy-graph'
                   )],
@@ -203,8 +204,7 @@ def _retrieve_data(data_source_id: int = 2):
 
 def add_dash(server):
     dash_app = Dash(__name__, server=server, url_base_pathname=url_base,
-                    assets_folder=f'{GET_PATH()}/dashboard/assets')
-
+                    assets_folder=f'{GET_PATH()}/dashboard/assets', external_stylesheets=[dbc.themes.BOOTSTRAP])
     apply_layout(dash_app, alternative_layout)
 
     @dash_app.callback(Output('occupancy-graph', 'figure'), [

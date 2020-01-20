@@ -2,7 +2,6 @@ import os as _os
 from datetime import datetime as dt
 from enum import Enum
 
-import matplotlib.pyplot as plt
 import numpy as np
 import plotly.express as px
 import plotly.figure_factory as ff

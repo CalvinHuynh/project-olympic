@@ -12,7 +12,8 @@ from api.routes import blueprint_index as index
 from api.settings import (FLASK_APP_NAME, FLASK_SECRET_KEY, GET_PATH,
                           GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET,
                           GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
-                          JWT_SECRET_KEY, JWT_TOKEN_LOCATION)
+                          JWT_SECRET_KEY, JWT_TOKEN_LOCATION,
+                          JWT_ACCESS_TOKEN_EXPIRES)
 
 jwt = None
 oauth = None
@@ -27,6 +28,7 @@ def register_config(app: Flask):
     app.config['SECRET_KEY'] = FLASK_SECRET_KEY
     app.config['JWT_TOKEN_LOCATION'] = jwt_locations
     app.config['JWT_SECRET_KEY'] = JWT_SECRET_KEY
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = JWT_ACCESS_TOKEN_EXPIRES
     app.config['JWT_COOKIE_CSRF_PROTECT'] = False
     app.config['GITHUB_CLIENT_ID'] = GITHUB_CLIENT_ID
     app.config['GITHUB_CLIENT_SECRET'] = GITHUB_CLIENT_SECRET

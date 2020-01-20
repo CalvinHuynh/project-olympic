@@ -86,6 +86,12 @@
     cursor: pointer;
 }
 
+.overflow-navbar {
+    position: absolute;
+    width: 100%;
+    left: 0px;
+}
+
 /* Boilerplate stuff */
 
 html,
