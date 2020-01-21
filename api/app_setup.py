@@ -1,3 +1,4 @@
+from datetime import timedelta
 from http import HTTPStatus
 
 from authlib.flask.client import OAuth
@@ -9,11 +10,11 @@ from api.dashboard.dash_routes import blueprint as dash_blueprint
 from api.models import initialize_database
 from api.routes import blueprint_api as api_v1
 from api.routes import blueprint_index as index
-from api.settings import (FLASK_APP_NAME, FLASK_SECRET_KEY, GET_PATH,
-                          GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET,
-                          GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
-                          JWT_SECRET_KEY, JWT_TOKEN_LOCATION,
-                          JWT_ACCESS_TOKEN_EXPIRES)
+from api.settings import (FLASK_APP_NAME, FLASK_PERMANENT_SESSION_LIFETIME,
+                          FLASK_SECRET_KEY, GET_PATH, GITHUB_CLIENT_ID,
+                          GITHUB_CLIENT_SECRET, GOOGLE_CLIENT_ID,
+                          GOOGLE_CLIENT_SECRET, JWT_ACCESS_TOKEN_EXPIRES,
+                          JWT_SECRET_KEY, JWT_TOKEN_LOCATION)
 
 jwt = None
 oauth = None
@@ -26,6 +27,8 @@ def register_config(app: Flask):
 
     app.config['RESTPLUS_VALIDATE'] = True
     app.config['SECRET_KEY'] = FLASK_SECRET_KEY
+    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(
+        seconds=FLASK_PERMANENT_SESSION_LIFETIME)
     app.config['JWT_TOKEN_LOCATION'] = jwt_locations
     app.config['JWT_SECRET_KEY'] = JWT_SECRET_KEY
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = JWT_ACCESS_TOKEN_EXPIRES

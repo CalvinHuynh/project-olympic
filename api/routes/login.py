@@ -1,6 +1,6 @@
 import sys
 
-from flask import (Response, make_response, redirect, render_template)
+from flask import (Response, make_response, redirect, render_template, session)
 from flask_jwt_extended import (create_access_token, set_access_cookies,
                                 unset_access_cookies)
 from flask_restplus import Namespace, Resource
@@ -46,7 +46,9 @@ def handle_authorize(remote, token, user_info):
             "user": user
         }
         access_token = create_access_token(identity=identity_object)
-        response = make_response(redirect('/api/v1/docs'))
+        response = make_response(redirect('/'))
+        session["user"] = user
+        print(session["user"])
         set_access_cookies(response, access_token)
 
         return response
@@ -76,5 +78,6 @@ class LogOut(Resource):
         """Log out the current user"""
         response = make_response(redirect('/'))
         # unset_jwt_cookies(response)
+        session.pop("user", None)
         unset_access_cookies(response)
         return response
