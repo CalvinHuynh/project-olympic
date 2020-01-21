@@ -159,6 +159,147 @@ alternative_layout = html.Div([
     ))
 ])
 
+# <button class = "navbar-toggler" type = "button" data - toggle = "collapse" data - target = "#navbarNavDropdown"
+# aria - controls = "navbarNavDropdown" aria - expanded = "false" aria - label = "Toggle navigation" >
+# <span class = "navbar-toggler-icon" > < / span >
+# < / button >
+
+# col-xs-10 col-sm-8 col-md-3
+alternative_layout_2 = html.Div([
+    html.H1('Occupancy Viewer'),
+    html.Div([
+        html.Div([
+        html.Label('Show line of'),
+        dcc.Dropdown(
+            id='my-dropdown',
+            options=[{
+                'label': 'Current temperature',
+                'value': 'temp'
+            }, {
+                'label': 'Minimum temperature',
+                'value': 'temp_min'
+            }, {
+                'label': 'Maximum temperature',
+                'value': 'temp_max'
+            }],
+            value=['temp'],
+            multi=True,
+            className=""),
+
+        html.Label('View date range'),
+        dcc.DatePickerRange(
+            id='date-picker-range',
+            min_date_allowed=dt(2019, 11, 1),
+            start_date=('2019-11-08'),
+            initial_visible_month=dt(2019, 11, 1),
+            className=""
+        ),
+
+        html.Label('X axis scale'),
+        html.Div([
+            dcc.Input(
+                id='time-offset-input',
+                type='number',
+                value=1,
+            ), dcc.Dropdown(
+                id='date-offset-dropdown',
+                placeholder='Time frame',
+                options=[
+                    {'label': 'minutes', 'value': 'T'},
+                    {'label': 'hours', 'value': 'H'}
+                ],
+                value='H',
+                style=dict(
+                    minWidth='12rem'
+                )
+            ),
+        ], style=dict(
+            display='inline-flex'
+        ), className=""),
+
+        html.Label('Retrieve latest data'),
+        html.Button('Refresh data', id='refresh-data-button',
+                    type='button', className='button'),
+    ], className="form-group col-xs-10 col-sm-8 col-md-3"),
+    ], className="collapse filter-panel", id="filter-panel"),
+    html.Button('Toggle', className='navbar-toggler',
+                type='button', **{'data-toggle': 'collapse', 'data-target': '#filter-panel'}),
+    html.Div([
+        dcc.Graph(id='occupancy-graph'
+                  )],
+             style=dict(
+        display='inline-block',
+        width='100%'
+    ))
+], className="panel-body")
+
+select = dbc.FormGroup([
+    dbc.Label('Show line of'),
+    dbc.Select(
+        id='my-dropdown',
+        options=[{
+            'label': 'Current temperature',
+            'value': 'temp'
+        }, {
+            'label': 'Minimum temperature',
+            'value': 'temp_min'
+        }, {
+            'label': 'Maximum temperature',
+            'value': 'temp_max'
+        }],
+        # value=[],
+        # multi=True,
+    )
+])
+
+datepicker = dbc.FormGroup([
+    dbc.Label('View date range'), dcc.DatePickerRange(
+        id='date-picker-range',
+        min_date_allowed=dt(2019, 11, 1),
+        start_date=('2019-11-08'),
+        initial_visible_month=dt(2019, 11, 1),
+    )
+])
+
+offset = dbc.FormGroup([
+    dbc.Label('X axis scale'), html.Div([
+        dbc.Input(
+            id='time-offset-input',
+            type='number',
+            value=1,
+        ), dcc.Dropdown(
+            id='date-offset-dropdown',
+            placeholder='Time frame',
+            options=[
+                {'label': 'minutes', 'value': 'T'},
+                {'label': 'hours', 'value': 'H'}
+            ],
+            value='H',
+            style=dict(
+                minWidth='12rem'
+            )
+        ),
+    ], style=dict(
+        display='inline-flex'
+    )),
+])
+
+refresh = dbc.FormGroup([
+    dbc.Label('Checkboxes'), dbc.Button(
+        'Refresh data', id='refresh-data-button', className='button')
+])
+
+dbc_layout = html.Div([
+    select, datepicker, offset, refresh,
+    html.Div([
+        dcc.Graph(id='occupancy-graph'
+                  )],
+             style=dict(
+        display='inline-block',
+        width='100%'
+    ))
+])
+
 
 temperature_label_dict = {
     'temp': 'Current temperature',
@@ -205,7 +346,7 @@ def _retrieve_data(data_source_id: int = 2):
 def add_dash(server):
     dash_app = Dash(__name__, server=server, url_base_pathname=url_base,
                     assets_folder=f'{GET_PATH()}/dashboard/assets', external_stylesheets=[dbc.themes.BOOTSTRAP])
-    apply_layout(dash_app, alternative_layout)
+    apply_layout(dash_app, alternative_layout_2)
 
     @dash_app.callback(Output('occupancy-graph', 'figure'), [
         Input('my-dropdown', 'value'),
@@ -312,6 +453,12 @@ def add_dash(server):
                         name=f'{temperature_label_dict.get(dropdown_value)}'))
 
         figure.update_xaxes(hoverformat='%c')
+        figure.update_layout(
+            showlegend=True,
+            legend_orientation="h",
+            legend=dict(x=0, y=1.1),
+            margin={'l': 50, 'r': 50, 't': 0, 'b': 0}
+        )
         return figure
 
     return dash_app.server
