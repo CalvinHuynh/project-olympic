@@ -5,8 +5,8 @@
   <!-- Required meta tags -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='assets/bootstrap.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='assets/main.css') }}">
   <title>{{ FLASK_TITLE }}</title>
   <link rel="shortcut icon" href="{{ url_for('static', filename='assets/favicon.ico') }}">
 </head>
@@ -58,8 +58,8 @@
     {% block content %}
     {% endblock %}
   </div>
-  <script defer src="{{ url_for('static', filename='vendor/jquery/js/jquery-3.4.1.min.js')}}"></script>
-  <script defer src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.min.js')}}"></script>
+  <script defer src="{{ url_for('static', filename='assets/jquery-3.4.1.min.js')}}"></script>
+  <script defer src="{{ url_for('static', filename='assets/bootstrap.min.js')}}"></script>
 </body>
 
 </html>

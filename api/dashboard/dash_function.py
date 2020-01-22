@@ -1,11 +1,11 @@
 import dash_html_components as html
-import dash_bootstrap_components as dbc
 
 
 def apply_layout(app, layout):
     def serve_layout():
-        return dbc.Container([
+        return html.Div([
             html.Div('1', id='session_id', style={'display': 'none'}), layout
-        ], fluid=True)
+        ], className="container-fluid",
+            style=dict(width='100%', position='absolute', left='0'))
 
     app.layout = serve_layout
