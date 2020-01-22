@@ -3,10 +3,13 @@ from flask import render_template
 from api.helpers.check_token_type_decorator import jwt_required_extended
 
 from . import blueprint
-from .dash_app_1 import dash_app_1
+from .dash_overview import occupancy_overview
 
 
-@blueprint.route('/info')
+@blueprint.route('/overview')
 @jwt_required_extended
-def info_dashboard():
-    return render_template('app_1.html', dash_url=dash_app_1.url_base)
+def overview_dashboard():
+    return render_template(
+        'overview.html',
+        dash_url=occupancy_overview.url_base
+    )

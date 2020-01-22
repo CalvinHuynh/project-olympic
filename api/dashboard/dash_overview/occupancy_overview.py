@@ -1,6 +1,5 @@
 from datetime import datetime as dt
 
-import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objects as go
@@ -100,7 +99,7 @@ layout = html.Div([
 alternative_layout = html.Div([
     html.Div([
         html.Div([
-            html.H1('Occupancy Viewer'),
+            html.H1('Occupancy Overview'),
         ], className="col")
     ], className="row"),
     html.Div([
@@ -175,74 +174,6 @@ alternative_layout = html.Div([
         ], className="col"),
     ], className="row")
 ])
-
-select = dbc.FormGroup([
-    dbc.Label('Show line of'),
-    dbc.Select(
-        id='my-dropdown',
-        options=[{
-            'label': 'Current temperature',
-            'value': 'temp'
-        }, {
-            'label': 'Minimum temperature',
-            'value': 'temp_min'
-        }, {
-            'label': 'Maximum temperature',
-            'value': 'temp_max'
-        }],
-        # value=[],
-        # multi=True,
-    )
-])
-
-datepicker = dbc.FormGroup([
-    dbc.Label('View date range'), dcc.DatePickerRange(
-        id='date-picker-range',
-        min_date_allowed=dt(2019, 11, 1),
-        start_date=('2019-11-08'),
-        initial_visible_month=dt(2019, 11, 1),
-    )
-])
-
-offset = dbc.FormGroup([
-    dbc.Label('X axis scale'), html.Div([
-        dbc.Input(
-            id='time-offset-input',
-            type='number',
-            value=1,
-        ), dcc.Dropdown(
-            id='date-offset-dropdown',
-            placeholder='Time frame',
-            options=[
-                {'label': 'minutes', 'value': 'T'},
-                {'label': 'hours', 'value': 'H'}
-            ],
-            value='H',
-            style=dict(
-                minWidth='12rem'
-            )
-        ),
-    ], style=dict(
-        display='inline-flex'
-    )),
-])
-
-refresh = dbc.FormGroup([
-    dbc.Label('Checkboxes'), dbc.Button(
-        'Refresh data', id='refresh-data-button', className='button')
-])
-
-dbc_layout = html.Div([
-    select, datepicker, offset, refresh,
-    html.Div([
-        dcc.Graph(id='occupancy-graph'
-                  )],
-             style=dict(
-        display='inline-block',
-        width='100%'
-    ))
-])
-
 
 temperature_label_dict = {
     'temp': 'Current temperature',

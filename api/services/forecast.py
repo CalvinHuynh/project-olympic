@@ -49,9 +49,9 @@ def _add_time_characteristics(data_frame, time_unit: str = '1H'):
     return data_frame
 
 
-def _create_next_week_dataframe():
+def _create_next_week_dataframe(day_of_week: int = 0):
     next_week_dataframe = DataFrame(
-        {'created_date': _df_helper.get_future_timestamps()})
+        {'created_date': _df_helper.get_future_timestamps(day_of_week)})
     next_week_dataframe['created_date'] = to_datetime(
         next_week_dataframe['created_date'], unit='s')
     next_week_dataframe['day_of_week'] = next_week_dataframe[
@@ -70,10 +70,18 @@ def _create_next_week_dataframe():
 
 
 class ForecastService():
-    def create_next_week_prediction():
+    def create_next_week_prediction(use_start_of_the_week: bool = True):
         # retrieve the last three weeks for prediction
+        # This service should run every saturday to get the forecast of the
+        # following week
+        import datetime as dt
         try:
-            start, end = _df_helper.get_past_weeks()
+            if not use_start_of_the_week:
+                week_day = dt.date.today().weekday()
+            else:
+                week_day = 0  # let day of the week start at 0
+            start, end = _df_helper.get_past_weeks(
+                use_start_of_the_week=use_start_of_the_week)
             data = _DataSourceDataService.get_all_data_from_data_source(
                 _DataSourceDataService,
                 data_source_id=2,
@@ -84,11 +92,12 @@ class ForecastService():
 
             data_frame = _transform_data_to_dataframe(data)
             data_frame = _add_time_characteristics(data_frame)
-            next_week_dataframe = _create_next_week_dataframe()
-
+            next_week_dataframe = _create_next_week_dataframe(week_day)
+            next_week = dt.datetime.fromtimestamp(
+                next_week_dataframe.iloc[[0]]['created_date']
+                .values[0].astype(int) // 10**9)
             train, test = train_test_split(
                 data_frame, test_size=0.25, shuffle=False)
-            print(train)
             scaler = StandardScaler()
             train_X_scaled = scaler.fit_transform(train.iloc[:, range(2, 5)])
             train_y = train.iloc[:, 1]
@@ -104,7 +113,9 @@ class ForecastService():
             next_week_dataframe['predicted_no_of_clients'] = result
             result = CrowdForecast.create(
                 created_date=to_utc_datetime(),
-                prediction_for_date_range=f"{start}-{end}",
+                date_range_used=f"{start}_{end}",
+                prediction_for_week=next_week.isocalendar()[1],
+                prediction_start_date=next_week.strftime('%Y-%m-%d'),
                 prediction_data=next_week_dataframe.to_json()
             )
             return model_to_dict(result)
