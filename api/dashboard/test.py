@@ -8,7 +8,7 @@ import plotly.figure_factory as ff
 import plotly.graph_objects as go
 from dotenv import load_dotenv as _load_dotenv
 from numpy import int as np_int
-from pandas import DataFrame, Series, set_option, to_datetime
+from pandas import DataFrame, Series, set_option, to_datetime, read_json
 from pandas.io.json import json_normalize
 from peewee import (CharField, DateTimeField, ForeignKeyField, IntegerField,
                     Model, MySQLDatabase, PrimaryKeyField)
@@ -77,7 +77,9 @@ class Weather(Base):
 class CrowdForecast(Base):
     id = PrimaryKeyField(),
     created_date = DateTimeField()
-    prediction_for_date_range = CharField(max_length=50),
+    date_range_used = CharField(unique=True, max_length=50)
+    prediction_for_week = CharField(max_length=2)
+    prediction_start_date = CharField(max_length=20)
     prediction_data = JSONField()
 
 
@@ -1397,6 +1399,23 @@ def iteration_2(data_frame, time_unit):
     coeff_plot_2.show()
     pass
 
+def test_retrieve_dataframe_database():
+    import datetime as dt
+    today = dt.date.today()
+    print(today)
+    print(f"striped time {today.strftime('%Y-%m-%d')}")
+    result = CrowdForecast.get(
+        CrowdForecast.prediction_start_date == '2020-01-22'
+    )
+    # result = CrowdForecast.get_by_id(1)
+    print(result.prediction_data)
+    dataframe = read_json(result.prediction_data)
+    dataframe['created_date'] = to_datetime(
+            dataframe['created_date'], unit='ms')
+    print(dataframe)
+    pass
 
+test_retrieve_dataframe_database()
 # iteration_1(merged_df)
-iteration_2(data_source_df, '1H')
+# iteration_2(data_source_df, '1H')
+

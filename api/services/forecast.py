@@ -93,8 +93,11 @@ class ForecastService():
             data_frame = _transform_data_to_dataframe(data)
             data_frame = _add_time_characteristics(data_frame)
             next_week_dataframe = _create_next_week_dataframe(week_day)
-            next_week = dt.datetime.fromtimestamp(
+            next_week_start = dt.datetime.fromtimestamp(
                 next_week_dataframe.iloc[[0]]['created_date']
+                .values[0].astype(int) // 10**9)
+            next_week_end = dt.datetime.fromtimestamp(
+                next_week_dataframe.iloc[[-1]]['created_date']
                 .values[0].astype(int) // 10**9)
             train, test = train_test_split(
                 data_frame, test_size=0.25, shuffle=False)
@@ -114,8 +117,9 @@ class ForecastService():
             result = CrowdForecast.create(
                 created_date=to_utc_datetime(),
                 date_range_used=f"{start}_{end}",
-                prediction_for_week=next_week.isocalendar()[1],
-                prediction_start_date=next_week.strftime('%Y-%m-%d'),
+                prediction_for_week=next_week_start.isocalendar()[1],
+                prediction_start_date=next_week_start.strftime('%Y-%m-%d'),
+                prediction_end_date=next_week_end.strftime('%Y-%m-%d'),
                 prediction_data=next_week_dataframe.to_json()
             )
             return model_to_dict(result)
