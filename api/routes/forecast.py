@@ -1,7 +1,6 @@
 from http import HTTPStatus
 
-from flask import jsonify
-# from flask_jwt_extended import get_jwt_identity
+from flask import jsonify, request
 from flask_restplus import Namespace, Resource
 
 from api.helpers import ErrorObject, SuccessObject, jwt_required_extended
@@ -14,14 +13,33 @@ api = Namespace('forecast', description="Forecast related operations")
 @api.route('')
 class ForecastResources(Resource):
     @jwt_required_extended
-    # @convert_input_to_tuple
-    # @check_for("User")
     def post(self, **kwargs):
-        """Creates next week prediction"""
+        """Creates next week crowd forecast"""
         try:
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
                     _ForecastService.create_next_week_prediction()))
+        except Exception as err:
+            return ErrorObject.create_response(self, err.args[0], err.args[1])
+
+    @jwt_required_extended
+    @api.param('start_date',
+               type=str,
+               description='Start date in YYYY-mm-dd format, e.g: "2019-12-31"'
+               )
+    @api.param('end_date',
+               type=str,
+               description='End date in YYYY-mm-dd format, e.g: "2019-12-31"')
+    def get(self, **kwargs):
+        """Retrieves crowd forecast"""
+        try:
+            return jsonify(
+                SuccessObject.create_response(
+                    self, HTTPStatus.OK,
+                    _ForecastService.get_crowd_forecast(
+                        self,
+                        start_date=request.args.get('start_date'),
+                        end_date=request.args.get('end_date'))))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])

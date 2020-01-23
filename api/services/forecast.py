@@ -1,14 +1,14 @@
 from http import HTTPStatus
 
-from pandas import DataFrame, to_datetime
-# from peewee import DoesNotExist, IntegrityError
+from pandas import DataFrame, read_json, to_datetime
+from peewee import DoesNotExist
 from playhouse.shortcuts import model_to_dict
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.svm import SVR
 
 import api.helpers.data_frame_helper as _df_helper
-from api.helpers import to_utc_datetime
+from api.helpers import to_utc_datetime, validate_dateformat
 from api.models import CrowdForecast
 
 from .data_source_data import DataSourceDataService as _DataSourceDataService
@@ -70,7 +70,20 @@ def _create_next_week_dataframe(day_of_week: int = 0):
 
 
 class ForecastService():
-    def create_next_week_prediction(use_start_of_the_week: bool = True):
+    def create_next_week_prediction(
+            number_of_weeks_to_use: int = 3,
+            use_start_of_the_week: bool = True):
+        """Create next week prediction
+
+        Keyword Arguments:
+            number_of_weeks_to_use {int} -- number of weeks to use as input
+            data (default: {3})
+            use_start_of_the_week {bool} -- boolean to use the start of the
+            week (default: {True})
+
+        Returns:
+            CrowdForecast -- A crowd forecast object will be returned
+        """
         # retrieve the last three weeks for prediction
         # This service should run every saturday to get the forecast of the
         # following week
@@ -81,6 +94,7 @@ class ForecastService():
             else:
                 week_day = 0  # let day of the week start at 0
             start, end = _df_helper.get_past_weeks(
+                number_of_weeks=number_of_weeks_to_use,
                 use_start_of_the_week=use_start_of_the_week)
             data = _DataSourceDataService.get_all_data_from_data_source(
                 _DataSourceDataService,
@@ -126,4 +140,38 @@ class ForecastService():
         except Exception as err:
             print(err)
             raise ValueError(HTTPStatus.INTERNAL_SERVER_ERROR,
-                             "Unable to create prediction for the next week.")
+                             "Internal error has occured.")
+
+    def get_crowd_forecast(start_date: str, end_date: str):
+        """Get crowd forecast for given dates
+
+        Arguments:
+            start_date {str} -- start date of prediction, accepted
+            format '%Y-%m-%d'
+            end_date {str} -- end date of prediction, accepted
+            format '%Y-%m-%d'
+
+        Raises:
+            ValueError: Unable to find forecast for given dates
+        """
+        try:
+            try:
+                validate_dateformat(start_date)
+                validate_dateformat(end_date)
+            except ValueError:
+                raise
+            result = CrowdForecast.get(
+                CrowdForecast.prediction_start_date == start_date &
+                CrowdForecast.prediction_end_date == end_date
+            )
+            dataframe = read_json(result.prediction_data)
+            dataframe['created_date'] = to_datetime(
+                dataframe['created_date'], unit='ms')
+            return(dataframe.to_json())
+        except DoesNotExist:
+            raise ValueError(HTTPStatus.NOT_FOUND,
+                             "Unable to find forecast for given dates.")
+        except Exception as err:
+            print(err)
+            raise ValueError(HTTPStatus.INTERNAL_SERVER_ERROR,
+                             "Internal error has occured.")
