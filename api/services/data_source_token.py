@@ -13,9 +13,6 @@ from api.models import DataSource, DataSourceToken, User
 from .data_source import DataSourceService as _DataSourceService
 from .user import UserService as _UserService
 
-_user_service = _UserService
-_data_source_service = _DataSourceService
-
 
 class DataSourceTokenService():
     def get_token_by_id(self, id: int):
@@ -53,7 +50,7 @@ class DataSourceTokenService():
         data_source: DataSource = None
         try:
             if user_id:
-                user = _user_service.get_user_by_id(self, user_id)
+                user = _UserService.get_user_by_id(self, user_id)
         except Exception:
             raise
 
@@ -61,7 +58,7 @@ class DataSourceTokenService():
             if data_source_id:
                 data_source = dict_to_model(
                     DataSource,
-                    _data_source_service.get_data_source_by_id(
+                    _DataSourceService.get_data_source_by_id(
                         self, data_source_id))
         except Exception:
             raise

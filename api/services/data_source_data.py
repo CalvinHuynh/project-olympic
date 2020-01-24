@@ -10,7 +10,6 @@ from api.models import DataSource, DataSourceData
 from .data_source import DataSourceService as _DataSourceService
 
 _ALLOWED_SORT_VALUES = ['asc', 'desc']
-_data_source_service = _DataSourceService
 
 
 class DataSourceDataService():
@@ -153,7 +152,7 @@ class DataSourceDataService():
         """
         data_source = None
         try:
-            data_source = _data_source_service.get_data_source_by_id(
+            data_source = _DataSourceService.get_data_source_by_id(
                 self, data_source_id)
         except Exception:
             raise

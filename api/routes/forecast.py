@@ -19,7 +19,7 @@ class ForecastResources(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _ForecastService.create_next_week_prediction()))
+                    _ForecastService.create_next_week_prediction(self)))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
 
@@ -31,8 +31,13 @@ class ForecastResources(Resource):
     @api.param('end_date',
                type=str,
                description='End date in YYYY-mm-dd format, e.g: "2019-12-31"')
+    @api.param('get_dataframe',
+               type=int,
+               default=0,
+               enum=(0, 1),
+               description='Returns a jsonified dataframe if set to 1')
     def get(self, **kwargs):
-        """Retrieves crowd forecast"""
+        """Retrieves crowd forecast per week"""
         try:
             return jsonify(
                 SuccessObject.create_response(
@@ -40,6 +45,7 @@ class ForecastResources(Resource):
                     _ForecastService.get_crowd_forecast(
                         self,
                         start_date=request.args.get('start_date'),
-                        end_date=request.args.get('end_date'))))
+                        end_date=request.args.get('end_date'),
+                        return_data_frame=request.args.get('get_dataframe'))))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])

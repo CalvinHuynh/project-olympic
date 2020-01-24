@@ -1,7 +1,7 @@
 from http import HTTPStatus
 
 from pandas import DataFrame, read_json, to_datetime
-from peewee import DoesNotExist
+from peewee import DoesNotExist, IntegrityError
 from playhouse.shortcuts import model_to_dict
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
@@ -13,9 +13,6 @@ from api.models import CrowdForecast
 
 from .data_source_data import DataSourceDataService as _DataSourceDataService
 
-# from .user import UserService as _UserService
-
-# _user_service = _UserService
 _label_encoder = LabelEncoder()
 
 
@@ -71,7 +68,8 @@ def _create_next_week_dataframe(day_of_week: int = 0):
 
 class ForecastService():
     def create_next_week_prediction(
-            number_of_weeks_to_use: int = 3,
+            self,
+            number_of_weeks_to_use: int = 4,
             use_start_of_the_week: bool = True):
         """Create next week prediction
 
@@ -137,12 +135,21 @@ class ForecastService():
                 prediction_data=next_week_dataframe.to_json()
             )
             return model_to_dict(result)
+        except IntegrityError as err:
+            print(err)
+            raise ValueError(HTTPStatus.CONFLICT,
+                             f"Forecast already exists using data range: "
+                             f"{start} - {end}")
         except Exception as err:
             print(err)
             raise ValueError(HTTPStatus.INTERNAL_SERVER_ERROR,
                              "Internal error has occured.")
 
-    def get_crowd_forecast(start_date: str, end_date: str):
+    def get_crowd_forecast(
+            self,
+            start_date: str,
+            end_date: str,
+            return_data_frame: int = 1):
         """Get crowd forecast for given dates
 
         Arguments:
@@ -151,24 +158,30 @@ class ForecastService():
             end_date {str} -- end date of prediction, accepted
             format '%Y-%m-%d'
 
-        Raises:
-            ValueError: Unable to find forecast for given dates
+        Keyword Arguments:
+            return_data_frame {int} -- If 1, returns a jsonified
+            dataframe (default: {1})
         """
         try:
-            try:
-                validate_dateformat(start_date)
-                validate_dateformat(end_date)
-            except ValueError:
-                raise
+            validate_dateformat("start_date", start_date)
+            validate_dateformat("end_date", end_date)
+        except ValueError as err:
+            raise ValueError(HTTPStatus.BAD_REQUEST, str(err))
+
+        try:
             result = CrowdForecast.get(
-                CrowdForecast.prediction_start_date == start_date &
-                CrowdForecast.prediction_end_date == end_date
+                (CrowdForecast.prediction_start_date == start_date) &
+                (CrowdForecast.prediction_end_date == end_date)
             )
-            dataframe = read_json(result.prediction_data)
-            dataframe['created_date'] = to_datetime(
-                dataframe['created_date'], unit='ms')
-            return(dataframe.to_json())
-        except DoesNotExist:
+            if int(return_data_frame) == 0:
+                dataframe = read_json(result.prediction_data)
+                dataframe['created_date'] = to_datetime(
+                    dataframe['created_date'], unit='ms')
+                return(dataframe.to_json())
+            else:
+                return model_to_dict(result)
+        except DoesNotExist as err:
+            print(err)
             raise ValueError(HTTPStatus.NOT_FOUND,
                              "Unable to find forecast for given dates.")
         except Exception as err:

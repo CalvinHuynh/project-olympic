@@ -8,25 +8,23 @@ from api.models import DataSource, User
 
 from .user import UserService as _UserService
 
-_user_service = _UserService
-
 
 def _get_user(create_data_source_dto: CreateDataSourceDto, user_id: int,
               username: str):
     if hasattr(create_data_source_dto, 'user'):
         if create_data_source_dto.user.id:
-            return _user_service.get_user_by_id(_user_service,
-                                                create_data_source_dto.user.id)
+            return _UserService.get_user_by_id(_UserService,
+                                               create_data_source_dto.user.id)
         elif create_data_source_dto.user.username:
-            return _user_service.get_user_by_username(
-                _user_service, create_data_source_dto.user.username)
+            return _UserService.get_user_by_username(
+                _UserService, create_data_source_dto.user.username)
         else:
             print("Skipping as user has no fields")
             pass
     elif user_id:
-        return _user_service.get_user_by_id(_user_service, user_id)
+        return _UserService.get_user_by_id(_UserService, user_id)
     else:
-        return _user_service.get_user_by_username(_user_service, username)
+        return _UserService.get_user_by_username(_UserService, username)
 
 
 class DataSourceService():

@@ -1,8 +1,24 @@
 
-def validate_dateformat(date_text, format: str = '%Y-%m-%d'):
+
+def validate_dateformat(
+        variable_name: str, date_text: str, format: str = '%Y-%m-%d'):
     import datetime as dt
-    try:
-        dt.datetime.strptime(date_text, format)
-    except ValueError:
+    import re
+
+    date_pattern = re.compile(r'\d{4}-\d{2}-\d{2}')
+    if date_text:
+        try:
+            dt.datetime.strptime(date_text, format)
+        except ValueError:
+            raise ValueError(
+                f"Incorrect date format for parameter {variable_name},"
+                f"expected format is YYYY-MM-DD")
+    else:
         raise ValueError(
-            "Incorrect date format, expected format is YYYY-MM-DD")
+            f"Input parameter {variable_name} cannot be null or empty,"
+            f"expected format is YYYY-MM-Dd")
+
+    if not date_pattern.match(date_text):
+        raise ValueError(
+            f"Incorrect date format for parameter {variable_name},"
+            f"expected format is YYYY-MM-DD")
