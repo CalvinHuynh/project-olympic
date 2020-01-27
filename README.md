@@ -1,5 +1,10 @@
 # Project Olympic
-This is an API that periodically looks up the number of clients that are currently connected to the network. It also retrieves the current weather and the weather forecast from [OpenWeatherMap](https://openweathermap.org/). 
+The goal of this project is to create an API that offers endpoints for data acquisition and predictions.  
+The `api/jobs.py` file contains three cronjobs that periodically do the following:
+1. Retrieve the current weather every 10th minute
+2. Retrieve the 5-day weather forecast every day at 20:00
+3. Retrieve the number of clients from the web portal every 10th minute
+The current weather and the weather forecast are retrieved from [OpenWeatherMap](https://openweathermap.org/). 
 
 ## Technologies
 Exploratory project to experiment with unfamiliar technologies such as:
@@ -8,12 +13,12 @@ Exploratory project to experiment with unfamiliar technologies such as:
 * Python: The python language is chosen due to the numerous mathematical and scientific packages. Python is also chosen due to my wish to learn a new programming language.
 * Google Cloud (Cloud SQL and Compute Engine): Google's solutions are used as Incentro is a Google Partner.
 
-## Python packages
-* Flask web framework (and other extensions extending Flask):
-* Peewee ORM
-* Scikit-learn 
-* Pandas
-* Dash
+## Python packages used
+* Flask web framework (and other extensions extending Flask): Flask is chosen due to the freedom that the framework offers. The project is actively being developed on Git and it has a large community.
+* Peewee ORM: Peewee is chosen over other ORM's (SQLAlchemy, Django) as Peewee has a smaller footprint and has a low learning curve for someone new to Python.
+* Scikit-learn: 
+* Pandas: Commonly used library to create and interact with a tabular data structure.
+* Dash: 
 
 ## Requirement
 * Python 3.3 or higher
