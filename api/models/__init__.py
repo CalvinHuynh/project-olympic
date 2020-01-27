@@ -5,6 +5,7 @@ from .data_source_token import DataSourceToken
 # from .role import Role
 from .user import User
 from .weather import Forecast, Weather
+from .forecast import CrowdForecast
 
 
 def create_tables(database: MySQLDatabase, migrations: bool = False):

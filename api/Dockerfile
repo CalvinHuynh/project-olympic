@@ -12,5 +12,6 @@ RUN dnf install python3 \
 
 COPY . .
 RUN pip3 install --no-cache-dir -r requirements.txt
+RUN chmod +x /api/bin/geckodriver && chmod +x /api/bin/chromedriver
 
 CMD [ "flask", "run" ]

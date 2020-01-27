@@ -12,6 +12,11 @@ services:
       - "3306:3306"
     volumes:
       - ~/mysql_data:/var/lib/mysql
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "10"
   web:
     build: ./api
     restart: always
@@ -28,3 +33,8 @@ services:
       FLASK_ENV: ${FLASK_ENV}
       FLASK_RUN_HOST: ${FLASK_RUN_HOST}
       FLASK_RUN_PORT: ${FLASK_RUN_PORT}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "10"

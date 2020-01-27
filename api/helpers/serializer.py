@@ -79,3 +79,22 @@ def json_to_object(data):
         # print("Trying to fix json structure")
         data = json.dumps(data)
         return json.loads(data, object_hook=_json_object_hook)
+
+
+def filter_items_from_list(txt_list: list, rgx_match: str):
+    """Filter items matching regex
+
+    Arguments:
+        txt_list {list} -- list to filter
+        rgx_match {str} -- regex to look for
+
+    Returns:
+        list -- a list containing the non matching items
+    """
+    import re
+    filtered_list = []
+    for item in txt_list:
+        if not re.search(rgx_match, item):
+            filtered_list.append(item)
+
+    return filtered_list

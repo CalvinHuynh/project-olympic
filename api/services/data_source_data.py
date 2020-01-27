@@ -9,8 +9,7 @@ from api.models import DataSource, DataSourceData
 
 from .data_source import DataSourceService as _DataSourceService
 
-_ALLOWED_ORDER_BY_VALUES = ['asc', 'desc']
-_data_source_service = _DataSourceService
+_ALLOWED_SORT_VALUES = ['asc', 'desc']
 
 
 class DataSourceDataService():
@@ -33,14 +32,14 @@ class DataSourceDataService():
                              'Data with id {} does not exist'.format(data_id))
 
     def get_all_data(self, limit: int, start_date: str, end_date: str,
-                     order_by: str):
+                     sort: str):
         """Retrieves all data
 
         Arguments:
             limit {int} -- limits the number of results
             start_date {str} -- start date
             end_date {str} -- end date
-            order_by {str} -- orders the result by id
+            sort {str} -- sorts the data in ascending or descending order
 
         Returns:
             DataSourceData -- An array of all data source data will be returned
@@ -50,8 +49,8 @@ class DataSourceDataService():
         # Set defaults
         if not limit:
             limit = 20
-        if not order_by:
-            order_by = 'desc'
+        if not sort:
+            sort = 'desc'
 
         if start_date:
             query = query.where(DataSourceData.created_date >= start_date)
@@ -59,15 +58,15 @@ class DataSourceDataService():
             query = query.where(DataSourceData.created_date <= end_date)
 
         # Build the query based on the query params
-        if order_by.lower() in _ALLOWED_ORDER_BY_VALUES:
-            if order_by.lower() == _ALLOWED_ORDER_BY_VALUES[0]:
+        if sort.lower() in _ALLOWED_SORT_VALUES:
+            if sort.lower() == _ALLOWED_SORT_VALUES[0]:
                 query = query.order_by(DataSourceData.id.asc())
             else:
                 query = query.order_by(DataSourceData.id.desc())
         else:
             raise ValueError(
                 HTTPStatus.BAD_REQUEST,
-                'Invalid order_by value, only "asc" or "desc" are allowed')
+                'Invalid sort value, only "asc" or "desc" are allowed')
         try:
             casted_limit = int(limit)
         except ValueError:
@@ -84,7 +83,7 @@ class DataSourceDataService():
 
     def get_all_data_from_data_source(self, data_source_id: int, limit: int,
                                       start_date: str, end_date: str,
-                                      order_by: str):
+                                      sort: str = 'desc'):
         """Retrieves all data from a specific data source
 
         Arguments:
@@ -92,7 +91,7 @@ class DataSourceDataService():
             limit {int} -- limits the number of results
             start_date {str} -- start date
             end_date {str} -- end date
-            order_by {str} -- orders the result by id
+            sort {str} -- sorts the data in ascending or descending order
 
         Returns:
             DataSourceData -- An array of all data source data will be returned
@@ -103,8 +102,8 @@ class DataSourceDataService():
         # Set defaults
         if not limit:
             limit = 20
-        if not order_by:
-            order_by = 'desc'
+        if not sort:
+            sort = 'desc'
 
         if start_date:
             query = query.where(DataSourceData.created_date >= start_date)
@@ -112,15 +111,15 @@ class DataSourceDataService():
             query = query.where(DataSourceData.created_date <= end_date)
 
         # Build the query based on the query params
-        if order_by.lower() in _ALLOWED_ORDER_BY_VALUES:
-            if order_by.lower() == _ALLOWED_ORDER_BY_VALUES[0]:
+        if sort.lower() in _ALLOWED_SORT_VALUES:
+            if sort.lower() == _ALLOWED_SORT_VALUES[0]:
                 query = query.order_by(DataSourceData.id.asc())
             else:
                 query = query.order_by(DataSourceData.id.desc())
         else:
             raise ValueError(
                 HTTPStatus.BAD_REQUEST,
-                'Invalid order_by value, only "asc" or "desc" are allowed')
+                'Invalid sort value, only "asc" or "desc" are allowed')
         try:
             casted_limit = int(limit)
         except ValueError:
@@ -153,7 +152,7 @@ class DataSourceDataService():
         """
         data_source = None
         try:
-            data_source = _data_source_service.get_data_source_by_id(
+            data_source = _DataSourceService.get_data_source_by_id(
                 self, data_source_id)
         except Exception:
             raise

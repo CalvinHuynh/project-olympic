@@ -13,9 +13,6 @@ from api.models import DataSource, DataSourceToken, User
 from .data_source import DataSourceService as _DataSourceService
 from .user import UserService as _UserService
 
-_user_service = _UserService
-_data_source_service = _DataSourceService
-
 
 class DataSourceTokenService():
     def get_token_by_id(self, id: int):
@@ -53,7 +50,7 @@ class DataSourceTokenService():
         data_source: DataSource = None
         try:
             if user_id:
-                user = _user_service.get_user_by_id(self, user_id)
+                user = _UserService.get_user_by_id(self, user_id)
         except Exception:
             raise
 
@@ -61,7 +58,7 @@ class DataSourceTokenService():
             if data_source_id:
                 data_source = dict_to_model(
                     DataSource,
-                    _data_source_service.get_data_source_by_id(
+                    _DataSourceService.get_data_source_by_id(
                         self, data_source_id))
         except Exception:
             raise
@@ -69,7 +66,6 @@ class DataSourceTokenService():
         if user is not None and isinstance(
                 user, User) and data_source is not None and isinstance(
                     data_source, DataSource):
-            created_date = to_utc_datetime()
             last_activity_date = None
             # Set validity of token to 1 year
             expiry_date = to_utc_datetime(
@@ -79,7 +75,7 @@ class DataSourceTokenService():
                 result = model_to_dict(DataSourceToken.create(
                     user=user,
                     data_source=data_source,
-                    created_date=created_date,
+                    created_date=to_utc_datetime(),
                     last_activity_date=last_activity_date,
                     expiry_date=expiry_date,
                     no_of_usage=no_of_usage,

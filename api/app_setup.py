@@ -1,17 +1,19 @@
+from datetime import timedelta
 from http import HTTPStatus
 
 from authlib.flask.client import OAuth
 from flask import Flask, render_template
 from flask_jwt_extended import JWTManager
 
-from api.dashboard.dash_app_1 import add_dash as dash_1
+from api.dashboard.dash_overview import add_dash as dash_overview
 from api.dashboard.dash_routes import blueprint as dash_blueprint
 from api.models import initialize_database
 from api.routes import blueprint_api as api_v1
 from api.routes import blueprint_index as index
-from api.settings import (FLASK_APP_NAME, FLASK_SECRET_KEY, GET_PATH,
-                          GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET,
-                          GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
+from api.settings import (FLASK_APP_NAME, FLASK_PERMANENT_SESSION_LIFETIME,
+                          FLASK_SECRET_KEY, GET_PATH, GITHUB_CLIENT_ID,
+                          GITHUB_CLIENT_SECRET, GOOGLE_CLIENT_ID,
+                          GOOGLE_CLIENT_SECRET, JWT_ACCESS_TOKEN_EXPIRES,
                           JWT_SECRET_KEY, JWT_TOKEN_LOCATION)
 
 jwt = None
@@ -25,8 +27,11 @@ def register_config(app: Flask):
 
     app.config['RESTPLUS_VALIDATE'] = True
     app.config['SECRET_KEY'] = FLASK_SECRET_KEY
+    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(
+        seconds=FLASK_PERMANENT_SESSION_LIFETIME)
     app.config['JWT_TOKEN_LOCATION'] = jwt_locations
     app.config['JWT_SECRET_KEY'] = JWT_SECRET_KEY
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = JWT_ACCESS_TOKEN_EXPIRES
     app.config['JWT_COOKIE_CSRF_PROTECT'] = False
     app.config['GITHUB_CLIENT_ID'] = GITHUB_CLIENT_ID
     app.config['GITHUB_CLIENT_SECRET'] = GITHUB_CLIENT_SECRET
@@ -82,7 +87,7 @@ def create_app():
     # Initializes the routes
     app = register_blueprints(app)
     # Initializes the dash graphs
-    app = dash_1(app)
+    app = dash_overview(app)
 
     # Overwrite default error handling
     @jwt.invalid_token_loader
