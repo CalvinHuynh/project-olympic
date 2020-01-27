@@ -131,7 +131,7 @@ alternative_layout = html.Div([
                         id='date-picker-range',
                         min_date_allowed=dt(2019, 11, 1),
                         start_date=('2019-11-08'),
-                        initial_visible_month=dt(2019, 11, 1),
+                        # initial_visible_month=dt(2019, 11, 1),
                         className=""
                     ),
                 ], className="form-group"),
@@ -226,8 +226,8 @@ def add_dash(server):
         Input('refresh-data-button', 'n_clicks'),
         Input('date-picker-range', 'start_date'),
         Input('date-picker-range', 'end_date'),
-        # Input('time-offset-input', 'value'),
-        # Input('date-offset-dropdown', 'value')
+        # Input('time-offset-input', 'time_input'),
+        # Input('date-offset-dropdown', 'date_offset')
     ])
     @jwt_required_extended
     def update_graph(
@@ -235,8 +235,9 @@ def add_dash(server):
             n_clicks,
             start_date,
             end_date,
-            time_input,
-            date_offset):
+            # time_input,
+            # date_offset
+            ):
         global _data_initialized
         data_source_data_df = DataFrame()
         hourly_weather_data_df = DataFrame()
