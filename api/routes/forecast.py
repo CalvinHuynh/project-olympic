@@ -6,6 +6,8 @@ from flask_restplus import Namespace, Resource
 from api.helpers import ErrorObject, SuccessObject, jwt_required_extended
 from api.services import ForecastService as _ForecastService
 
+from api.settings import FLASK_ENV
+
 api = Namespace('forecast', description="Forecast related operations")
 
 
@@ -20,16 +22,25 @@ class ForecastResources(Resource):
                )
     def post(self, **kwargs):
         """Creates next week crowd forecast"""
-        try:
-            return jsonify(
-                SuccessObject.create_response(
-                    self, HTTPStatus.OK,
-                    _ForecastService.create_next_week_prediction(
-                        self,
-                        number_of_weeks_to_use=request.args.get(
-                            'number_of_weeks'))))
-        except Exception as err:
-            return ErrorObject.create_response(self, err.args[0], err.args[1])
+        if FLASK_ENV == 'development':
+            try:
+                return jsonify(
+                    SuccessObject.create_response(
+                        self, HTTPStatus.OK,
+                        _ForecastService.create_next_week_prediction(
+                            self,
+                            number_of_weeks_to_use=request.args.get(
+                                'number_of_weeks'))))
+            except Exception as err:
+                return ErrorObject.create_response(
+                    self,
+                    err.args[0],
+                    err.args[1])
+        else:
+            return ErrorObject.create_response(
+                self,
+                HTTPStatus.NOT_FOUND,
+                HTTPStatus.NOT_FOUND.phrase)
 
     @jwt_required_extended
     @api.param('start_date',

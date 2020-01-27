@@ -87,6 +87,8 @@ class ForecastService():
         # This service should run every saturday to get the forecast of the
         # following week
         import datetime as dt
+        if not number_of_weeks_to_use:
+            number_of_weeks_to_use = 4
         try:
             if not use_start_of_the_week:
                 week_day = dt.date.today().weekday()
