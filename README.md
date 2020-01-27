@@ -16,9 +16,9 @@ Exploratory project to experiment with unfamiliar technologies such as:
 ## Python packages used
 * Flask web framework (and other extensions extending Flask): Flask is chosen due to the freedom that the framework offers. The project is actively being developed on Git and it has a large community.
 * Peewee ORM: Peewee is chosen over other ORM's (SQLAlchemy, Django) as Peewee has a smaller footprint and has a low learning curve for someone new to Python.
-* Scikit-learn: 
-* Pandas: Commonly used library to create and interact with a tabular data structure.
-* Dash: 
+* Scikit-learn: This library offers several regression methods for this project to use. This library is chosen due to the ease to use, a low learning curve and a handy graph to help the user chose the correct algorithm.
+* Pandas: Library used for creating data frames. It is used to analyze patterns & trends and to prepare the data for machine learning.
+* Dash: Package written on top of Flask, Plotly.js and React.js. Used for building data visualisation apps.
 
 ## Requirement
 * Python 3.3 or higher
@@ -40,7 +40,13 @@ python3 -m venv /path/to/virtual/env # creates a virtual environment using pytho
 source /path/to/virtual/env/bin/activate # activates the virtual environment
 pip3 install -r requirements.txt # installs the packages recursively to the virtual environment
 ```
-
+After installing the packages, run the following command in the terminal to start the server:
+```bash
+cd /path/to/root/of/project
+export FLASK_APP="./api/app.py" # sets the entry point for Flask in the environment
+python -m flask run # starts the flask server
+```
+Access the server at the URL shown in the output of the terminal.
 
 
 ## Formatting and Linting
