@@ -13,13 +13,21 @@ api = Namespace('forecast', description="Forecast related operations")
 @api.route('')
 class ForecastResources(Resource):
     @jwt_required_extended
+    @api.param('number_of_weeks',
+               type=int,
+               description=f'Number of weeks to use for creating'
+               f' the prediction model'
+               )
     def post(self, **kwargs):
         """Creates next week crowd forecast"""
         try:
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _ForecastService.create_next_week_prediction(self)))
+                    _ForecastService.create_next_week_prediction(
+                        self,
+                        number_of_weeks_to_use=request.args.get(
+                            'number_of_weeks'))))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
 
@@ -32,10 +40,10 @@ class ForecastResources(Resource):
                type=str,
                description='End date in YYYY-mm-dd format, e.g: "2019-12-31"')
     @api.param('get_dataframe',
-               type=int,
-               default=0,
-               enum=(0, 1),
-               description='Returns a jsonified dataframe if set to 1')
+               type=bool,
+               default=False,
+               enum=(True, False),
+               description='Returns a jsonified dataframe if set to True')
     def get(self, **kwargs):
         """Retrieves crowd forecast per week"""
         try:

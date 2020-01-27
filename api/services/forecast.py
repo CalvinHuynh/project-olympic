@@ -8,7 +8,8 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.svm import SVR
 
 import api.helpers.data_frame_helper as _df_helper
-from api.helpers import to_utc_datetime, validate_dateformat
+from api.helpers import (to_utc_datetime, validate_dateformat,
+                         validate_string_bool, validate_string_int)
 from api.models import CrowdForecast
 
 from .data_source_data import DataSourceDataService as _DataSourceDataService
@@ -92,7 +93,7 @@ class ForecastService():
             else:
                 week_day = 0  # let day of the week start at 0
             start, end = _df_helper.get_past_weeks(
-                number_of_weeks=number_of_weeks_to_use,
+                number_of_weeks=validate_string_int(number_of_weeks_to_use),
                 use_start_of_the_week=use_start_of_the_week)
             data = _DataSourceDataService.get_all_data_from_data_source(
                 _DataSourceDataService,
@@ -129,7 +130,8 @@ class ForecastService():
             result = CrowdForecast.create(
                 created_date=to_utc_datetime(),
                 date_range_used=f"{start}_{end}",
-                prediction_for_week=next_week_start.isocalendar()[1],
+                number_of_weeks_used=number_of_weeks_to_use,
+                prediction_for_week_nr=next_week_start.isocalendar()[1],
                 prediction_start_date=next_week_start.strftime('%Y-%m-%d'),
                 prediction_end_date=next_week_end.strftime('%Y-%m-%d'),
                 prediction_data=next_week_dataframe.to_json()
@@ -149,7 +151,7 @@ class ForecastService():
             self,
             start_date: str,
             end_date: str,
-            return_data_frame: int = 1):
+            return_data_frame: bool = False):
         """Get crowd forecast for given dates
 
         Arguments:
@@ -159,9 +161,11 @@ class ForecastService():
             format '%Y-%m-%d'
 
         Keyword Arguments:
-            return_data_frame {int} -- If 1, returns a jsonified
-            dataframe (default: {1})
+            return_data_frame {bool} -- If True, returns a jsonified
+            dataframe (default: {False})
         """
+        if not return_data_frame:
+            return_data_frame = False
         try:
             validate_dateformat("start_date", start_date)
             validate_dateformat("end_date", end_date)
@@ -169,11 +173,16 @@ class ForecastService():
             raise ValueError(HTTPStatus.BAD_REQUEST, str(err))
 
         try:
-            result = CrowdForecast.get(
-                (CrowdForecast.prediction_start_date == start_date) &
-                (CrowdForecast.prediction_end_date == end_date)
-            )
-            if int(return_data_frame) == 0:
+            return_data_frame_bool = validate_string_bool(return_data_frame)
+        except ValueError as err:
+            raise ValueError(HTTPStatus.BAD_REQUEST, str(err))
+
+        try:
+            result = CrowdForecast.select().where(
+                CrowdForecast.prediction_start_date == start_date,
+                CrowdForecast.prediction_end_date == end_date).order_by(
+                CrowdForecast.id.desc()).get()
+            if return_data_frame_bool:
                 dataframe = read_json(result.prediction_data)
                 dataframe['created_date'] = to_datetime(
                     dataframe['created_date'], unit='ms')

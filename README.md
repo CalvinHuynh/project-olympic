@@ -1,5 +1,5 @@
 # Project Olympic
-This is an API that periodically looks up the number of clients that are currently connected to the network. It also retrieves the current weather and the weather forecast from [OpenWeatherMap](https://openweathermap.org/).
+This is an API that periodically looks up the number of clients that are currently connected to the network. It also retrieves the current weather and the weather forecast from [OpenWeatherMap](https://openweathermap.org/). 
 
 ## Technologies
 Exploratory project to experiment with unfamiliar technologies such as:
