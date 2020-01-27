@@ -136,29 +136,29 @@ alternative_layout = html.Div([
                     ),
                 ], className="form-group"),
 
-                html.Div([
-                    html.Label('X axis scale'),
-                    html.Div([
-                        dcc.Input(
-                            id='time-offset-input',
-                            type='number',
-                            value=1,
-                        ), dcc.Dropdown(
-                            id='date-offset-dropdown',
-                            placeholder='Time frame',
-                            options=[
-                                {'label': 'minutes', 'value': 'T'},
-                                {'label': 'hours', 'value': 'H'}
-                            ],
-                            value='H',
-                            style=dict(
-                                minWidth='12rem'
-                            )
-                        ),
-                    ], style=dict(
-                        display='inline-flex'
-                    ), className=""),
-                ], className="form-group"),
+                # html.Div([
+                #     html.Label('X axis scale'),
+                #     html.Div([
+                #         dcc.Input(
+                #             id='time-offset-input',
+                #             type='number',
+                #             value=1,
+                #         ), dcc.Dropdown(
+                #             id='date-offset-dropdown',
+                #             placeholder='Time frame',
+                #             options=[
+                #                 {'label': 'minutes', 'value': 'T'},
+                #                 {'label': 'hours', 'value': 'H'}
+                #             ],
+                #             value='H',
+                #             style=dict(
+                #                 minWidth='12rem'
+                #             )
+                #         ),
+                #     ], style=dict(
+                #         display='inline-flex'
+                #     ), className=""),
+                # ], className="form-group"),
 
                 html.Div([
                     html.Label('Retrieve latest data'),
@@ -226,8 +226,8 @@ def add_dash(server):
         Input('refresh-data-button', 'n_clicks'),
         Input('date-picker-range', 'start_date'),
         Input('date-picker-range', 'end_date'),
-        Input('time-offset-input', 'value'),
-        Input('date-offset-dropdown', 'value')
+        # Input('time-offset-input', 'value'),
+        # Input('date-offset-dropdown', 'value')
     ])
     @jwt_required_extended
     def update_graph(
