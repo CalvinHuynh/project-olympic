@@ -1,4 +1,5 @@
 # Project Olympic
+[![Build Status](https://travis-ci.com/CalvinHuynh/project-olympic.svg?branch=master)](https://travis-ci.com/CalvinHuynh/project-olympic)  
 The goal of this project is to create an API that offers endpoints for data acquisition and predictions.  
 The `api/jobs.py` file contains three cronjobs that periodically do the following:
 1. Retrieve the current weather every 10th minute
