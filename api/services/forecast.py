@@ -47,9 +47,10 @@ def _add_time_characteristics(data_frame, time_unit: str = '1H'):
     return data_frame
 
 
-def _create_next_week_dataframe(day_of_week: int = 0):
+def _create_next_week_dataframe(start_date=None, day_of_week: int = 0):
     next_week_dataframe = DataFrame(
-        {'created_date': _df_helper.get_future_timestamps(day_of_week)})
+        {'created_date': _df_helper.get_future_timestamps(
+            start_date, day_of_week)})
     next_week_dataframe['created_date'] = to_datetime(
         next_week_dataframe['created_date'], unit='s')
     next_week_dataframe['day_of_week'] = next_week_dataframe[
@@ -70,11 +71,15 @@ def _create_next_week_dataframe(day_of_week: int = 0):
 class ForecastService():
     def create_next_week_prediction(
             self,
+            start_date=None,
             number_of_weeks_to_use: int = 4,
             use_start_of_the_week: bool = True):
         """Create next week prediction
 
         Keyword Arguments:
+            start_date -- start_date is the starting point to get the data
+             of the past week and to calculate the following week.
+             (default : {None})
             number_of_weeks_to_use {int} -- number of weeks to use as input
             data (default: {3})
             use_start_of_the_week {bool} -- boolean to use the start of the
@@ -87,14 +92,28 @@ class ForecastService():
         # This service should run every saturday to get the forecast of the
         # following week
         import datetime as dt
+        if start_date:
+            validate_dateformat('start_date', start_date)
+            start_date = dt.datetime.strptime(start_date, '%Y-%m-%d').date()
+
         if not number_of_weeks_to_use:
             number_of_weeks_to_use = 4
+
+        if not use_start_of_the_week:
+            use_start_of_the_week = True
+
+        try:
+            use_start_of_the_week = validate_string_bool(use_start_of_the_week)
+        except ValueError as err:
+            raise ValueError(HTTPStatus.BAD_REQUEST, str(err))
+
         try:
             if not use_start_of_the_week:
                 week_day = dt.date.today().weekday()
             else:
                 week_day = 0  # let day of the week start at 0
             start, end = _df_helper.get_past_weeks(
+                start_date=start_date,
                 number_of_weeks=validate_string_int(number_of_weeks_to_use),
                 use_start_of_the_week=use_start_of_the_week)
             data = _DataSourceDataService.get_all_data_from_data_source(
@@ -107,7 +126,8 @@ class ForecastService():
 
             data_frame = _transform_data_to_dataframe(data)
             data_frame = _add_time_characteristics(data_frame)
-            next_week_dataframe = _create_next_week_dataframe(week_day)
+            next_week_dataframe = _create_next_week_dataframe(
+                start_date, week_day)
             next_week_start = dt.datetime.fromtimestamp(
                 next_week_dataframe.iloc[[0]]['created_date']
                 .values[0].astype(int) // 10**9)
@@ -140,12 +160,12 @@ class ForecastService():
             )
             return model_to_dict(result)
         except IntegrityError as err:
-            print(err)
+            print(err)  # replace with a logger
             raise ValueError(HTTPStatus.CONFLICT,
                              f"Forecast already exists using data range: "
                              f"{start} - {end}")
         except Exception as err:
-            print(err)
+            print(err)  # replace with a logger
             raise ValueError(HTTPStatus.INTERNAL_SERVER_ERROR,
                              "Internal error has occured.")
 

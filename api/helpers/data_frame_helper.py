@@ -1,5 +1,7 @@
-from pandas import DataFrame, Series
 from numpy import int as np_int
+from pandas import DataFrame, Series
+
+from .validators import validate_dateformat
 
 
 def filter_json(expression: str, json_data: object):
@@ -253,12 +255,15 @@ def fill_missing_values_using_forecast(
 
 
 def get_future_timestamps(
+        start_date=None,
         day_of_week: int = 0,
         timestamp: int = 3600,
         number_of_timestamps: int = 168):
     """Calculates the future timestamps from a given day of the week.
 
     Keyword Arguments:
+        start_date -- start_date to base the future timestamps from.
+        If start_date is None, today is used (default : {None})
         day_of_week {int} -- calculate next day of the week
         (0-6, where 0 is monday and 6 is sunday)  (default: {0})
         timestamp {int} -- timestamp (default: {3600})
@@ -270,9 +275,14 @@ def get_future_timestamps(
     """
     import datetime as dt
     future_timestamps = []
-    today = dt.date.today()
-    next_day_of_week = today + dt.timedelta(
-        (day_of_week - today.weekday()) % 7)
+    if not start_date:
+        start_date = dt.date.today()
+    else:
+        validate_dateformat('start_date', start_date)
+        if not isinstance(start_date, dt.date):
+            start_date = dt.datetime.strptime(start_date, '%Y-%m-%d').date()
+    next_day_of_week = start_date + dt.timedelta(
+        (day_of_week - start_date.weekday()) % 7)
     timestamp_next_day_of_week = int(
         (next_day_of_week - dt.date(1970, 1, 1)).total_seconds())
 
@@ -301,6 +311,7 @@ def get_last_month():
 
 
 def get_past_weeks(
+        start_date=None,
         number_of_weeks: int = 3,
         use_start_of_the_week: bool = True):
     """Retrieves the past weeks
@@ -316,13 +327,19 @@ def get_past_weeks(
         the past.
     """
     import datetime as dt
-    if use_start_of_the_week:
-        start_week = dt.date.today() - dt.timedelta(
-            days=dt.date.today().weekday(), weeks=number_of_weeks)
-        end_week = dt.date.today() - dt.timedelta(
-            days=dt.date.today().weekday())
+    if not start_date:
+        start_date = dt.date.today()
     else:
-        start_week = dt.date.today() - dt.timedelta(weeks=number_of_weeks)
-        end_week = dt.date.today()
+        validate_dateformat('start_date', start_date)
+        if not isinstance(start_date, dt.date):
+            start_date = dt.datetime.strptime(start_date, '%Y-%m-%d').date()
+    if use_start_of_the_week:
+        start_week = start_date - dt.timedelta(
+            days=start_date.weekday(), weeks=number_of_weeks)
+        end_week = start_date - dt.timedelta(
+            days=start_date.weekday())
+    else:
+        start_week = start_date - dt.timedelta(weeks=number_of_weeks)
+        end_week = start_date
 
     return start_week, end_week
