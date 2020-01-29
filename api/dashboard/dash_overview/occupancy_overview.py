@@ -136,30 +136,6 @@ alternative_layout = html.Div([
                     ),
                 ], className="form-group"),
 
-                # html.Div([
-                #     html.Label('X axis scale'),
-                #     html.Div([
-                #         dcc.Input(
-                #             id='time-offset-input',
-                #             type='number',
-                #             value=1,
-                #         ), dcc.Dropdown(
-                #             id='date-offset-dropdown',
-                #             placeholder='Time frame',
-                #             options=[
-                #                 {'label': 'minutes', 'value': 'T'},
-                #                 {'label': 'hours', 'value': 'H'}
-                #             ],
-                #             value='H',
-                #             style=dict(
-                #                 minWidth='12rem'
-                #             )
-                #         ),
-                #     ], style=dict(
-                #         display='inline-flex'
-                #     ), className=""),
-                # ], className="form-group"),
-
                 html.Div([
                     html.Label('Retrieve latest data'),
                     html.Button('Refresh data', id='refresh-data-button',

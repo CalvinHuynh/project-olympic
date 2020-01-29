@@ -54,3 +54,10 @@ Access the server at the URL shown in the output of the terminal.
 ## Formatting and Linting
 In this project [yapf](https://github.com/google/yapf) is used to format the code.  
 For linting [flake8](https://gitlab.com/pycqa/flake8) is used. Before committing, please ensure that the codebase contains no linting errors. To do so, run the following command `$ flake8` at the root of the project.
+
+
+## TODO:
+- [ ] Add unit tests
+- [ ] Add logging
+- [ ] Add outlier detection in data
+- [ ] 
