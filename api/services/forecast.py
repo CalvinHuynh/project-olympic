@@ -162,8 +162,11 @@ class ForecastService():
         except IntegrityError as err:
             print(err)  # replace with a logger
             raise ValueError(HTTPStatus.CONFLICT,
-                             f"Forecast already exists using data range: "
-                             f"{start} - {end}")
+                             f"A forecast already exists with parameters:"
+                             f"date_range_used: from {start} - {end} "
+                             f"prediction_for_date: from "
+                             f"{next_week_start.strftime('%Y-%m-%d')} - "
+                             f"{next_week_end.strftime('%Y-%m-%d')}")
         except Exception as err:
             print(err)  # replace with a logger
             raise ValueError(HTTPStatus.INTERNAL_SERVER_ERROR,
