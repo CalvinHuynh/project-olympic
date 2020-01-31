@@ -294,7 +294,7 @@ def get_future_timestamps(
     return future_timestamps
 
 
-def get_last_month():
+def get_start_and_end_of_month():
     """Retrieves the last month
 
     Returns:
@@ -302,12 +302,10 @@ def get_last_month():
         the previous month.
     """
     import datetime as dt
-    prev_month_end = dt.date.today().replace(day=1) - dt.timedelta(days=1)
-    prev_month_start = prev_month_end.replace(day=1)
-    return {
-        'month_start': prev_month_start,
-        'month_end': prev_month_end
-    }
+    from dateutil.relativedelta import relativedelta
+    month_start = dt.date.today().replace(day=1)
+    month_end = month_start + relativedelta(months=1) - dt.timedelta(days=1)
+    return month_start, month_end
 
 
 def get_past_weeks(
