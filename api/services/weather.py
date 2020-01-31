@@ -3,7 +3,7 @@ from http import HTTPStatus
 
 from playhouse.shortcuts import model_to_dict
 
-from api.helpers import to_utc_datetime, filter_items_from_list
+from api.helpers import to_utc_datetime, filter_items_from_list, validate_dateformat
 from api.models import Weather, Forecast
 from api.settings import OPEN_WEATHER_API_KEY
 from api.wrapper import OpenWeatherClient
@@ -70,9 +70,19 @@ class WeatherService():
             sort = 'desc'
 
         if start_date:
-            query = query.where(Weather.created_date >= start_date)
+            try:
+                validate_dateformat('start_date', start_date)
+                query = query.where(Weather.created_date >= start_date)
+            except ValueError as err:
+                raise ValueError(HTTPStatus.BAD_REQUEST,
+                                 str(err))
         if end_date:
-            query = query.where(Weather.created_date <= end_date)
+            try:
+                validate_dateformat('end_date', end_date)
+                query = query.where(Weather.created_date <= end_date)
+            except ValueError as err:
+                raise ValueError(HTTPStatus.BAD_REQUEST,
+                                 str(err))
 
         if order_by.strip().lower() in obj_attributes:
             order_by_field = getattr(Weather, order_by.strip().lower())

@@ -4,7 +4,7 @@ from peewee import DoesNotExist, IntegrityError
 from playhouse.shortcuts import dict_to_model, model_to_dict
 
 from api.dto import CreateDataSourceDataDto
-from api.helpers import to_utc_datetime
+from api.helpers import to_utc_datetime, validate_dateformat
 from api.models import DataSource, DataSourceData
 
 from .data_source import DataSourceService as _DataSourceService
@@ -31,6 +31,7 @@ class DataSourceDataService():
             raise ValueError(HTTPStatus.NOT_FOUND,
                              'Data with id {} does not exist'.format(data_id))
 
+
     def get_all_data(self, limit: int, start_date: str, end_date: str,
                      sort: str):
         """Retrieves all data
@@ -44,6 +45,7 @@ class DataSourceDataService():
         Returns:
             DataSourceData -- An array of all data source data will be returned
         """
+        # flake8: noqa: C901
         all_data_array = []
         query = DataSourceData.select()
         # Set defaults
@@ -53,9 +55,19 @@ class DataSourceDataService():
             sort = 'desc'
 
         if start_date:
-            query = query.where(DataSourceData.created_date >= start_date)
+            try:
+                validate_dateformat('start_date', start_date)
+                query = query.where(DataSourceData.created_date >= start_date)
+            except ValueError as err:
+                raise ValueError(HTTPStatus.BAD_REQUEST,
+                                 str(err))
         if end_date:
-            query = query.where(DataSourceData.created_date <= end_date)
+            try:
+                validate_dateformat('end_date', end_date)
+                query = query.where(DataSourceData.created_date <= end_date)
+            except ValueError as err:
+                raise ValueError(HTTPStatus.BAD_REQUEST,
+                                 str(err))
 
         # Build the query based on the query params
         if sort.lower() in _ALLOWED_SORT_VALUES:
@@ -106,9 +118,19 @@ class DataSourceDataService():
             sort = 'desc'
 
         if start_date:
-            query = query.where(DataSourceData.created_date >= start_date)
+            try:
+                validate_dateformat('start_date', start_date)
+                query = query.where(DataSourceData.created_date >= start_date)
+            except ValueError as err:
+                raise ValueError(HTTPStatus.BAD_REQUEST,
+                                 str(err))
         if end_date:
-            query = query.where(DataSourceData.created_date <= end_date)
+            try:
+                validate_dateformat('end_date', end_date)
+                query = query.where(DataSourceData.created_date <= end_date)
+            except ValueError as err:
+                raise ValueError(HTTPStatus.BAD_REQUEST,
+                                 str(err))
 
         # Build the query based on the query params
         if sort.lower() in _ALLOWED_SORT_VALUES:
