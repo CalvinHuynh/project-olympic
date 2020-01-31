@@ -2,7 +2,7 @@ from datetime import timedelta
 from http import HTTPStatus
 
 from authlib.flask.client import OAuth
-from flask import Flask, render_template
+from flask import Flask, render_template, g
 from flask_jwt_extended import JWTManager
 
 from api.dashboard.dash_overview import add_dash as dash_overview
@@ -76,6 +76,24 @@ def register_blueprints(app: Flask):
     return app
 
 
+def register_request_handlers(app: Flask):
+    from api.models import database
+    # request handler to open the database connection
+    @app.before_request
+    def before_request():
+        g.db = database
+        g.db.connect()
+
+    # request handler to close the database connection
+    @app.after_request
+    def after_request(response):
+        g.db = database
+        g.db.close()
+        return response
+
+    return app
+
+
 def create_app():
     app = Flask(FLASK_APP_NAME if FLASK_APP_NAME else __name__,
                 static_url_path='',
@@ -84,6 +102,7 @@ def create_app():
     app = register_config(app)
     app = register_extensions(app)
     app = register_errorpages(app)
+    app = register_request_handlers(app)
     # Initializes the routes
     app = register_blueprints(app)
     # Initializes the dash graphs

@@ -1,4 +1,6 @@
 # Project Olympic
+[![Build Status](https://travis-ci.com/CalvinHuynh/project-olympic.svg?branch=master)](https://travis-ci.com/CalvinHuynh/project-olympic)  
+## Description
 The goal of this project is to create an API that offers endpoints for data acquisition and predictions.  
 The `api/jobs.py` file contains three cronjobs that periodically do the following:
 1. Retrieve the current weather every 10th minute
@@ -52,3 +54,9 @@ Access the server at the URL shown in the output of the terminal.
 ## Formatting and Linting
 In this project [yapf](https://github.com/google/yapf) is used to format the code.  
 For linting [flake8](https://gitlab.com/pycqa/flake8) is used. Before committing, please ensure that the codebase contains no linting errors. To do so, run the following command `$ flake8` at the root of the project.
+
+
+## TODO:
+- [ ] Add unit tests
+- [ ] Add logging
+- [ ] Add outlier detection in data
