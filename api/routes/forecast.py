@@ -45,10 +45,16 @@ class ForecastResources(Resource):
                             use_start_of_the_week=request.args.get(
                                 'use_start_of_the_week'))))
             except Exception as err:
-                return ErrorObject.create_response(
-                    self,
-                    err.args[0],
-                    err.args[1])
+                if (len(err.args) == 1):
+                    return ErrorObject.create_response(
+                        self,
+                        HTTPStatus.BAD_REQUEST,
+                        str(err))
+                else:
+                    return ErrorObject.create_response(
+                        self,
+                        err.args[0],
+                        err.args[1])
         else:
             return ErrorObject.create_response(
                 self,

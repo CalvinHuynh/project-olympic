@@ -20,7 +20,7 @@ def _get_start_and_end_of_week():
     import datetime as dt
     today = dt.datetime.today()
     start_of_week = today - dt.timedelta(days=today.weekday())
-    end_of_week = start_of_week + dt.timedelta(days=7)
+    end_of_week = start_of_week + dt.timedelta(days=6)
     return start_of_week, end_of_week
 
 
@@ -61,8 +61,6 @@ def _retrieve_current_clients(data_source_id: int = 2):
     if not data_source_data_df.empty:
         data_source_data_df['created_date'] = data_source_data_df[
             'created_date'].map(lambda x: x.replace(second=0))
-        data_source_data_df = data_source_data_df.resample(
-            '1H', on='created_date').mean().reset_index()
     return data_source_data_df
 
 
@@ -189,19 +187,24 @@ def add_dash(server):
                        color='rgb(63, 81, 181)'
             )))
 
-        if not current_clients_df.empty:
-            # filter current clients df
-            start_hour, end_hour = _get_current_hour_range()
-            current_clients_df_filtered = crowd_forecast_df[(
-                crowd_forecast_df['created_date'] >= start_hour
-            )]
-            current_clients_df_filtered = crowd_forecast_df[(
-                crowd_forecast_df['created_date'] <= start_hour
-            )]
+        # filter current clients
+        start_hour, end_hour = _get_current_hour_range()
+        current_clients_df[
+            'created_date'] = current_clients_df[
+            'created_date'].astype('datetime64[ns, Europe/Amsterdam]')
+        current_clients_df['day_of_week'] = current_clients_df[
+            'created_date'].dt.dayofweek
+        current_clients_df = current_clients_df[(
+            current_clients_df['day_of_week'] == selected_dropdown_value
+        )]
+        current_clients_df_filtered = current_clients_df[(
+            current_clients_df['created_date'] >= start_hour
+        )]
+        current_clients_df_filtered = current_clients_df_filtered[(
+            current_clients_df_filtered['created_date'] <= end_hour
+        )]
 
-            current_clients_df_filtered[
-                'created_date'] = current_clients_df_filtered[
-                'created_date'].astype('datetime64[ns, Europe/Amsterdam]')
+        if not current_clients_df_filtered.empty:
             figure.add_trace(
                 go.Bar(x=current_clients_df_filtered['created_date'],
                        y=current_clients_df_filtered['no_of_clients'],
@@ -212,8 +215,8 @@ def add_dash(server):
                 )))
 
         figure.update_yaxes(
-            range=[0, crowd_forecast_df.predicted_no_of_clients.max() + 5],
-            dtick=10,
+            range=[0, current_clients_df.no_of_clients.max() + 5],
+            dtick=5,
             autorange=False,
             showticklabels=False
         )
@@ -221,7 +224,7 @@ def add_dash(server):
         figure.update_layout(
             title=f"Predicted crowdedness for "
             f"{day_of_week_names[selected_dropdown_value]}",
-            margin={'l': 20, 'r': 20, 't': 50, 'b': 0}
+            margin={'l': 20, 'r': 20, 't': 50, 'b': 0},
         )
 
         return figure
