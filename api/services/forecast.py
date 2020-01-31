@@ -34,16 +34,16 @@ def _transform_data_to_dataframe(data):
 def _add_time_characteristics(data_frame, time_unit: str = '1H'):
     data_frame = data_frame.resample(
         time_unit, on='created_date').mean().reset_index()
-    data_frame['day_of_week'] = data_frame['created_date'].dt.day_name()
+    data_frame['day_of_week'] = data_frame['created_date'].dt.dayofweek
     data_frame['date_hour'] = data_frame['created_date'].dt.hour
     data_frame['no_of_clients'].round(2)
     data_frame['is_weekend'] = data_frame['day_of_week'].apply(
-        lambda x: _df_helper.item_in_list(x, ['Saturday', 'Sunday'])
+        lambda x: _df_helper.item_in_list(x, [5, 6])
     )
     del data_frame['id']
     del data_frame['data_source']
-    for item in ['day_of_week', 'is_weekend']:
-        data_frame[item] = _label_encoder.fit_transform(data_frame[item])
+    data_frame['is_weekend'] = _label_encoder.fit_transform(
+        data_frame['is_weekend'])
     return data_frame
 
 
@@ -54,17 +54,16 @@ def _create_next_week_dataframe(start_date=None, day_of_week: int = 0):
     next_week_dataframe['created_date'] = to_datetime(
         next_week_dataframe['created_date'], unit='s')
     next_week_dataframe['day_of_week'] = next_week_dataframe[
-        'created_date'].dt.day_name()
+        'created_date'].dt.dayofweek
     next_week_dataframe['date_hour'] = next_week_dataframe[
         'created_date'].dt.hour
     next_week_dataframe['is_weekend'] = next_week_dataframe[
         'day_of_week'].apply(
-        lambda x: _df_helper.item_in_list(x, ['Saturday', 'Sunday'])
+        lambda x: _df_helper.item_in_list(x, [5, 6])
     )
 
-    for item in ['day_of_week', 'is_weekend']:
-        next_week_dataframe[item] = _label_encoder.fit_transform(
-            next_week_dataframe[item])
+    next_week_dataframe['is_weekend'] = _label_encoder.fit_transform(
+        next_week_dataframe['is_weekend'])
     return next_week_dataframe
 
 
