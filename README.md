@@ -60,4 +60,3 @@ For linting [flake8](https://gitlab.com/pycqa/flake8) is used. Before committing
 - [ ] Add unit tests
 - [ ] Add logging
 - [ ] Add outlier detection in data
-- [ ] 
