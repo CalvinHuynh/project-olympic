@@ -2,12 +2,10 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from api.services import DataSourceDataService as _DataSourceDataService
 from api.services import WeatherService as _WeatherService
+from api.services import ForecastService as _ForecastService
 # from api.wrapper.browser.web import AutomatedWebDriver, WebDriverType
 
 from .settings import NUMBER_OF_BACKGROUND_WORKERS
-
-_weather_service = _WeatherService
-_data_source_data_service = _DataSourceDataService
 
 executors = {
     'default': {
@@ -21,13 +19,17 @@ bg_scheduler = BackgroundScheduler(executors=executors)
 
 @bg_scheduler.scheduled_job('cron', minute='*/10')
 def get_weather():
-    _weather_service.get_current_weather(_weather_service)
+    _WeatherService.get_current_weather(_WeatherService)
 
 
 @bg_scheduler.scheduled_job('cron', minute='0', hour='20')
 def get_weather_forecast():
-    _weather_service.get_weather_forecast_5d_3h(_weather_service)
+    _DataSourceDataService.get_weather_forecast_5d_3h(_DataSourceDataService)
 
+
+@bg_scheduler.scheduled_job('cron', minute='0', hour='20', day_of_week='sat')
+def create_next_week_forecast():
+    _ForecastService.create_next_week_prediction(_ForecastService)
 
 # @bg_scheduler.scheduled_job('cron', minute='*/10')
 # def get_clients():
