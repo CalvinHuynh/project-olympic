@@ -31,7 +31,7 @@ class DataSourceDataService():
             raise ValueError(HTTPStatus.NOT_FOUND,
                              'Data with id {} does not exist'.format(data_id))
 
-
+    # flake8: noqa: C901
     def get_all_data(self, limit: int, start_date: str, end_date: str,
                      sort: str):
         """Retrieves all data
@@ -45,7 +45,6 @@ class DataSourceDataService():
         Returns:
             DataSourceData -- An array of all data source data will be returned
         """
-        # flake8: noqa: C901
         all_data_array = []
         query = DataSourceData.select()
         # Set defaults
@@ -131,7 +130,6 @@ class DataSourceDataService():
             except ValueError as err:
                 raise ValueError(HTTPStatus.BAD_REQUEST,
                                  str(err))
-
         # Build the query based on the query params
         if sort.lower() in _ALLOWED_SORT_VALUES:
             if sort.lower() == _ALLOWED_SORT_VALUES[0]:
