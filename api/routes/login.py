@@ -9,7 +9,7 @@ from playhouse.shortcuts import dict_to_model, model_to_dict
 
 from api.helpers import ErrorObject, to_utc_datetime
 from api.models import User
-from api.services import UserService
+from api.services import UserService as _UserService
 from api.settings import (ALLOWED_OAUTH_CLIENTS as _ALLOWED_OAUTH_CLIENTS,
                           FLASK_APP_NAME as _FLASK_APP_NAME)
 
@@ -21,13 +21,11 @@ SUPPORTED_OAUTH_PROVIDERS = []
 for client in _CLIENTS:
     SUPPORTED_OAUTH_PROVIDERS.append(getattr(sys.modules['loginpass'], client))
 
-user_service = UserService
-
 
 def handle_authorize(remote, token, user_info):
     user = None
     try:
-        user = user_service.get_user_by_email(UserService, user_info['email'])
+        user = _UserService.get_user_by_email(_UserService, user_info['email'])
         user = dict_to_model(User, user)
         user.last_login_date = to_utc_datetime()
         user.save()
@@ -36,7 +34,7 @@ def handle_authorize(remote, token, user_info):
         pass
     try:
         if user is None:
-            user = user_service.create_user(UserService,
+            user = _UserService.create_user(_UserService,
                                             email=user_info['email'])
 
         identity_object = {
@@ -53,7 +51,7 @@ def handle_authorize(remote, token, user_info):
 
         return response
     except Exception as err:
-        return ErrorObject.create_response(UserService, err.args[0],
+        return ErrorObject.create_response(_UserService, err.args[0],
                                            err.args[1])
 
 
