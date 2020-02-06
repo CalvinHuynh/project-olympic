@@ -61,6 +61,11 @@ def _retrieve_current_clients(data_source_id: int = 2):
     if not data_source_data_df.empty:
         data_source_data_df['created_date'] = data_source_data_df[
             'created_date'].map(lambda x: x.replace(second=0))
+        # substract the number of always connected clients
+        data_source_data_df['no_of_clients'] = data_source_data_df[
+            'no_of_clients'] - 8
+        data_source_data_df.loc[
+            data_source_data_df['no_of_clients'] < 0, 'no_of_clients'] = 0
     return data_source_data_df
 
 
