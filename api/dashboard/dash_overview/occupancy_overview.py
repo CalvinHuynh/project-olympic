@@ -16,87 +16,6 @@ url_base = '/dash/app1/'
 _data_initialized = False
 
 layout = html.Div([
-    html.H1('Occupancy Viewer'),
-    html.Div(
-        [
-            html.Div(
-                [
-                    dcc.Dropdown(
-                        id='my-dropdown',
-                        options=[{
-                            'label': 'Current temperature',
-                            'value': 'temp'
-                        }, {
-                            'label': 'Minimum temperature',
-                            'value': 'temp_min'
-                        }, {
-                            'label': 'Maximum temperature',
-                            'value': 'temp_max'
-                        }],
-                        value=['temp'],
-                        multi=True)
-                ],
-                style=dict(
-                    width='40%', display='table-cell',
-                    verticalAlign='middle')),
-            html.Div([
-                dcc.DatePickerRange(
-                    id='date-picker-range',
-                    min_date_allowed=dt(2019, 11, 1),
-                    start_date=('2019-11-08'),
-                    initial_visible_month=dt(2019, 11, 1),
-
-                ),
-            ], style=dict(
-                width='20%', display='table-cell',
-                verticalAlign='middle'
-            )),
-            html.Div([
-                dcc.Input(
-                    id='time-offset-input',
-                    type='number',
-                    value=0
-                ),
-            ], style=dict(
-                width='10%', display='table-cell',
-                verticalAlign='middle'
-            )),
-            html.Div([
-                dcc.Dropdown(
-                    id='date-offset-dropdown',
-                    options=[
-                        {'label': 'seconds', 'value': 'S'},
-                        {'label': 'minutes', 'value': 'T'},
-                        {'label': 'hours', 'value': 'H'}
-                    ],
-                ),
-            ], style=dict(
-                width='10%', display='table-cell',
-                verticalAlign='middle'
-            )),
-            html.Div(
-                [html.Button('Refresh data', id='refresh-data-button',
-                             type='button', className='button')
-                 ],
-                style=dict(
-                    width='10%', display='table-cell',
-                    verticalAlign='middle')),
-        ],
-        style=dict(
-            width='100%',
-            display='table',
-            className='row'
-        )),
-    html.Div(
-        [dcc.Graph(id='occupancy-graph')],
-        style=dict(
-            display='inline-block',
-            width='100%',
-            className='row'
-        ))
-])
-
-alternative_layout = html.Div([
     html.Div([
         html.Div([
             html.H1('Occupancy Overview'),
@@ -135,30 +54,6 @@ alternative_layout = html.Div([
                         className=""
                     ),
                 ], className="form-group"),
-
-                # html.Div([
-                #     html.Label('X axis scale'),
-                #     html.Div([
-                #         dcc.Input(
-                #             id='time-offset-input',
-                #             type='number',
-                #             value=1,
-                #         ), dcc.Dropdown(
-                #             id='date-offset-dropdown',
-                #             placeholder='Time frame',
-                #             options=[
-                #                 {'label': 'minutes', 'value': 'T'},
-                #                 {'label': 'hours', 'value': 'H'}
-                #             ],
-                #             value='H',
-                #             style=dict(
-                #                 minWidth='12rem'
-                #             )
-                #         ),
-                #     ], style=dict(
-                #         display='inline-flex'
-                #     ), className=""),
-                # ], className="form-group"),
 
                 html.Div([
                     html.Label('Retrieve latest data'),
@@ -219,7 +114,7 @@ def _retrieve_data(data_source_id: int = 2):
 def add_dash(server):
     dash_app = Dash(__name__, server=server, url_base_pathname=url_base,
                     assets_folder=GET_PATH() + '/static')
-    apply_layout(dash_app, alternative_layout)
+    apply_layout(dash_app, layout)
 
     @dash_app.callback(Output('occupancy-graph', 'figure'), [
         Input('my-dropdown', 'value'),

@@ -15,11 +15,21 @@ api = Namespace('forecast', description="Forecast related operations")
 @api.route('')
 class ForecastResources(Resource):
     @jwt_required_extended
+    @api.param('start_date',
+               type=str,
+               description='Start date in YYYY-mm-dd format, e.g: "2019-12-31"'
+               )
     @api.param('number_of_weeks',
                type=int,
                description=f'Number of weeks to use for creating'
                f' the prediction model'
                )
+    @api.param('use_start_of_the_week',
+               type=bool,
+               default=False,
+               enum=(True, False),
+               description=f'If true, dates will be set at the start of the'
+               f' week on monday')
     def post(self, **kwargs):
         """Creates next week crowd forecast"""
         if FLASK_ENV == 'development':
@@ -29,8 +39,11 @@ class ForecastResources(Resource):
                         self, HTTPStatus.OK,
                         _ForecastService.create_next_week_prediction(
                             self,
+                            start_date=request.args.get('start_date'),
                             number_of_weeks_to_use=request.args.get(
-                                'number_of_weeks'))))
+                                'number_of_weeks'),
+                            use_start_of_the_week=request.args.get(
+                                'use_start_of_the_week'))))
             except Exception as err:
                 return ErrorObject.create_response(
                     self,
