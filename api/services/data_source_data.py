@@ -31,7 +31,6 @@ class DataSourceDataService():
             raise ValueError(HTTPStatus.NOT_FOUND,
                              'Data with id {} does not exist'.format(data_id))
 
-    # flake8: noqa: C901
     def get_all_data(self, limit: int, start_date: str, end_date: str,
                      sort: str):
         """Retrieves all data

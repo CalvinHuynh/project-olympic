@@ -11,9 +11,6 @@ from api.services import (UserService as _UserService, DataSourceTokenService
 
 api = Namespace('user', description="User related operations")
 
-# TODO: add DI
-_user_service = _UserService
-_data_source_token_service = _DataSourceTokenService
 
 username_dto = api.model(
     'SetUsernameDto',
@@ -32,8 +29,8 @@ class UserResource(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _user_service.get_user_by_id(self, token['user']['id'],
-                                                 True)))
+                    _UserService.get_user_by_id(self, token['user']['id'],
+                                                True)))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
 
@@ -46,8 +43,8 @@ class UserResource(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _user_service.set_username(self, token['user']['id'],
-                                               api.payload['username'])))
+                    _UserService.set_username(self, token['user']['id'],
+                                              api.payload['username'])))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
 
@@ -64,7 +61,7 @@ class UserDataSourceTokensResource(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _user_service.get_data_source_tokens_by_user(
+                    _UserService.get_data_source_tokens_by_user(
                         self, token['user']['id'])))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
@@ -84,7 +81,7 @@ class UserDataSourceTokenAdminRevokeResource(Resource):
                 return jsonify(
                     SuccessObject.create_response(
                         self, HTTPStatus.OK,
-                        _data_source_token_service.admin_revoke_token(
+                        _DataSourceTokenService.admin_revoke_token(
                             self, token_id)))
             except Exception as err:
                 return ErrorObject.create_response(self, err.args[0],
@@ -108,7 +105,7 @@ class UserDataSourceTokenRevokeResource(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _user_service.deactivate_token_of_user(
+                    _UserService.deactivate_token_of_user(
                         self, token['user']['id'], token_id)))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
@@ -127,7 +124,7 @@ class GetUserResource(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _user_service.get_user_by_username(self, name)))
+                    _UserService.get_user_by_username(self, name)))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
 
@@ -145,7 +142,7 @@ class UserDataSourcesResource(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _user_service.get_data_source_by_user(self,
-                                                          username=name)))
+                    _UserService.get_data_source_by_user(self,
+                                                         username=name)))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])

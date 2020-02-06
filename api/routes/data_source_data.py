@@ -16,9 +16,6 @@ create_data_source_data_dto = api.model('CreateDataSourceDataDto', {
     fields.Integer(description="number of clients", example=4),
 })
 
-_data_source_data_service = _DataSourceDataService
-_weather_service = _WeatherService
-
 
 @api.doc(security='JWT')
 @api.route('')
@@ -46,7 +43,7 @@ class DataResources(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _data_source_data_service.get_all_data(
+                    _DataSourceDataService.get_all_data(
                         self,
                         limit=request.args.get('limit'),
                         start_date=request.args.get('start_date'),
@@ -66,7 +63,7 @@ class DataResources(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _data_source_data_service.post_data(
+                    _DataSourceDataService.post_data(
                         self, token['data_source_token']['data_source'],
                         kwargs['tupled_output'])))
         except Exception as err:
@@ -100,7 +97,7 @@ class SpecificDataSourceResource(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _data_source_data_service.get_all_data_from_data_source(
+                    _DataSourceDataService.get_all_data_from_data_source(
                         self,
                         data_source_id=data_source_id,
                         limit=request.args.get('limit'),
@@ -122,7 +119,7 @@ class SincleDataResources(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _data_source_data_service.get_one_data_point(
+                    _DataSourceDataService.get_one_data_point(
                         self, data_id)))
         except Exception as err:
             return ErrorObject.create_response(self, err.args[0], err.args[1])
@@ -164,7 +161,7 @@ class WeatherResources(Resource):
             return jsonify(
                 SuccessObject.create_response(
                     self, HTTPStatus.OK,
-                    _weather_service.retrieve_all_weather_data(
+                    _WeatherService.retrieve_all_weather_data(
                         self,
                         limit=request.args.get('limit'),
                         start_date=request.args.get('start_date'),
