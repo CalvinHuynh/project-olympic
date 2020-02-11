@@ -258,7 +258,7 @@ def get_future_timestamps(
         start_date=None,
         day_of_week: int = 0,
         timestamp: int = 3600,
-        number_of_timestamps: int = 168):
+        number_of_timestamps: int = 167):
     """Calculates the future timestamps from a given day of the week.
 
     Keyword Arguments:

@@ -125,6 +125,8 @@ class ForecastService():
 
             data_frame = _transform_data_to_dataframe(data)
             data_frame = _add_time_characteristics(data_frame)
+            # Drop rows where no_of_clients is NaN
+            data_frame = data_frame.dropna(subset=['no_of_clients'])
             next_week_dataframe = _create_next_week_dataframe(
                 start_date, week_day)
             next_week_start = dt.datetime.fromtimestamp(

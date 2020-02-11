@@ -24,16 +24,16 @@ def validate_dateformat(
             except ValueError:
                 raise ValueError(
                     f"Incorrect date format for parameter {variable_name},"
-                    f" expected format is YYYY-MM-DD")
+                    f" expected format is YYYY-mm-dd")
         else:
             raise ValueError(
                 f"Input parameter {variable_name} cannot be null or empty,"
-                f" expected format is YYYY-MM-Dd")
+                f" expected format is YYYY-mm-dd")
 
         if not date_pattern.match(date_text):
             raise ValueError(
                 f"Incorrect date format for parameter {variable_name},"
-                f" expected format is YYYY-MM-DD")
+                f" expected format is YYYY-mm-dd")
 
 
 def validate_string_bool(input: str):

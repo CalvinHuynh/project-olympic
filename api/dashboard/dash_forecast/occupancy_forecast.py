@@ -1,36 +1,43 @@
-from datetime import datetime as dt
+from datetime import datetime, timedelta
 
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objects as go
 from dash import Dash
 from dash.dependencies import Input, Output
-from pandas import DataFrame, read_pickle, read_json, to_datetime
+from pandas import (DataFrame, read_pickle, read_json,
+                    to_datetime, DatetimeIndex)
 
 from api.dashboard.dash_function import apply_layout
-# from api.helpers.check_token_type_decorator import jwt_required_extended
 from api.helpers.data_frame_helper import cached_dataframe_outdated
 from api.settings import GET_PATH
 
 url_base = '/dash/app2/'
 _data_initialized = False
 
+# minus_one_month = timedelta(days=28, hours=6)
+
 
 def _get_start_and_end_of_week():
     import datetime as dt
+    # today = dt.datetime.today() - minus_one_month
     today = dt.datetime.today()
     start_of_week = today - dt.timedelta(days=today.weekday())
     end_of_week = start_of_week + dt.timedelta(days=6)
     return start_of_week, end_of_week
 
 
-def _get_current_hour_range():
+def _get_current_hour_range(return_with_date: bool = False):
     import datetime as dt
+    # start_date = dt.datetime.today() - minus_one_month
     start_date = dt.datetime.today()
     start = start_date.replace(minute=0, second=0)
     end = dt.datetime.strftime(
         start + dt.timedelta(minutes=59), '%Y-%m-%d %H:%M:00')
     start = dt.datetime.strftime(start, '%Y-%m-%d %H:%M:00')
+    if not return_with_date:
+        end = end.split()[1]
+        start = start.split()[1]
     return start, end
 
 
@@ -115,7 +122,7 @@ layout = html.Div([
                             'label': 'Sunday',
                             'value': 6
                         }],
-                        value=dt.today().weekday(),
+                        value=datetime.today().weekday(),
                         className=""),
                 ], className="form-group"),
             ], className="form-group col-xs-10 col-sm-8 col-md-12"),
@@ -188,32 +195,53 @@ def add_dash(server):
             go.Bar(x=filtered_forecast_df['created_date'],
                    y=filtered_forecast_df['predicted_no_of_clients'],
                    hoverinfo='skip',
+                   base=0,
                    marker=go.bar.Marker(
                        color='rgb(63, 81, 181)'
             )))
 
-        # filter current clients
-        start_hour, end_hour = _get_current_hour_range()
+        # Converts string to datetime64 type
         current_clients_df[
             'created_date'] = current_clients_df[
-            'created_date'].astype('datetime64[ns, Europe/Amsterdam]')
+            'created_date'].astype('datetime64[ns]')
         current_clients_df['day_of_week'] = current_clients_df[
             'created_date'].dt.dayofweek
+        # Extract YYYY-mm-dd format from converted datetime64 type
+        # This new field is used for querying
+        current_clients_df['date'] = to_datetime(
+            current_clients_df['created_date'], format='%Y-%m-%d')
         current_clients_df = current_clients_df[(
             current_clients_df['day_of_week'] == selected_dropdown_value
         )]
+
+        # Query to retrieve today's date
+        # today_date = datetime.today() - minus_one_month
+        today_date = datetime.today()
+        start_date = today_date.replace(minute=0, second=0)
+        end_date = datetime.strftime(
+            start_date + timedelta(minutes=59), '%Y-%m-%d')
         current_clients_df_filtered = current_clients_df[(
-            current_clients_df['created_date'] >= start_hour
+            current_clients_df['date'] >= start_date
         )]
         current_clients_df_filtered = current_clients_df_filtered[(
-            current_clients_df_filtered['created_date'] <= end_hour
+            current_clients_df_filtered['date'] <= end_date
         )]
 
-        if not current_clients_df_filtered.empty:
+        current_clients_df['index_created_date'] = DatetimeIndex(
+            current_clients_df['created_date'])
+        current_clients_df = current_clients_df.set_index('index_created_date')
+        # Get start hour and end hour using current time
+        start_time, end_time = _get_current_hour_range()
+        current_clients_df_filtered = current_clients_df.between_time(
+            start_time, end_time)
+
+        if not current_clients_df_filtered.empty and (
+                selected_dropdown_value == today_date.weekday()):
             figure.add_trace(
-                go.Bar(x=current_clients_df_filtered['created_date'],
-                       y=current_clients_df_filtered['no_of_clients'],
+                go.Bar(x=[current_clients_df_filtered.iloc[0]['created_date']],
+                       y=[current_clients_df_filtered['no_of_clients'].mean()],
                        hoverinfo='skip',
+                       base=0,
                        opacity=0.5,
                        marker=go.bar.Marker(
                     color='rgb(253, 80, 3)'
