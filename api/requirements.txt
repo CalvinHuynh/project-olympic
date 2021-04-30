@@ -69,7 +69,7 @@ selenium==3.141.0
 six==1.13.0
 typed-ast==1.4.0
 tzlocal==2.0.0
-urllib3==1.25.7
+urllib3==1.25.8
 Werkzeug==0.16.0
 wrapt==1.11.2
 wtf-peewee==3.0.0
